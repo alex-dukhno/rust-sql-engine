@@ -1,8 +1,8 @@
-extern crate sql_ast;
+extern crate sql;
 
-use sql_ast::SQLQueryParser;
-use sql_ast::SQLNode;
-use sql_ast::SQLParseError;
+use sql::parser::SQLQueryParser;
+use sql::parser::SQLNode;
+use sql::parser::SQLParseError;
 
 #[test]
 fn test_create_sql_query_parser() {

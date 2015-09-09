@@ -1,12 +1,12 @@
 [package]
 name = "rust-sql-engine"
-version = "0.1.0"
+version = "0.0.1-SNAPSHOT"
 authors = ["Alex-Diez <alexvic.amatory@gmail.com>"]
 
 [lib]
-name = "sql_ast"
-path = "src/sql_ast/sql_parser.rs"
+name = "sql"
+path = "src/sql/sql.rs"
 
 [[test]]
-name = "sql_ast_test"
-path = "src/sql_ast/test/sql_parser_unit_tests.rs"
+name = "sql_parser_test"
+path = "src/tests/parser_unit_tests.rs"
