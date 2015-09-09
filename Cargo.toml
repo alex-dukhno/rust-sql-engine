@@ -1,0 +1,12 @@
+[package]
+name = "rust-sql-engine"
+version = "0.1.0"
+authors = ["Alex-Diez <alexvic.amatory@gmail.com>"]
+
+[lib]
+name = "sql_ast"
+path = "src/sql_ast/sql_parser.rs"
+
+[[test]]
+name = "sql_ast_test"
+path = "src/sql_ast/test/sql_parser_unit_tests.rs"
