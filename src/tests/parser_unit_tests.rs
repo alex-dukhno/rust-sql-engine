@@ -2,7 +2,7 @@ extern crate sql;
 
 use sql::parser::SQLQueryParser;
 use sql::parser::SQLNode;
-use sql::parser::SQLParseError;
+use sql::error::SQLError;
 
 #[test]
 fn test_create_sql_query_parser() {
