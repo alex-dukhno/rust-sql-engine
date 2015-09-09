@@ -1,15 +1,14 @@
 use std::string::String;
+use std::result::Result;
 
-use std::option::Option;
-
-use std::marker::Sized;
+use std::boxed::Box;
 
 use super::error::SQLError;
 
-use std::fmt;
-use std::result;
+use super::ast::SQLAbstractTreeWalker;
+use super::ast::SQLNode;
 
-pub type SQLResult = result::Result<SQLNode, SQLError>;
+pub type SQLResult = Result<SQLAbstractTreeWalker, SQLError>;
 
 pub struct SQLQueryParser {
     name: String,
@@ -22,17 +21,6 @@ impl SQLQueryParser {
     }
 
     pub fn parse_query(&self, query: String) -> SQLResult {
-        Result::Ok(SQLNode::new(query))
-    }
-}
-
-pub struct SQLNode {
-    value: String,
-}
-
-impl SQLNode {
-
-    pub fn new(value: String) -> SQLNode {
-        SQLNode { value: value }
+        Result::Ok(SQLAbstractTreeWalker::new(query))
     }
 }
