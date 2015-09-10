@@ -1,42 +1,31 @@
 use std::boxed::Box;
 use std::borrow::Borrow;
-
+use std::vec::Vec;
 use std::option::Option;
 
 use std::string::String;
 
-pub struct SQLAbstractTreeWalker {
-    head: Option<Box<SQLNode>>,
-}
-
-impl SQLAbstractTreeWalker {
-
-    pub fn new(value: String) ->SQLAbstractTreeWalker {
-        SQLAbstractTreeWalker { head : Some(Box::new(SQLNode::new(value))) }
-    }
-
-    // pub fn next(&mut self) -> Option<Box<SQLNode>> {
-        // let node = self.head.borrow();
-        // self.head = match self.head.next {
-            // Some(n) => Some(n.borrow()),
-            // None => None
-        // }
-        // Some(node)
-    // }
-}
-
 pub struct SQLNode {
     value: String,
-    pub next: Option<Box<SQLNode>>,
+    start_at: i32,
+    end_at: i32,
 }
 
 impl SQLNode {
 
-    pub fn new(value: String) -> SQLNode {
-        SQLNode { value: value, next: Option::None }
-    }
+    // pub fn new(value: String) -> SQLNode {
+        // SQLNode { value: value, next: Option::None }
+    // }
 
-    pub fn get_string(&self) -> String {
-        self.value.clone()
-    }
+    // pub fn get_string(&self) -> String {
+        // self.value.clone()
+    // }
+}
+
+pub struct InsertStatementNode {
+    insert_node: SQLNode,
+    into_node: SQLNode,
+    table_name_node: SQLNode,
+    columns_nodes: Vec<SQLNode>,
+
 }
