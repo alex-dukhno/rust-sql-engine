@@ -8,5 +8,5 @@ name = "sql"
 path = "src/sql/sql.rs"
 
 [[test]]
-name = "sql_parser_test"
-path = "src/tests/parser_unit_tests.rs"
+name = "unit_tests"
+path = "src/tests/unit_tests.rs"
