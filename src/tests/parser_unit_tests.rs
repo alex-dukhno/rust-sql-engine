@@ -1,5 +1,3 @@
-use sql::ast::SQLNode;
-
 // use sql::parser::parse_query;
 
 #[test]
