@@ -1,5 +1,5 @@
 use sql::ast::ASTNode;
-use sql::ast::InsertStatementNode;
+use sql::ast::ASTInsertStatementNode;
 
 use std::option::Option;
 
@@ -16,7 +16,7 @@ fn test_create_ast_node_with_less_then_should_be_end_at_value() {
 
 #[test]
 fn test_create_insert_ast_node() {
-    InsertStatementNode::new(
+    ASTInsertStatementNode::new(
             ASTNode::new("insert".to_string(), 0, 5),
             ASTNode::new("into".to_string(), 7, 10),
             ASTNode::new("tab1".to_string(), 11, 14),

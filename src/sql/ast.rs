@@ -2,8 +2,12 @@ use std::boxed::Box;
 use std::borrow::Borrow;
 use std::vec::Vec;
 use std::option::Option;
-
+use std::marker::Sized;
 use std::string::String;
+
+use super::error::SQLError;
+
+pub type InsertParserResult = Result<ASTInsertStatementNode, SQLError>;
 
 pub struct ASTNode {
     value: String,
@@ -25,7 +29,7 @@ impl ASTNode {
     // }
 }
 
-pub struct InsertStatementNode {
+pub struct ASTInsertStatementNode {
     insert_node: ASTNode,
     into_node: ASTNode,
     table_name_node: ASTNode,
@@ -33,14 +37,14 @@ pub struct InsertStatementNode {
     values_nodes: Vec<ASTNode>,
 }
 
-impl InsertStatementNode {
+impl ASTInsertStatementNode {
 
     pub fn new(
             insert_node: ASTNode,
             into_node: ASTNode,
             table_name_node: ASTNode,
             columns_nodes: Option<Vec<ASTNode>>,
-            values_nodes: Vec<ASTNode>) -> InsertStatementNode {
-        InsertStatementNode { insert_node: insert_node, into_node: into_node, table_name_node: table_name_node, columns_nodes: columns_nodes, values_nodes: values_nodes }
+            values_nodes: Vec<ASTNode>) -> ASTInsertStatementNode {
+        ASTInsertStatementNode { insert_node: insert_node, into_node: into_node, table_name_node: table_name_node, columns_nodes: columns_nodes, values_nodes: values_nodes }
     }
 }
