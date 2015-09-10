@@ -25,10 +25,22 @@ impl ASTNode {
     // }
 }
 
-// pub struct InsertStatementNode {
-    // insert_node: SQLNode,
-    // into_node: SQLNode,
-    // table_name_node: SQLNode,
-    // columns_nodes: Option<Vec<SQLNode>>,
+pub struct InsertStatementNode {
+    insert_node: ASTNode,
+    into_node: ASTNode,
+    table_name_node: ASTNode,
+    columns_nodes: Option<Vec<ASTNode>>,
+    values_nodes: Vec<ASTNode>,
+}
 
-// }
+impl InsertStatementNode {
+
+    pub fn new(
+            insert_node: ASTNode,
+            into_node: ASTNode,
+            table_name_node: ASTNode,
+            columns_nodes: Option<Vec<ASTNode>>,
+            values_nodes: Vec<ASTNode>) -> InsertStatementNode {
+        InsertStatementNode { insert_node: insert_node, into_node: into_node, table_name_node: table_name_node, columns_nodes: columns_nodes, values_nodes: values_nodes }
+    }
+}
