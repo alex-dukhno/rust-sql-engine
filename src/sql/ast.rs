@@ -5,10 +5,6 @@ use std::option::Option;
 use std::marker::Sized;
 use std::string::String;
 
-use super::error::SQLError;
-
-pub type InsertParserResult = Result<ASTInsertStatementNode, SQLError>;
-
 pub struct ASTNode {
     value: String,
     start_at: usize,
@@ -45,6 +41,12 @@ impl ASTInsertStatementNode {
             table_name_node: ASTNode,
             columns_nodes: Option<Vec<ASTNode>>,
             values_nodes: Vec<ASTNode>) -> ASTInsertStatementNode {
-        ASTInsertStatementNode { insert_node: insert_node, into_node: into_node, table_name_node: table_name_node, columns_nodes: columns_nodes, values_nodes: values_nodes }
+        ASTInsertStatementNode {
+            insert_node: insert_node,
+            into_node: into_node,
+            table_name_node: table_name_node,
+            columns_nodes: columns_nodes,
+            values_nodes: values_nodes
+        }
     }
 }
