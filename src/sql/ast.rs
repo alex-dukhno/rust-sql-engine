@@ -7,13 +7,16 @@ use std::string::String;
 
 pub struct ASTNode {
     value: String,
-    start_at: i32,
-    end_at: i32,
+    start_at: usize,
+    end_at: usize,
 }
 
 impl ASTNode {
 
-    pub fn new(value: String, start_at: i32, end_at: i32) -> ASTNode {
+    pub fn new(value: String, start_at: usize, end_at: usize) -> ASTNode {
+        if value.len() != end_at - start_at + 1 {
+            panic!("value's length is different to node length");
+        }
         ASTNode { value: value, start_at: start_at, end_at: end_at }
     }
 
