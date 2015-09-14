@@ -3,8 +3,8 @@ use std::result::Result;
 use std::iter::Iterator;
 
 use super::error::SQLError;
-
-const WHITE_SPACES = vec![' ', '\n', '\r', '\t', '\v', '\f'];
+/*
+const WHITE_SPACES = vec![' ', '\n', '\t'];
 
 pub type InsertParserResult = Result<ASTInsertStatementNode, SQLError>;
 
@@ -46,3 +46,4 @@ fn skip_white_spaces(chars: &mut Iterator) {
         }
     );
 }
+*/

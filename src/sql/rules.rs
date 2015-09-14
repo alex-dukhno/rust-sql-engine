@@ -1,9 +1,9 @@
-pub struct InsertQueryRules {
-    start_with
-}
+// pub struct InsertQueryRules {
+    // start_with
+// }
 
 
-
+/*
 INSERT_QUERY =
     [ws]INSERT[ws]INTO[ws]
     [${TABLE_NAME}
@@ -11,3 +11,4 @@ INSERT_QUERY =
             [ws]VALUES(${COLUMN_VAL}[,[ws]${COLUMN_VAL}])
         |
     SELECT_QUERY];
+*/
