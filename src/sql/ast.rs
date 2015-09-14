@@ -1,11 +1,13 @@
 use std::boxed::Box;
+use std::borrow::BorrowMut;
+use std::borrow::Borrow;
 use std::option::Option;
 use std::string::String;
 
 pub struct ASTNode<'a> {
-    val: &'a str,
-    left: Box<Option<ASTNode<'a>>>,
-    right: Box<Option<ASTNode<'a>>>,
+    pub val: &'a str,
+    pub left: Box<Option<ASTNode<'a>>>,
+    pub right: Box<Option<ASTNode<'a>>>,
 }
 
 impl<'a> ASTNode<'a> {
