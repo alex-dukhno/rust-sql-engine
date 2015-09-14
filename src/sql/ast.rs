@@ -48,8 +48,20 @@ impl<'a> ASTNode<'a> {
 }
 
 pub fn parse_query<'a>(query_string: &'a str) -> ASTNode<'a> {
-    let mut c = query_string.chars();
-    let index = c.position(|c| c == ' ').unwrap();
-    let v = &query_string[0..index];
-    ASTNode::new(vec![v])
+    let mut c = query_string.chars().peekable();
+    let mut last_index = 0;
+    let mut head = Option::None;
+    while c.peek().is_some() {
+        let index = c.position(|c| c == ' ').unwrap();
+        let v = &query_string[last_index..index];
+        let node = ASTNode::new(vec![v]);
+        last_index = index + 2;
+        if head.is_none() {
+            head = Option::Some(node);
+        }
+        else {
+            head.unwrap().left = Box::new(Option::Some(node));
+        }
+    }
+    head.unwrap()
 }
