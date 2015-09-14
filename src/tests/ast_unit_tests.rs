@@ -1,5 +1,5 @@
 use sql::ast::ASTNode;
-// use sql::ast::parse_query;
+use sql::ast::parse_query;
 
 #[test]
 fn test_create_ast_node() {
@@ -36,15 +36,68 @@ fn test_previous_value() {
 }
 
 #[test]
+fn test_parse_insert_node() {
+    let query = "insert into tab1(col1) values('1');";
+    let mut insert_node = parse_query(query);
+    assert_eq!(insert_node.current_val(), "insert");
+    assert!(insert_node.next_val().is_none());
+    assert!(insert_node.prev_val().is_none());
+}
+
+#[test]
 #[ignore]
-fn test_parse_simple_insert() {
-    /*let query = "insert into tab1(col1) values('1');";
+fn test_parse_into_node() {
+    let query = "insert into tab1(col1) values('1');";
     let insert_node = parse_query(query);
-    assert_eq!(insert_node.val, "insert");
-    let into_node = *insert_node.left;
-    assert_eq!(insert_node.val, "into");
-    let table_node = into_node.left;
-    assert_eq!(table_node.val, "tab1");
-    let values_node = insert_node.right;
-    assert_eq!(values_node.val, "values");*/
+    let mut into_node = (*insert_node.left).unwrap();
+    assert_eq!(into_node.current_val(), "into");
+    assert!(into_node.next_val().is_none());
+    assert!(into_node.prev_val().is_none());
+}
+
+#[test]
+#[ignore]
+fn test_parse_table_node() {
+    let query = "insert into tab1(col1) values('1');";
+    let insert_node = parse_query(query);
+    let into_node = (*insert_node.left).unwrap();
+    let mut table_node = (*into_node.left).unwrap();
+    assert_eq!(table_node.current_val(), "tab1");
+    assert!(table_node.next_val().is_none());
+    assert!(table_node.prev_val().is_none());
+}
+
+#[test]
+#[ignore]
+fn test_parse_simple_columns_node() {
+    let query = "insert into tab1(col1) values('1');";
+    let insert_node = parse_query(query);
+    let into_node = (*insert_node.left).unwrap();
+    let mut columns_node = (*into_node.right).unwrap();
+    assert_eq!(columns_node.current_val(), "col1");
+    assert!(columns_node.next_val().is_none());
+    assert!(columns_node.prev_val().is_none());
+}
+
+#[test]
+#[ignore]
+fn test_parse_values_node() {
+    let query = "insert into tab1(col1) values('1');";
+    let insert_node = parse_query(query);
+    let mut values_node = (*insert_node.right).unwrap();
+    assert_eq!(values_node.current_val(), "values");
+    assert!(values_node.next_val().is_none());
+    assert!(values_node.prev_val().is_none());
+}
+
+#[test]
+#[ignore]
+fn test_parse_simple_data_node() {
+    let query = "insert into tab1(col1) values('1');";
+    let insert_node = parse_query(query);
+    let values_node = (*insert_node.right).unwrap();
+    let mut data_node = (*values_node.left).unwrap();
+    assert_eq!(data_node.current_val(), "'1'");
+    assert!(data_node.next_val().is_none());
+    assert!(data_node.prev_val().is_none());
 }

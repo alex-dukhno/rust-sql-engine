@@ -46,3 +46,10 @@ impl<'a> ASTNode<'a> {
         Option::None
     }
 }
+
+pub fn parse_query<'a>(query_string: &'a str) -> ASTNode<'a> {
+    let mut c = query_string.chars();
+    let index = c.position(|c| c == ' ').unwrap();
+    let v = &query_string[0..index];
+    ASTNode::new(vec![v])
+}
