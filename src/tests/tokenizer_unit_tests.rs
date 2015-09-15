@@ -12,20 +12,20 @@ fn test_one_word_in_line() {
     assert!(actual.is_some());
 }
 
-#[test]
-fn test_simple_whitespace_delimeter() {
-    let tokens = vec!["one", " ", "two"];
-    let token_string = build_tokens_string(&tokens);
-    let mut t = Tokenizer::new(&(*token_string));
-    test_tokens(&tokens, &mut t);
-}
-
 fn build_tokens_string<'a>(tokens: &Vec<&'a str>) -> Box<String> {
     let mut s = "".to_string();
     for &token in (*tokens).iter() {
         s = s + token;
     }
     Box::new(s)
+}
+
+#[test]
+fn test_simple_whitespace_delimeter() {
+    let tokens = vec!["one", " ", "two"];
+    let token_string = build_tokens_string(&tokens);
+    let mut t = Tokenizer::new(&(*token_string));
+    test_tokens(&tokens, &mut t);
 }
 
 fn test_tokens<'a>(expected_tokens: &Vec<&'a str>, actual_tokens: &mut Tokenizer<'a>) {
@@ -36,25 +36,17 @@ fn test_tokens<'a>(expected_tokens: &Vec<&'a str>, actual_tokens: &mut Tokenizer
 }
 
 #[test]
-#[ignore]
 fn test_simple_tabulation_delimeter() {
-    let mut t = Tokenizer::new("one\ttwo");
-    let one = t.next();
-    assert_eq!(one.unwrap(), "one");
-    // let tabulation = t.next();
-    // assert_eq!(tabulation.unwrap(), "\t");
-    let two = t.next();
-    assert_eq!(two.unwrap(), "two");
+    let tokens = vec!["one", "\t", "two"];
+    let token_string = build_tokens_string(&tokens);
+    let mut t = Tokenizer::new(&(*token_string));
+    test_tokens(&tokens, &mut t);
 }
 
 #[test]
-#[ignore]
 fn test_simple_new_line_delimeter() {
-    let mut t = Tokenizer::new("one\ntwo");
-    let one = t.next();
-    assert_eq!(one.unwrap(), "one");
-    // let new_line = t.next();
-    // assert_eq!(new_line.unwrap(), "\n");
-    let two = t.next();
-    assert_eq!(two.unwrap(), "two");
+    let tokens = vec!["one", "\n", "two"];
+    let token_string = build_tokens_string(&tokens);
+    let mut t = Tokenizer::new(&(*token_string));
+    test_tokens(&tokens, &mut t);
 }
