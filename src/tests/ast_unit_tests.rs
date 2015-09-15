@@ -1,7 +1,8 @@
 use sql::ast::ASTNode;
 use sql::ast::parse_query;
-
+/*
 #[test]
+#[ignore]
 fn test_create_ast_node() {
     let value = "insert";
     let mut ast_node = ASTNode::new(vec![value]);
@@ -11,6 +12,7 @@ fn test_create_ast_node() {
 }
 
 #[test]
+#[ignore]
 fn test_current_value() {
     let value = "insert";
     let mut ast_node = ASTNode::new(vec![value]);
@@ -18,6 +20,7 @@ fn test_current_value() {
 }
 
 #[test]
+#[ignore]
 fn test_next_value() {
     let value = "insert";
     let mut ast_node = ASTNode::new(vec![value]);
@@ -27,6 +30,7 @@ fn test_next_value() {
 }
 
 #[test]
+#[ignore]
 fn test_previous_value() {
     let value = "insert";
     let mut ast_node = ASTNode::new(vec![value]);
@@ -34,7 +38,7 @@ fn test_previous_value() {
     assert!(ast_node.prev_val().is_none());
     assert_eq!(ast_node.current_val(), value);
 }
-/*
+
 #[test]
 #[ignore]
 fn test_parse_insert_node() {

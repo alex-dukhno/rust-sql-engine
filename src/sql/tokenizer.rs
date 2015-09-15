@@ -1,17 +1,18 @@
 use std::iter::Iterator;
+use std::iter::ExactSizeIterator;
 use std::str::Chars;
 use std::option::Option;
 use std::vec::Vec;
 
 pub struct Tokenizer<'a> {
     src: &'a str,
-    delimeters: Vec<char>,
+    white_spaces: Vec<char>,
 }
 
 impl<'a> Tokenizer<'a> {
 
     pub fn new(src: &'a str) -> Tokenizer {
-        Tokenizer { src: src, delimeters: vec![' ', '\t', '\n'] }
+        Tokenizer { src: src, white_spaces: vec![' ', '\t', '\n'] }
     }
 }
 
@@ -20,22 +21,37 @@ impl<'a> Iterator for Tokenizer<'a> {
     type Item = &'a str;
 
     fn next(&mut self) -> Option<&'a str> {
-        let mut delimeter_index = 0;
-        for c in self.src.chars() {
-            if delimeter_index == 0
-                    && self.delimeters.contains(&c) {
-                let result = &(self.src)[0..1];
-                self.src = &(self.src)[1..self.src.len()];
-                return Option::Some(result);
-            }
-            if self.delimeters.contains(&c) {
-                let result = &(self.src)[0..delimeter_index];
-                self.src = &(self.src)[delimeter_index..self.src.len()];
-                return Option::Some(result)
-            }
-            delimeter_index += 1;
+        println!("start next");
+        if self.src.is_empty() {
+            return Option::None;
         }
+        let last = self.src.chars().rev().next().unwrap();
+        println!("last is - '{}'", last);
+        let mut chars = self.src.chars();
+        let delimeter = if self.white_spaces.contains(&last) {
+            chars.position(
+                |c| {
+                    println!("current char - '{}'", c);
+                    !(self.white_spaces.contains(&c))
+                }
+            )
+        }
+        else {
+            chars.position(
+                |c| {
+                    println!("current char - '{}'", c);
+                    self.white_spaces.contains(&c) || c != last
+                }
+            )
+        };
+        if delimeter.is_none() {
+            return Option::None
+        }
+        let delimeter_index = delimeter.unwrap();
+        println!("delimeter index is - '{}'", delimeter_index);
         let result = &(self.src)[0..delimeter_index];
+        println!("result - '{}'", result);
+        self.src = &(self.src)[delimeter_index..self.src.len()];
         Option::Some(result)
     }
 }
