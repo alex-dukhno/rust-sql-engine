@@ -77,3 +77,11 @@ fn test_whitespaces_as_one_token() {
     let mut t = Tokenizer::new(&(*token_string));
     test_tokens(&tokens, &mut t);
 }
+
+#[test]
+fn test_exclamation_mark() {
+    let tokens = vec!["one", "!", "two"];
+    let token_string = build_tokens_string(&tokens);
+    let mut t = Tokenizer::new(&(*token_string));
+    test_tokens(&tokens, &mut t);
+}
