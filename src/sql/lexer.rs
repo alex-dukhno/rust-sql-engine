@@ -13,15 +13,20 @@ impl<'a> Lexer<'a> {
         Lexer {
                 src: src,
                 white_spaces: vec![' ', '\t', '\n'],
-                special_chars: vec!['!', '?', '%', '(', ')', '\'', '"']
+                special_chars: vec!['!', '?', '%', '(', ')', '\'', '"', '>', '<']
         }
     }
 
     fn is_char_types_changed(&self, current_char: &char) -> bool {
-        !self.is_spaces_lexem() && self.is_white_space(current_char)
-                || self.is_spaces_lexem() && !self.is_white_space(current_char)
-        || !self.is_special_lexem() && self.is_special_char(current_char)
-                || self.is_special_lexem() && !self.is_special_char(current_char)
+        let first_char = &(self.take_first_char());
+        // println!("first char is - '{}', current char is - '{}'", first_char, current_char);
+        self.is_ascii_symbol(first_char) && (self.is_white_space(current_char) || self.is_special_char(current_char))
+            || self.is_white_space(first_char) && (self.is_ascii_symbol(current_char) || self.is_special_char(current_char) || first_char != current_char)
+            || self.is_special_char(first_char) && (self.is_ascii_symbol(current_char) || self.is_white_space(current_char) || first_char != current_char)
+    }
+
+    fn is_ascii_symbol(&self, c: &char) -> bool {
+        !self.special_chars.contains(&c) && !self.white_spaces.contains(&c)
     }
 
     fn is_white_space(&self, c: &char) -> bool {
@@ -34,14 +39,6 @@ impl<'a> Lexer<'a> {
 
     fn find_delimeter_index(&self) -> usize {
         self.src.chars().take_while(|c| !self.is_char_types_changed(&c)).count()
-    }
-
-    fn is_spaces_lexem(&self) -> bool {
-        self.white_spaces.contains(&self.take_first_char())
-    }
-
-    fn is_special_lexem(&self) -> bool {
-        self.special_chars.contains(&self.take_first_char())
     }
 
     fn take_first_char(&self) -> char {
