@@ -21,6 +21,14 @@ fn build_tokens_string<'a>(tokens: &Vec<&'a str>) -> Box<String> {
 }
 
 #[test]
+fn test_one_word_with_first_and_last_same_char() {
+    let tokens = vec!["eone"];
+    let token_string = build_tokens_string(&tokens);
+    let mut t = Tokenizer::new(&(*token_string));
+    test_tokens(&tokens, &mut t);
+}
+
+#[test]
 #[ignore]
 fn test_simple_whitespace_delimeter() {
     let tokens = vec!["one", " ", "two"];

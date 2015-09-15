@@ -21,36 +21,37 @@ impl<'a> Iterator for Tokenizer<'a> {
     type Item = &'a str;
 
     fn next(&mut self) -> Option<&'a str> {
-        println!("start next");
+        println!("24 start next");
         if self.src.is_empty() {
             return Option::None;
         }
         let last = self.src.chars().rev().next().unwrap();
-        println!("last is - '{}'", last);
-        let mut chars = self.src.chars();
+        println!("29 last is - '{}'", last);
+        let mut chars = self.src.char_indices();
+        let last_index = self.src.len() - 1;
         let delimeter = if self.white_spaces.contains(&last) {
             chars.position(
-                |c| {
-                    println!("current char - '{}'", c);
+                |(i, c)| {
+                    println!("35 current char - '{}' current position - '{}'", c, i);
                     !(self.white_spaces.contains(&c))
                 }
             )
         }
         else {
             chars.position(
-                |c| {
-                    println!("current char - '{}'", c);
-                    self.white_spaces.contains(&c) || c != last
+                |(i, c)| {
+                    println!("43 current char - '{}' current position - '{}'", c, i);
+                    self.white_spaces.contains(&c) || i == last_index
                 }
             )
         };
         if delimeter.is_none() {
             return Option::None
         }
-        let delimeter_index = delimeter.unwrap();
-        println!("delimeter index is - '{}'", delimeter_index);
+        let delimeter_index = delimeter.unwrap() + 1;
+        println!("52 delimeter index is - '{}'", delimeter_index);
         let result = &(self.src)[0..delimeter_index];
-        println!("result - '{}'", result);
+        println!("54 result - '{}'", result);
         self.src = &(self.src)[delimeter_index..self.src.len()];
         Option::Some(result)
     }
