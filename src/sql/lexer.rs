@@ -13,7 +13,7 @@ impl<'a> Lexer<'a> {
         Lexer {
                 src: src,
                 white_spaces: vec![' ', '\t', '\n'],
-                special_chars: vec!['!', '?', '%', '(', ')', '\'', '"', '>', '<']
+                special_chars: vec!['!', '?', '%', '(', ')', '\'', '"', '>', '<', '=', '+', '-', '*', '/', '\\']
         }
     }
 

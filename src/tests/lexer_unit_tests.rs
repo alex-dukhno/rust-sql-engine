@@ -165,3 +165,51 @@ fn test_less_then() {
     let mut lexer = Lexer::new(&(*lexem_string));
     test_lexems(&lexems, &mut lexer);
 }
+
+#[test]
+fn test_equals_to() {
+    let lexems = vec!["one", "=", "two"];
+    let lexem_string = build_lexems_string(&lexems);
+    let mut lexer = Lexer::new(&(*lexem_string));
+    test_lexems(&lexems, &mut lexer);
+}
+
+#[test]
+fn test_plus() {
+    let lexems = vec!["one", "+", "two"];
+    let lexem_string = build_lexems_string(&lexems);
+    let mut lexer = Lexer::new(&(*lexem_string));
+    test_lexems(&lexems, &mut lexer);
+}
+
+#[test]
+fn test_minus() {
+    let lexems = vec!["one", "-", "two"];
+    let lexem_string = build_lexems_string(&lexems);
+    let mut lexer = Lexer::new(&(*lexem_string));
+    test_lexems(&lexems, &mut lexer);
+}
+
+#[test]
+fn test_asterisk() {
+    let lexems = vec!["one", "*", "two"];
+    let lexem_string = build_lexems_string(&lexems);
+    let mut lexer = Lexer::new(&(*lexem_string));
+    test_lexems(&lexems, &mut lexer);
+}
+
+#[test]
+fn test_slash() {
+    let lexems = vec!["one", "/", "two"];
+    let lexem_string = build_lexems_string(&lexems);
+    let mut lexer = Lexer::new(&(*lexem_string));
+    test_lexems(&lexems, &mut lexer);
+}
+
+#[test]
+fn test_back_slash() {
+    let lexems = vec!["one", "\\", "two"];
+    let lexem_string = build_lexems_string(&lexems);
+    let mut lexer = Lexer::new(&(*lexem_string));
+    test_lexems(&lexems, &mut lexer);
+}
