@@ -1,9 +1,13 @@
 use sql::lexer::Lexer;
-use sql::parser::Parser;
+use sql::ast::KeyWord;
 
 #[test]
-fn test_create_parser() {
+fn test_parse_insert_query() {
     let query = "inser into tab1(col1)values('1');";
     let lexer = Lexer::new(query);
-    Parser::new(&lexer);
+    let insert = parse_query(&lexer);
+    assert_eq!(insert.into.table_name, "tab1".to_string());
+    assert!(insert.into.columns_names.is_some());
+    assert_eq!(insert.into.columns_names.unwrap(), vec!["col1".to_string()]);
+    assert_eq!(insert.values.columns_values, vec!["'1'".to_string()]);
 }
