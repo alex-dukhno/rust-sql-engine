@@ -85,3 +85,11 @@ fn test_exclamation_mark() {
     let mut t = Tokenizer::new(&(*token_string));
     test_tokens(&tokens, &mut t);
 }
+
+#[test]
+fn test_white_spaces_delimited_with_special_char() {
+    let tokens = vec![" \n\t", "!", "\n "];
+    let token_string = build_tokens_string(&tokens);
+    let mut t = Tokenizer::new(&(*token_string));
+    test_tokens(&tokens, &mut t);
+}
