@@ -11,7 +11,7 @@ pub struct Tokenizer<'a> {
 impl<'a> Tokenizer<'a> {
 
     pub fn new(src: &'a str) -> Tokenizer {
-        Tokenizer { src: src, delimeters: vec![' '] }
+        Tokenizer { src: src, delimeters: vec![' ', '\t', '\n'] }
     }
 }
 
@@ -22,9 +22,15 @@ impl<'a> Iterator for Tokenizer<'a> {
     fn next(&mut self) -> Option<&'a str> {
         let mut delimeter_index = 0;
         for c in self.src.chars() {
+            if delimeter_index == 0
+                    && self.delimeters.contains(&c) {
+                let result = &(self.src)[0..1];
+                self.src = &(self.src)[1..self.src.len()];
+                return Option::Some(result);
+            }
             if self.delimeters.contains(&c) {
                 let result = &(self.src)[0..delimeter_index];
-                self.src = &(self.src)[delimeter_index + 1..self.src.len()];
+                self.src = &(self.src)[delimeter_index..self.src.len()];
                 return Option::Some(result)
             }
             delimeter_index += 1;
