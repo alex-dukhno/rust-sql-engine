@@ -1,13 +1,13 @@
 use std::vec::Vec;
 use std::boxed::Box;
 
-use sql::tokenizer::Tokenizer;
+use sql::lexer::Lexer;
 
 #[test]
 fn test_one_word_in_line() {
     let tokens = vec!["one"];
     let token_string = build_tokens_string(&tokens);
-    let mut t = Tokenizer::new(&(*token_string));
+    let mut t = Lexer::new(&(*token_string));
     let actual = t.next();
     assert!(actual.is_some());
 }
@@ -24,7 +24,7 @@ fn build_tokens_string<'a>(tokens: &Vec<&'a str>) -> Box<String> {
 fn test_one_word_with_first_and_last_same_char() {
     let tokens = vec!["eone"];
     let token_string = build_tokens_string(&tokens);
-    let mut t = Tokenizer::new(&(*token_string));
+    let mut t = Lexer::new(&(*token_string));
     test_tokens(&tokens, &mut t);
 }
 
@@ -32,11 +32,11 @@ fn test_one_word_with_first_and_last_same_char() {
 fn test_simple_whitespace_delimeter() {
     let tokens = vec!["one", " ", "two"];
     let token_string = build_tokens_string(&tokens);
-    let mut t = Tokenizer::new(&(*token_string));
+    let mut t = Lexer::new(&(*token_string));
     test_tokens(&tokens, &mut t);
 }
 
-fn test_tokens<'a>(expected_tokens: &Vec<&'a str>, actual_tokens: &mut Tokenizer<'a>) {
+fn test_tokens<'a>(expected_tokens: &Vec<&'a str>, actual_tokens: &mut Lexer<'a>) {
     for &expected in (*expected_tokens).iter() {
         let actual = actual_tokens.next();
         match actual {
@@ -50,7 +50,7 @@ fn test_tokens<'a>(expected_tokens: &Vec<&'a str>, actual_tokens: &mut Tokenizer
 fn test_simple_tabulation_delimeter() {
     let tokens = vec!["one", "\t", "two"];
     let token_string = build_tokens_string(&tokens);
-    let mut t = Tokenizer::new(&(*token_string));
+    let mut t = Lexer::new(&(*token_string));
     test_tokens(&tokens, &mut t);
 }
 
@@ -58,7 +58,7 @@ fn test_simple_tabulation_delimeter() {
 fn test_simple_new_line_delimeter() {
     let tokens = vec!["one", "\n", "two"];
     let token_string = build_tokens_string(&tokens);
-    let mut t = Tokenizer::new(&(*token_string));
+    let mut t = Lexer::new(&(*token_string));
     test_tokens(&tokens, &mut t);
 }
 
@@ -66,7 +66,7 @@ fn test_simple_new_line_delimeter() {
 fn test_end_of_line_as_none() {
     let tokens = vec!["one", "\n", "two", ""];
     let token_string = build_tokens_string(&tokens);
-    let mut t = Tokenizer::new(&(*token_string));
+    let mut t = Lexer::new(&(*token_string));
     test_tokens(&tokens, &mut t);
 }
 
@@ -74,7 +74,7 @@ fn test_end_of_line_as_none() {
 fn test_whitespaces_as_one_token() {
     let tokens = vec!["one", " \t \n ", "two"];
     let token_string = build_tokens_string(&tokens);
-    let mut t = Tokenizer::new(&(*token_string));
+    let mut t = Lexer::new(&(*token_string));
     test_tokens(&tokens, &mut t);
 }
 
@@ -82,7 +82,7 @@ fn test_whitespaces_as_one_token() {
 fn test_exclamation_mark() {
     let tokens = vec!["one", "!", "two"];
     let token_string = build_tokens_string(&tokens);
-    let mut t = Tokenizer::new(&(*token_string));
+    let mut t = Lexer::new(&(*token_string));
     test_tokens(&tokens, &mut t);
 }
 
@@ -90,7 +90,7 @@ fn test_exclamation_mark() {
 fn test_white_spaces_delimited_with_special_char() {
     let tokens = vec![" \n\t", "!", "\n "];
     let token_string = build_tokens_string(&tokens);
-    let mut t = Tokenizer::new(&(*token_string));
+    let mut t = Lexer::new(&(*token_string));
     test_tokens(&tokens, &mut t);
 }
 
@@ -98,7 +98,7 @@ fn test_white_spaces_delimited_with_special_char() {
 fn test_question_mark() {
     let tokens = vec!["one", "?", "two"];
     let token_string = build_tokens_string(&tokens);
-    let mut t = Tokenizer::new(&(*token_string));
+    let mut t = Lexer::new(&(*token_string));
     test_tokens(&tokens, &mut t);
 }
 
@@ -106,7 +106,7 @@ fn test_question_mark() {
 fn test_percent() {
     let tokens = vec!["one", "%", "two"];
     let token_string = build_tokens_string(&tokens);
-    let mut t = Tokenizer::new(&(*token_string));
+    let mut t = Lexer::new(&(*token_string));
     test_tokens(&tokens, &mut t);
 }
 
@@ -114,7 +114,7 @@ fn test_percent() {
 fn test_open_parenthesis() {
     let tokens = vec!["one", "(", "two"];
     let token_string = build_tokens_string(&tokens);
-    let mut t = Tokenizer::new(&(*token_string));
+    let mut t = Lexer::new(&(*token_string));
     test_tokens(&tokens, &mut t);
 }
 
@@ -122,7 +122,7 @@ fn test_open_parenthesis() {
 fn test_close_parenthesis() {
     let tokens = vec!["one", ")", "two"];
     let token_string = build_tokens_string(&tokens);
-    let mut t = Tokenizer::new(&(*token_string));
+    let mut t = Lexer::new(&(*token_string));
     test_tokens(&tokens, &mut t);
 }
 
@@ -130,7 +130,7 @@ fn test_close_parenthesis() {
 fn test_quote() {
     let tokens = vec!["one", "'", "two"];
     let token_string = build_tokens_string(&tokens);
-    let mut t = Tokenizer::new(&(*token_string));
+    let mut t = Lexer::new(&(*token_string));
     test_tokens(&tokens, &mut t);
 }
 
@@ -138,6 +138,6 @@ fn test_quote() {
 fn test_double_quote() {
     let tokens = vec!["one", "\"", "two"];
     let token_string = build_tokens_string(&tokens);
-    let mut t = Tokenizer::new(&(*token_string));
+    let mut t = Lexer::new(&(*token_string));
     test_tokens(&tokens, &mut t);
 }
