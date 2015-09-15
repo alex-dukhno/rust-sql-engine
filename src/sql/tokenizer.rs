@@ -1,6 +1,3 @@
-use std::iter::Iterator;
-use std::iter::ExactSizeIterator;
-use std::str::Chars;
 use std::option::Option;
 use std::vec::Vec;
 
@@ -14,6 +11,19 @@ impl<'a> Tokenizer<'a> {
     pub fn new(src: &'a str) -> Tokenizer {
         Tokenizer { src: src, white_spaces: vec![' ', '\t', '\n'] }
     }
+
+    fn is_char_types_changed(&self, current_char: &char) -> bool{
+        !self.is_spaces_token() && self.white_spaces.contains(current_char)
+                || self.is_spaces_token() && !self.white_spaces.contains(current_char)
+    }
+
+    fn find_delimeter_index(&self) -> usize {
+        self.src.chars().take_while(|c| !self.is_char_types_changed(&c)).count()
+    }
+
+    fn is_spaces_token(&self) -> bool {
+        self.white_spaces.contains(&(self.src.chars().next().unwrap()))
+    }
 }
 
 impl<'a> Iterator for Tokenizer<'a> {
@@ -21,24 +31,14 @@ impl<'a> Iterator for Tokenizer<'a> {
     type Item = &'a str;
 
     fn next(&mut self) -> Option<&'a str> {
-        println!("24 start next");
+        println!("43 start next");
         if self.src.is_empty() {
             return Option::None
         }
-        let is_spaces = self.white_spaces.contains(&(self.src.chars().next().unwrap()));
-        println!("29 is spaces - '{}'", is_spaces);
-        let mut delimeter_index = 0;
-        for c in self.src.chars() {
-            println!("32 current char - '{}'", c);
-            if !is_spaces && self.white_spaces.contains(&c)
-                    || is_spaces && !self.white_spaces.contains(&c) {
-                break;
-            }
-            delimeter_index += 1;
-        }
-        println!("40 delimeter index - '{}'", delimeter_index);
+        let delimeter_index = self.find_delimeter_index();
+        println!("48 delimeter index - '{}'", delimeter_index);
         let result = &(self.src)[0..delimeter_index];
-        println!("42 result - '{}'", result);
+        println!("50 result - '{}'", result);
         self.src = &(self.src)[delimeter_index..self.src.len()];
         Option::Some(result)
     }
