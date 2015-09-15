@@ -10,7 +10,11 @@ pub struct Tokenizer<'a> {
 impl<'a> Tokenizer<'a> {
 
     pub fn new(src: &'a str) -> Tokenizer {
-        Tokenizer { src: src, white_spaces: vec![' ', '\t', '\n'], special_chars: vec!['!'] }
+        Tokenizer {
+                src: src,
+                white_spaces: vec![' ', '\t', '\n'],
+                special_chars: vec!['!', '?', '%', '(', ')', '\'', '"']
+        }
     }
 
     fn is_char_types_changed(&self, current_char: &char) -> bool {

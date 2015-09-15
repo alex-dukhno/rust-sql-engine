@@ -93,3 +93,51 @@ fn test_white_spaces_delimited_with_special_char() {
     let mut t = Tokenizer::new(&(*token_string));
     test_tokens(&tokens, &mut t);
 }
+
+#[test]
+fn test_question_mark() {
+    let tokens = vec!["one", "?", "two"];
+    let token_string = build_tokens_string(&tokens);
+    let mut t = Tokenizer::new(&(*token_string));
+    test_tokens(&tokens, &mut t);
+}
+
+#[test]
+fn test_percent() {
+    let tokens = vec!["one", "%", "two"];
+    let token_string = build_tokens_string(&tokens);
+    let mut t = Tokenizer::new(&(*token_string));
+    test_tokens(&tokens, &mut t);
+}
+
+#[test]
+fn test_open_parenthesis() {
+    let tokens = vec!["one", "(", "two"];
+    let token_string = build_tokens_string(&tokens);
+    let mut t = Tokenizer::new(&(*token_string));
+    test_tokens(&tokens, &mut t);
+}
+
+#[test]
+fn test_close_parenthesis() {
+    let tokens = vec!["one", ")", "two"];
+    let token_string = build_tokens_string(&tokens);
+    let mut t = Tokenizer::new(&(*token_string));
+    test_tokens(&tokens, &mut t);
+}
+
+#[test]
+fn test_quote() {
+    let tokens = vec!["one", "'", "two"];
+    let token_string = build_tokens_string(&tokens);
+    let mut t = Tokenizer::new(&(*token_string));
+    test_tokens(&tokens, &mut t);
+}
+
+#[test]
+fn test_double_quote() {
+    let tokens = vec!["one", "\"", "two"];
+    let token_string = build_tokens_string(&tokens);
+    let mut t = Tokenizer::new(&(*token_string));
+    test_tokens(&tokens, &mut t);
+}
