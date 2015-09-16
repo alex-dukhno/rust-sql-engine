@@ -37,7 +37,7 @@ fn test_simple_whitespace_delimeter() {
 }
 
 fn test_lexems<'a>(expected_lexems: &Vec<&'a str>, actual_lexems: &mut Lexer<'a>) {
-    for &expected in (*expected_lexems).iter().rev() {
+    for &expected in (*expected_lexems).iter() {
         let actual = actual_lexems.next();
         match actual {
             Some(v) => assert_eq!(v, expected),
@@ -64,7 +64,7 @@ fn test_simple_new_line_delimeter() {
 
 #[test]
 fn test_end_of_line_as_none() {
-    let lexems = vec!["", "one", "\n", "two"];
+    let lexems = vec!["one", "\n", "two", ""];
     let lexem_string = build_lexems_string(&lexems);
     let mut lexer = Lexer::new(&(*lexem_string));
     test_lexems(&lexems, &mut lexer);

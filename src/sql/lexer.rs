@@ -38,28 +38,26 @@ impl<'a> Lexer<'a> {
     }
 
     fn find_delimeter_index(&self) -> usize {
-        self.src.len() - self.src.chars().rev().take_while(|c| !self.is_char_types_changed(&c)).count()
+        self.src.chars().take_while(|c| !self.is_char_types_changed(&c)).count()
     }
 
     fn take_first_char(&self) -> char {
-        self.src.chars().rev().next().unwrap()
+        self.src.chars().next().unwrap()
     }
 
     fn next_lexem(&mut self) -> Option<&'a str> {
         let delimeter_index = self.find_delimeter_index();
-        // println!("delimeter index - {}", delimeter_index);
         let result = self.take_lexem(&delimeter_index);
-        // println!("result - {}", result.unwrap());
         self.resize_src(&delimeter_index);
         result
     }
 
     fn take_lexem(&self, delimeter_index: &usize) -> Option<&'a str> {
-        Option::Some(&(self.src)[*delimeter_index..self.src.len()])
+        Option::Some(&(self.src)[0..*delimeter_index])
     }
 
     fn resize_src(&mut self, delimeter_index: &usize) {
-        self.src = &(self.src)[0..*delimeter_index];
+        self.src = &(self.src)[*delimeter_index..self.src.len()];
     }
 }
 
