@@ -1,16 +1,16 @@
 use std::option::Option;
 use std::vec::Vec;
 
-pub struct Lexer<'a> {
+pub struct Scanner<'a> {
     src: &'a str,
     white_spaces: Vec<char>,
     special_chars: Vec<char>,
 }
 
-impl<'a> Lexer<'a> {
+impl<'a> Scanner<'a> {
 
-    pub fn new(src: &'a str) -> Lexer {
-        Lexer {
+    pub fn new(src: &'a str) -> Scanner {
+        Scanner {
                 src: src,
                 white_spaces: vec![' ', '\t', '\n'],
                 special_chars: vec!['!', '?', '%', '(', ')', '\'', '"', '>', '<', '=', '+', '-', '*', '/', '\\']
@@ -61,7 +61,7 @@ impl<'a> Lexer<'a> {
     }
 }
 
-impl<'a> Iterator for Lexer<'a> {
+impl<'a> Iterator for Scanner<'a> {
 
     type Item = &'a str;
 
@@ -70,5 +70,29 @@ impl<'a> Iterator for Lexer<'a> {
             return Option::None
         }
         self.next_lexem()
+    }
+}
+
+pub struct Evaluator<'a> {
+    scanner: Scanner<'a>,
+}
+
+impl<'a> Evaluator<'a> {
+
+    pub fn new(src: &'a str) -> Evaluator {
+        Evaluator { scanner: Scanner::new(src) }
+    }
+}
+
+impl<'a> Iterator for Evaluator<'a> {
+
+    type Item = &'a str;
+
+    fn next(&mut self) -> Option<&'a str> {
+        let lexem = self.scanner.next();
+        match lexem {
+            Some(val) => if val != " " { lexem } else { self.next() } ,
+            None => lexem
+        }
     }
 }
