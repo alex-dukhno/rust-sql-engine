@@ -1,5 +1,6 @@
 use std::option::Option;
 use std::vec::Vec;
+use std::iter::Iterator;
 
 pub struct Scanner<'a> {
     src: &'a str,
@@ -73,14 +74,38 @@ impl<'a> Iterator for Scanner<'a> {
     }
 }
 
+// "--" -> "\n"
+// "/*" -> "*/"
+// " "|"\n"|"\t" -> ""
+
 pub struct Evaluator<'a> {
     scanner: Scanner<'a>,
+    white_spaces: Vec<&'a str>,
 }
 
 impl<'a> Evaluator<'a> {
 
     pub fn new(src: &'a str) -> Evaluator {
-        Evaluator { scanner: Scanner::new(src) }
+        Evaluator { scanner: Scanner::new(src), white_spaces: vec![" "] }
+    }
+
+    fn skip_spaces(&mut self) {
+        let lexem = self.scanner.peekable().peek();
+        match lexem {
+            Some(val) => match *val {
+                " " => self.scanner.skip_while(|s| self.skip_while_not_a_space(s)),
+                _ => self.scanner.skip_while(self.nothing_to_do("")),
+            },
+            None => self.scanner.skip_while(self.nothing_to_do("")),
+        }
+    }
+
+    fn nothing_to_do(&self, s: &'a str) -> bool {
+        false
+    }
+
+    fn skip_while_not_a_space(&self, s: &'a str) -> bool {
+        self.white_spaces.contains(s)
     }
 }
 
@@ -89,6 +114,7 @@ impl<'a> Iterator for Evaluator<'a> {
     type Item = &'a str;
 
     fn next(&mut self) -> Option<&'a str> {
+        self.skip_spaces();
         let lexem = self.scanner.next();
         match lexem {
             Some(val) => if val != " " { lexem } else { self.next() } ,
