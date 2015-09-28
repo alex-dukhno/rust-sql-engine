@@ -1,29 +1,66 @@
 use std::option::Option;
 use std::vec::Vec;
 use std::iter::Iterator;
+use std::collections::HashMap;
 
 pub struct Scanner<'a> {
     src: &'a str,
     white_spaces: Vec<char>,
     special_chars: Vec<char>,
+    peek_next: HashMap<char, char>,
 }
 
 impl<'a> Scanner<'a> {
 
     pub fn new(src: &'a str) -> Scanner {
+        let mut peek_next = HashMap::new();
+        peek_next.insert('-', '-');
         Scanner {
                 src: src,
                 white_spaces: vec![' ', '\t', '\n'],
-                special_chars: vec!['!', '?', '%', '(', ')', '\'', '"', '>', '<', '=', '+', '-', '*', '/', '\\']
+                special_chars: vec!['!', '?', '%', '(', ')', '\'', '"', '>', '<', '=', '+', '-', '*', '/', '\\'],
+                peek_next: peek_next,
         }
     }
 
     fn is_char_types_changed(&self, current_char: &char) -> bool {
+        self.is_char_type_change_from_ascii_symbol(current_char)
+            || self.is_char_type_change_from_white_space(current_char)
+            || self.is_char_type_change_from_special_char(current_char)
+    }
+
+    fn is_char_type_change_from_ascii_symbol(&self, current_char: &char) -> bool {
         let first_char = &(self.take_first_char());
-        // println!("first char is - '{}', current char is - '{}'", first_char, current_char);
-        self.is_ascii_symbol(first_char) && (self.is_white_space(current_char) || self.is_special_char(current_char))
-            || self.is_white_space(first_char) && (self.is_ascii_symbol(current_char) || self.is_special_char(current_char) || first_char != current_char)
-            || self.is_special_char(first_char) && (self.is_ascii_symbol(current_char) || self.is_white_space(current_char) || first_char != current_char)
+        println!("first char is - '{}', current char is - '{}'", first_char, current_char);
+        self.is_ascii_symbol(first_char)
+            && (self.is_white_space(current_char) || self.is_special_char(current_char))
+    }
+
+    fn is_char_type_change_from_white_space(&self, current_char: &char) -> bool {
+        let first_char = &(self.take_first_char());
+        println!("first char is - '{}', current char is - '{}'", first_char, current_char);
+        self.is_white_space(first_char)
+            && (self.is_ascii_symbol(current_char) || self.is_special_char(current_char) || current_char != first_char)
+    }
+
+    fn is_char_type_change_from_special_char(&self, current_char: &char) -> bool {
+        let first_char = &(self.take_first_char());
+        println!("first char is - '{}', current char is - '{}'", first_char, current_char);
+        if self.is_special_char(first_char) {
+            if self.peek_next.contains_key(first_char) {
+                let v = self.peek_next.get(first_char).unwrap();
+                let mut chars = self.src.chars();
+                match chars.skip(1).peekable().peek() {
+                    Some(n) => {
+                        println!("peekable char is '{}'", n);
+                        return n != v;
+                    },
+                    None => return self.is_ascii_symbol(current_char) || self.is_white_space(current_char) || current_char != first_char,
+                }
+            }
+            return self.is_ascii_symbol(current_char) || self.is_white_space(current_char) || current_char != first_char
+        }
+        false
     }
 
     fn is_ascii_symbol(&self, c: &char) -> bool {
@@ -90,23 +127,23 @@ impl<'a> Evaluator<'a> {
     }
 
     fn skip_spaces(&mut self) {
-        let lexem = self.scanner.peekable().peek();
-        match lexem {
-            Some(val) => match *val {
-                " " => self.scanner.skip_while(|s| self.skip_while_not_a_space(s)),
-                _ => self.scanner.skip_while(self.nothing_to_do("")),
-            },
-            None => self.scanner.skip_while(self.nothing_to_do("")),
-        }
+        // let lexem = self.scanner.peekable().peek();
+        // match lexem {
+            // Some(val) => match *val {
+                // " " => self.scanner.skip_while(|s| self.skip_while_not_a_space(s)),
+                // _ => self.scanner.skip_while(self.nothing_to_do("")),
+            // },
+            // None => self.scanner.skip_while(self.nothing_to_do("")),
+        // }
     }
 
-    fn nothing_to_do(&self, s: &'a str) -> bool {
+/*    fn nothing_to_do(&self, s: &'a str) -> bool {
         false
     }
 
     fn skip_while_not_a_space(&self, s: &'a str) -> bool {
         self.white_spaces.contains(s)
-    }
+    }*/
 }
 
 impl<'a> Iterator for Evaluator<'a> {

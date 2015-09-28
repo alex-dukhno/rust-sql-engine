@@ -213,3 +213,38 @@ fn test_back_slash() {
     let mut scanner = Scanner::new(&(*lexem_string));
     test_lexems(&lexems, &mut scanner);
 }
+
+#[test]
+fn test_double_dash_as_one_symbol() {
+    let lexems = vec!["one", "--", "two"];
+    let lexem_string = build_lexems_string(&lexems);
+    let mut scanner = Scanner::new(&(*lexem_string));
+    test_lexems(&lexems, &mut scanner);
+}
+
+#[test]
+#[ignore]
+fn test_triple_dash_as_two_symbols() {
+    let lexems = vec!["one", "--", "-", "two"];
+    let lexem_string = build_lexems_string(&lexems);
+    let mut scanner = Scanner::new(&(*lexem_string));
+    test_lexems(&lexems, &mut scanner);
+}
+
+#[test]
+#[ignore]
+fn test_double_asterisk_as_two_symbols() {
+    let lexems = vec!["one", "*", "*", "two"];
+    let lexem_string = build_lexems_string(&lexems);
+    let mut scanner = Scanner::new(&(*lexem_string));
+    test_lexems(&lexems, &mut scanner);
+}
+
+#[test]
+#[ignore]
+fn test_slash_asterisk_as_one_symbol() {
+    let lexems = vec!["one", "/*", "two"];
+    let lexem_string = build_lexems_string(&lexems);
+    let mut scanner = Scanner::new(&(*lexem_string));
+    test_lexems(&lexems, &mut scanner);
+}
