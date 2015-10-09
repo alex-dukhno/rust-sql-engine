@@ -29,24 +29,61 @@ fn run_test<'a>(lexems: &Vec<&'a str>) {
 
 #[test]
 fn test_one_word_in_line() {
-    let lexems = vec!["one"];
-    run_test(&lexems);
+    run_test(&(vec!["one"]));
 }
 
 #[test]
 fn test_simple_whitespace_delimeter() {
-    let lexems = vec!["lexem1", " ", "lexem2"];
-    run_test(&lexems);
+    run_test(&(vec!["lexem1", " ", "lexem2"]));
 }
 
 #[test]
 fn test_simple_tabulation_delimeter() {
-    let lexems = vec!["lexem1", "\t", "lexem2"];
-    run_test(&lexems);
+    run_test(&(vec!["lexem1", "\t", "lexem2"]));
 }
 
 #[test]
 fn test_whitespace_and_tabulation_as_one_delimeter() {
-    let lexems = vec!["lexem1", " \t\t\t   \t  ", "lexem2"];
-    run_test(&lexems);
+    run_test(&(vec!["lexem1", " \t\t\t   \t  ", "lexem2"]));
+}
+
+#[test]
+fn test_simple_new_line_delimeter() {
+    run_test(&(vec!["lexem1", "\n", "lexem2"]));
+}
+
+#[test]
+fn test_new_lines_divide_whitespace_and_tabulation() {
+    run_test(&(vec!["  \t\t   ", "\n\n", "  \t\t   "]));
+}
+
+#[test]
+fn test_empty_line() {
+    run_test(&(vec![""]));
+}
+
+#[test]
+fn test_left_parenthesis_as_lexem() {
+    run_test(&(vec!["lexem1", "(", "(", "(", "lexem2"]));
+}
+
+#[test]
+fn test_quote_as_lexem() {
+    run_test(&(vec!["lexem1", "'", "'", "lexem2"]));
+}
+
+#[test]
+fn test_right_parenthesis_as_lexem() {
+    run_test(&(vec!["lexem1", ")", ")", ")", "lexem2"]));
+}
+
+#[test]
+fn test_samicolon_as_lexem() {
+    run_test(&(vec!["lexem1", ";", ";", ";", "lexem2"]));
+}
+
+#[test]
+// #[ignore]
+fn test_simple_sql_query() {
+    run_test(&(vec!["insert", " ", "into", " ", "table1", " ", "values", "(", "'", "1", "'", ")", ";"]));
 }

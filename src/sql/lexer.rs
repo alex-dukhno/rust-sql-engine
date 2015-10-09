@@ -3,7 +3,8 @@ use std::iter::Iterator;
 
 pub struct Scanner<'a> {
     src: &'a str,
-    white_spaces: Vec<char>,
+    vertical_white_spaces: Vec<char>,
+    special_chars: Vec<char>,
 }
 
 impl<'a> Scanner<'a> {
@@ -11,7 +12,8 @@ impl<'a> Scanner<'a> {
     pub fn new(src: &'a str) -> Scanner {
         Scanner {
                 src: src,
-                white_spaces: vec![' ', '\t'],
+                vertical_white_spaces: vec![' ', '\t'],
+                special_chars: vec!['(', ')', '\'', ';']
         }
     }
 
@@ -21,11 +23,17 @@ impl<'a> Scanner<'a> {
 
     fn next_lexem(&mut self) -> Option<&'a str> {
         let first_char = self.first_char();
-        let index = if first_char.is_alphabetic() {
-            self.src.chars().take_while(|c| !self.white_spaces.contains(c)).count()
+        let index = if first_char.is_alphabetic() || first_char.is_digit(10) {
+            self.src.chars().take_while(|c| !self.vertical_white_spaces.contains(c) && *c != '\n' && !self.special_chars.contains(c)).count()
+        }
+        else if self.vertical_white_spaces.contains(&first_char) {
+            self.src.chars().take_while(|c| self.vertical_white_spaces.contains(c)).count()
+        }
+        else if self.special_chars.contains(&first_char) {
+            1
         }
         else {
-            self.src.chars().take_while(|c| self.white_spaces.contains(c)).count()
+            self.src.chars().take_while(|c| *c == '\n').count()
         };
         let result = &(self.src)[0..index];
         let src_len = self.src.len();
