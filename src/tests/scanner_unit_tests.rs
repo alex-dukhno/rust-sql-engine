@@ -68,36 +68,62 @@ fn test_select_with_where_clause() {
 }
 
 #[test]
-fn test_select_with_calculation_in_where_clause() {
-    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", "=", "1", " ", "+", "2", "-", "1"]));
+fn test_select_with_sum_in_where_clause() {
+    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", "=", "2", "+", "1"]));
+}
+
+#[test]
+fn test_select_with_subtraction_in_where_clause() {
+    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", "=", "2", "-", "1"]));
+}
+
+#[test]
+fn test_select_with_multiplication_in_where_clause() {
+    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", "=", "2", "*", "1"]));
+}
+
+#[test]
+fn test_select_with_division_in_where_clause() {
+    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", "=", "2", "/", "1"]));
 }
 
 #[test]
 fn test_select_with_less_then_condition() {
-    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", "<", "1", " ", "+", "2", "-", "1"]));
+    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", "<", "1"]));
 }
 
 #[test]
 fn test_select_with_less_then_or_equals_condition() {
-    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", "<=", "1", " ", "+", "2", "-", "1"]));
+    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", "<=", "1"]));
 }
 
 #[test]
 fn test_select_with_more_then_condition() {
-    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", ">", "1", " ", "+", "2", "-", "1"]));
+    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", ">", "1"]));
 }
 
 #[test]
 fn test_select_with_more_then_or_equals_condition() {
-    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", ">=", "1", " ", "+", "2", "-", "1"]));
+    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", ">=", "1"]));
 }
 
 #[test]
 fn test_select_with_not_equals_sql_standard() {
-    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", "<>", "1", " ", "+", "2", "-", "1"]));
+    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", "<>", "1"]));
 }
 
 #[test]
 fn test_select_with_not_equals_sql_not_standard() {
-    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", "!=", "1", " ", "+", "2", "-", "1"]));
+    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", "!=", "1"]));
+}
+
+#[test]
+fn test_line_comments() {
+    run_test(&(vec!["select", " ", "*", "--", "some", " ", "comment", " ", "here", "\n", "from", " ", "tab"]));
+}
+
+#[test]
+//corner case when query is like 'select */*blabla*/ from tab1'
+fn test_block_comments() {
+    run_test(&(vec!["select", " ", "*", " ", "/*", "some", " ", "comment", " ", "here", "*/", "from", " ", "tab"]))
 }

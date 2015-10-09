@@ -13,7 +13,7 @@ impl<'a> Scanner<'a> {
         Scanner {
                 src: src,
                 vertical_white_spaces: vec![' ', '\t'],
-                special_chars: vec!['(', ')', '\'', ';', '*', '.', '=', '+', '-']
+                special_chars: vec!['(', ')', '\'', ';', '.', '=', '+']
         }
     }
 
@@ -28,13 +28,40 @@ impl<'a> Scanner<'a> {
     fn next_lexem(&mut self) -> Option<&'a str> {
         let first_char = self.first_char();
         let index = if first_char.is_alphabetic() || first_char.is_digit(10) {
-            self.src.chars().take_while(|c| !self.vertical_white_spaces.contains(c) && *c != '\n' && !self.special_chars.contains(c)).count()
+            self.src.chars().take_while(|c| !self.vertical_white_spaces.contains(c) && *c != '\n' && !self.special_chars.contains(c) && *c != '-' && *c != '*' && *c != '/').count()
         }
         else if self.vertical_white_spaces.contains(&first_char) {
             self.src.chars().take_while(|c| self.vertical_white_spaces.contains(c)).count()
         }
         else if self.special_chars.contains(&first_char) {
             1
+        }
+        else if first_char == '/' {
+            let nth_char = self.nth_char(1);
+            if nth_char == '*' {
+                2
+            }
+            else {
+                1
+            }
+        }
+        else if first_char == '*' {
+            let nth_char = self.nth_char(1);
+            if nth_char == '/' {
+                2
+            }
+            else {
+                1
+            }
+        }
+        else if first_char == '-' {
+            let nth_char = self.nth_char(1);
+            if nth_char == '-' {
+                2
+            }
+            else {
+                1
+            }
         }
         else if first_char == '<' {
             let nth_char = self.nth_char(1);
