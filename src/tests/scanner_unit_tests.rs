@@ -21,23 +21,32 @@ fn test_lexems<'a>(expected_lexems: &Vec<&'a str>, actual_lexems: &mut Scanner<'
     }
 }
 
-// fn run_test(lexems: &Vec<&'a str>) {
-
-// }
+fn run_test<'a>(lexems: &Vec<&'a str>) {
+    let lexem_string = build_lexems_string(lexems);
+    let mut scanner = Scanner::new(&(*lexem_string));
+    test_lexems(&lexems, &mut scanner);
+}
 
 #[test]
 fn test_one_word_in_line() {
     let lexems = vec!["one"];
-    let lexem_string = build_lexems_string(&lexems);
-    let mut scanner = Scanner::new(&(*lexem_string));
-    let actual = scanner.next();
-    assert!(actual.is_some());
+    run_test(&lexems);
 }
 
 #[test]
 fn test_simple_whitespace_delimeter() {
     let lexems = vec!["lexem1", " ", "lexem2"];
-    let lexem_string = build_lexems_string(&lexems);
-    let mut scanner = Scanner::new(&(*lexem_string));
-    test_lexems(&lexems, &mut scanner);
+    run_test(&lexems);
+}
+
+#[test]
+fn test_simple_tabulation_delimeter() {
+    let lexems = vec!["lexem1", "\t", "lexem2"];
+    run_test(&lexems);
+}
+
+#[test]
+fn test_whitespace_and_tabulation_as_one_delimeter() {
+    let lexems = vec!["lexem1", " \t\t\t   \t  ", "lexem2"];
+    run_test(&lexems);
 }
