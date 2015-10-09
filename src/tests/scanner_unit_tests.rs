@@ -28,18 +28,13 @@ fn run_test<'a>(lexems: &Vec<&'a str>) {
 }
 
 #[test]
+fn test_empty_line() {
+    run_test(&(vec![""]));
+}
+
+#[test]
 fn test_one_word_in_line() {
     run_test(&(vec!["one"]));
-}
-
-#[test]
-fn test_simple_whitespace_delimeter() {
-    run_test(&(vec!["lexem1", " ", "lexem2"]));
-}
-
-#[test]
-fn test_simple_tabulation_delimeter() {
-    run_test(&(vec!["lexem1", "\t", "lexem2"]));
 }
 
 #[test]
@@ -48,42 +43,61 @@ fn test_whitespace_and_tabulation_as_one_delimeter() {
 }
 
 #[test]
-fn test_simple_new_line_delimeter() {
-    run_test(&(vec!["lexem1", "\n", "lexem2"]));
-}
-
-#[test]
 fn test_new_lines_divide_whitespace_and_tabulation() {
     run_test(&(vec!["  \t\t   ", "\n\n", "  \t\t   "]));
 }
 
 #[test]
-fn test_empty_line() {
-    run_test(&(vec![""]));
-}
-
-#[test]
-fn test_left_parenthesis_as_lexem() {
-    run_test(&(vec!["lexem1", "(", "(", "(", "lexem2"]));
-}
-
-#[test]
-fn test_quote_as_lexem() {
-    run_test(&(vec!["lexem1", "'", "'", "lexem2"]));
-}
-
-#[test]
-fn test_right_parenthesis_as_lexem() {
-    run_test(&(vec!["lexem1", ")", ")", ")", "lexem2"]));
-}
-
-#[test]
-fn test_samicolon_as_lexem() {
-    run_test(&(vec!["lexem1", ";", ";", ";", "lexem2"]));
-}
-
-#[test]
-// #[ignore]
 fn test_simple_sql_query() {
     run_test(&(vec!["insert", " ", "into", " ", "table1", " ", "values", "(", "'", "1", "'", ")", ";"]));
+}
+
+#[test]
+fn test_simple_select_query() {
+    run_test(&(vec!["select", " ", "*", " ", "from", " ", "table1"]));
+}
+
+#[test]
+fn test_select_query_with_alias() {
+    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1"]))
+}
+
+#[test]
+fn test_select_with_where_clause() {
+    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", "=", " ", "1"]));
+}
+
+#[test]
+fn test_select_with_calculation_in_where_clause() {
+    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", "=", "1", " ", "+", "2", "-", "1"]));
+}
+
+#[test]
+fn test_select_with_less_then_condition() {
+    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", "<", "1", " ", "+", "2", "-", "1"]));
+}
+
+#[test]
+fn test_select_with_less_then_or_equals_condition() {
+    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", "<=", "1", " ", "+", "2", "-", "1"]));
+}
+
+#[test]
+fn test_select_with_more_then_condition() {
+    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", ">", "1", " ", "+", "2", "-", "1"]));
+}
+
+#[test]
+fn test_select_with_more_then_or_equals_condition() {
+    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", ">=", "1", " ", "+", "2", "-", "1"]));
+}
+
+#[test]
+fn test_select_with_not_equals_sql_standard() {
+    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", "<>", "1", " ", "+", "2", "-", "1"]));
+}
+
+#[test]
+fn test_select_with_not_equals_sql_not_standard() {
+    run_test(&(vec!["select", " ", "t1", ".", "col1", " ", "from", " ", "table1", " ", "t1", " ", "where", " ", "t1", ".", "col1", " ", "!=", "1", " ", "+", "2", "-", "1"]));
 }

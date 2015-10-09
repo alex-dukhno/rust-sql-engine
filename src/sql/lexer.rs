@@ -13,12 +13,16 @@ impl<'a> Scanner<'a> {
         Scanner {
                 src: src,
                 vertical_white_spaces: vec![' ', '\t'],
-                special_chars: vec!['(', ')', '\'', ';']
+                special_chars: vec!['(', ')', '\'', ';', '*', '.', '=', '+', '-']
         }
     }
 
     fn first_char(&self) -> char {
-        self.src.chars().nth(0).unwrap()
+        self.nth_char(0)
+    }
+
+    fn nth_char(&self, index: usize) -> char {
+        self.src.chars().nth(index).unwrap()
     }
 
     fn next_lexem(&mut self) -> Option<&'a str> {
@@ -31,6 +35,32 @@ impl<'a> Scanner<'a> {
         }
         else if self.special_chars.contains(&first_char) {
             1
+        }
+        else if first_char == '<' {
+            let nth_char = self.nth_char(1);
+            if  nth_char == '>' || nth_char == '=' {
+                2
+            }
+            else {
+                1
+            }
+        }
+        else if first_char == '!' {
+            if self.nth_char(1) == '=' {
+                2
+            }
+            else {
+                1
+            }
+        }
+        else if first_char == '>' {
+            let nth_char = self.nth_char(1);
+            if nth_char == '=' {
+                2
+            }
+            else {
+                1
+            }
         }
         else {
             self.src.chars().take_while(|c| *c == '\n').count()
