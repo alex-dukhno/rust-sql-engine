@@ -1,2 +1,5 @@
 #Ignores for Cargo
 target/
+
+#sublime files
+*.sublime*
