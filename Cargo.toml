@@ -6,7 +6,11 @@ authors = ["Alex-Diez <alexvic.amatory@gmail.com>"]
 [lib]
 name = "sql"
 path = "src/sql/sql.rs"
+plugin = true
 
 [[test]]
 name = "unit_tests"
-path = "src/tests/unit_tests.rs"
+path = "tests/unit_tests.rs"
+
+[dependencies]
+stainless = "0.1.1"
