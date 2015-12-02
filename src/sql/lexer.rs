@@ -23,6 +23,7 @@ impl Lexer {
     }
 
     pub fn next_lexem(&mut self) -> Option<Token> {
+        self.remove_front_spaces();
         if self.src.is_empty() {
             None
         }
@@ -32,7 +33,6 @@ impl Lexer {
     }
 
     fn parse_lexem(&mut self) -> Token {
-        self.remove_front_spaces();
         if self.has_lexem_in_begining() {
             let s = self.src.remove(0);
             println!("38 s - {:?}", s);
@@ -95,9 +95,10 @@ impl Lexer {
     }
 
     fn remove_front_spaces(&mut self) {
-        while self.src[0] == ' ' 
+        while !self.src.is_empty()
+                && (self.src[0] == ' ' 
                 || self.src[0] == '\t'
-                || self.src[0] == '\n' {
+                || self.src[0] == '\n') {
             self.src.remove(0);
         }
     }
