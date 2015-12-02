@@ -85,4 +85,13 @@ describe! lexer_test {
         assert_eq!(lexer.next_lexem(), Some(SingleQuote));
         assert_eq!(lexer.next_lexem(), None);
     }
+
+    it "exclude line comments" {
+        let mut lexer = Lexer::new("one two -- some line comment here \n three");
+
+        assert_eq!(lexer.next_lexem(), Some(Word("one".to_string())));
+        assert_eq!(lexer.next_lexem(), Some(Word("two".to_string())));
+        assert_eq!(lexer.next_lexem(), Some(Word("three".to_string())));
+        assert_eq!(lexer.next_lexem(), None);
+    }
 }

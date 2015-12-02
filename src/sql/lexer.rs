@@ -81,7 +81,7 @@ impl Lexer {
                         break;
                     }
                 },
-                '-' => {
+                /*'-' => {
                     if i == 0 && self.src[1] == '-' {
                         let mut j = 2;
                         let mut c = self.src[j];
@@ -91,7 +91,7 @@ impl Lexer {
                         }
                         self.src = self.src.split_off(j);
                     }
-                }
+                }*/
                 _ => break,
             }
         }
