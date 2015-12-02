@@ -58,4 +58,13 @@ describe! lexer_test {
         assert_eq!(lexer.next_lexem(), Some(Word("three".to_string())));
         assert_eq!(lexer.next_lexem(), None);
     }
+
+    it "new lines in the end of lexer line" {
+        let mut lexer = Lexer::new("one two three\n\n\n");
+
+        assert_eq!(lexer.next_lexem(), Some(Word("one".to_string())));
+        assert_eq!(lexer.next_lexem(), Some(Word("two".to_string())));
+        assert_eq!(lexer.next_lexem(), Some(Word("three".to_string())));
+        assert_eq!(lexer.next_lexem(), None);
+    }
 }
