@@ -36,9 +36,7 @@ impl Lexer {
 
     fn parse_lexem(&mut self) -> Token {
         if self.has_lexem_in_begining() {
-            let s = self.src.remove(0);
-            println!("38 s - {:?}", s);
-            match s {
+            match self.src.remove(0) {
                 '(' => return Token::LeftParenthesis,
                 ',' => return Token::Colon,
                 ')' => return Token::RightParenthesis,
@@ -57,7 +55,6 @@ impl Lexer {
                 '\'' => {
                     if i == 0 && !self.string_expr {
                         self.src = self.src.split_off(1);
-                        println!("60 s - {:?}", s);
                         self.string_expr = !self.string_expr;
                         return Token::SingleQuote;
                     }
@@ -65,8 +62,6 @@ impl Lexer {
                             && self.src[i] == '\''
                             && self.src[i+1] == '\''
                             && self.string_expr {
-                        println!("67 s - {:?}", s);
-                        println!("68 [i] - {:?}", self.src[i]);
                         self.src.remove(i);
                         i += 1;
                     }
@@ -77,11 +72,9 @@ impl Lexer {
                 },
                 ' ' | '\t' | '\n' => {
                     if i == 0 && !self.string_expr {
-                        println!("78 s - {:?}", s);
                         self.src.remove(0);
                     }
                     else if self.string_expr {
-                        println!("82 s - {:?}", s);
                         i += 1;
                     }
                     else {
