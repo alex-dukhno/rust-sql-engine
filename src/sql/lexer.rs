@@ -12,13 +12,15 @@ pub enum Token {
 
 pub struct Lexer {
     src: Vec<char>,
+    string_expr: bool
 }
 
 impl Lexer {
     
     pub fn new(line: &str) -> Lexer {
         Lexer {
-            src: line.chars().collect::<Vec<char>>()
+            src: line.chars().collect::<Vec<char>>(),
+            string_expr: false
         }
     }
 
@@ -47,27 +49,45 @@ impl Lexer {
         let mut i = 0;
         while i < self.src.len() {
             let s = self.src[i];
-            println!("50 s - {:?}", s);
             match s {
                 'a'...'z' |
                 'A'...'Z' |
                 '0'...'9' |
                 '_' => i += 1,
                 '\'' => {
-                    if i == 0 {
+                    if i == 0 && !self.string_expr {
                         self.src = self.src.split_off(1);
+                        println!("60 s - {:?}", s);
+                        self.string_expr = !self.string_expr;
                         return Token::SingleQuote;
                     }
-                    else if self.src[i] == '\''
-                            && self.src[i+1] == '\'' {
+                    else if self.src.len() - i > 1
+                            && self.src[i] == '\''
+                            && self.src[i+1] == '\''
+                            && self.string_expr {
+                        println!("67 s - {:?}", s);
+                        println!("68 [i] - {:?}", self.src[i]);
                         self.src.remove(i);
+                        i += 1;
+                    }
+                    else {
+                        self.string_expr = !self.string_expr;
+                        break;
+                    }
+                },
+                ' ' | '\t' | '\n' => {
+                    if i == 0 && !self.string_expr {
+                        println!("78 s - {:?}", s);
+                        self.src.remove(0);
+                    }
+                    else if self.string_expr {
+                        println!("82 s - {:?}", s);
                         i += 1;
                     }
                     else {
                         break;
                     }
                 },
-                ' ' | '\t' | '\n' => { if i == 0 { self.src.remove(0); } else { break; } },
                 '-' => {
                     if i == 0 && self.src[1] == '-' {
                         let mut j = 2;
@@ -96,6 +116,7 @@ impl Lexer {
 
     fn remove_front_spaces(&mut self) {
         while !self.src.is_empty()
+                && !self.string_expr
                 && (self.src[0] == ' ' 
                 || self.src[0] == '\t'
                 || self.src[0] == '\n') {
