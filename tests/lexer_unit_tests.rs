@@ -67,4 +67,13 @@ describe! lexer_test {
         assert_eq!(lexer.next_lexem(), Some(Word("three".to_string())));
         assert_eq!(lexer.next_lexem(), None);
     }
+
+    it "bunch of single quotes separetad spaces as lexer string" {
+        let mut lexer = Lexer::new("' '' '' '' '");
+
+        assert_eq!(lexer.next_lexem(), Some(SingleQuote));
+        assert_eq!(lexer.next_lexem(), Some(Word(" ' ' ' ".to_string())));
+        assert_eq!(lexer.next_lexem(), Some(SingleQuote));
+        assert_eq!(lexer.next_lexem(), None);
+    }
 }
