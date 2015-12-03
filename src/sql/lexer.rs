@@ -71,7 +71,10 @@ impl Lexer {
                     }
                 },
                 ' ' | '\t' | '\n' => {
-                    if i == 0 && !self.string_expr {
+                    if self.string_expr {
+                        i += 1;
+                    }
+                    else if i == 0 && !self.string_expr {
                         self.src.remove(0);
                     }
                     else if self.string_expr {
@@ -82,7 +85,10 @@ impl Lexer {
                     }
                 },
                 '-' => {
-                    if i == 0 && self.src[1] == '-' {
+                    if self.string_expr {
+                        i += 1;
+                    }
+                    else if i == 0 && self.src[1] == '-' {
                         let mut j = 2;
                         let mut c = self.src[j];
                         while c != '\n' {
@@ -92,7 +98,12 @@ impl Lexer {
                         self.src = self.src.split_off(j);
                     }
                 }
-                _ => break,
+                _ => if self.string_expr {
+                        i += 1;
+                    }
+                    else {
+                        break;
+                    },
             }
         }
         let mut v = self.src.clone();
