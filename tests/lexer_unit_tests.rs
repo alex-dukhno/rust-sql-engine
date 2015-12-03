@@ -94,4 +94,12 @@ describe! lexer_test {
         assert_eq!(lexer.next_lexem(), Some(Word("three".to_string())));
         assert_eq!(lexer.next_lexem(), None);
     }
+
+    it "should include diff chars into string expression" {
+        let mut lexer = Lexer::new("'one two --- \n\n\t _ 1123'");
+
+        assert_eq!(lexer.next_lexem(), Some(SingleQuote));
+        assert_eq!(lexer.next_lexem(), Some(Word("one two --- \n\n\t _ 1123".to_string())));
+        assert_eq!(lexer.next_lexem(), Some(SingleQuote));
+    }
 }
