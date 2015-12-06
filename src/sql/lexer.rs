@@ -116,6 +116,7 @@ impl Lexer {
                 '_' => i += 1,
                 ' ' | '\t' | '\n' => {
                     if i == 0 {
+                        println!("119 going to remove spaces");
                         self.remove_front_spaces();
                     }
                     else {
@@ -126,6 +127,20 @@ impl Lexer {
                     if i == 0 && self.src[1] == '-' {
                         let comment_length = self.src.iter().take_while(|c| **c != '\n').count();
                         self.src = self.src.split_off(comment_length);
+                    }
+                },
+                '/' => {
+                    if i == 0 && self.src[1] == '*' {
+                        let mut comment_length = 2;
+                        let mut c = self.src[comment_length];
+                        let mut c_next = self.src[comment_length+1];
+                        while c != '*'
+                                && c_next != '/' {
+                            comment_length += 1;
+                            c = self.src[comment_length];
+                            c_next = self.src[comment_length+1];
+                        }
+                        self.src = self.src.split_off(comment_length+2);
                     }
                 },
                 _ => break,
