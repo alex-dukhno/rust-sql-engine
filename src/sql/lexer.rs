@@ -1,4 +1,4 @@
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug)]
 pub enum Token {
     Word(String),
 
@@ -10,37 +10,99 @@ pub enum Token {
     Colon
 }
 
+#[derive(PartialEq, Debug)]
+enum QueryParseStatus {
+    EmptyLine,
+    StringExpression,
+    QueryBody
+}
+
 pub struct Lexer {
     src: Vec<char>,
-    string_expr: bool
+    status: QueryParseStatus
 }
 
 impl Lexer {
     
     pub fn new(line: &str) -> Lexer {
+        let src = line.chars().collect::<Vec<char>>();
         Lexer {
-            src: line.chars().collect::<Vec<char>>(),
-            string_expr: false
+            src: src,
+            status: if line.is_empty() { QueryParseStatus::EmptyLine } else { QueryParseStatus::QueryBody }
         }
     }
 
     pub fn next_lexem(&mut self) -> Option<Token> {
-        self.remove_front_spaces();
-        if self.src.is_empty() {
-            None
-        }
-        else {
-            Some(self.parse_lexem())
+        match self.status {
+            QueryParseStatus::EmptyLine => None,
+            QueryParseStatus::StringExpression => self.parse_word_token(),
+            QueryParseStatus::QueryBody => self.parse_non_word_token(),
         }
     }
 
-    fn parse_lexem(&mut self) -> Token {
+    fn parse_word_token(&mut self) -> Option<Token> {
+        let mut i = 0;
+        while i < self.src.len() 
+                && !self.is_string_expression_delimeter(i) {
+            if self.is_single_quote_escape(i) {
+                self.src.remove(i);
+            }
+            i += 1;
+        }
+        Some(Token::Word(self.parse_word_lexem(i)))
+    }
+
+    fn parse_word_lexem(&mut self, index: usize) -> String {
+        let mut v = self.src.clone();
+        self.src = v.split_off(index);
+        self.change_query_status(None);
+        v.iter().map(|c| *c).collect::<String>().to_lowercase()
+    }
+
+    fn change_query_status(&mut self, symbol: Option<char>) {
+        if self.src.is_empty() {
+            self.status = QueryParseStatus::EmptyLine;
+        }
+        else if symbol == Some('\'') {
+            self.status = QueryParseStatus::StringExpression;
+        }
+        else {
+            self.status = QueryParseStatus::QueryBody;
+        }
+    }
+
+    fn is_single_quote_escape(&self, index: usize) -> bool {
+        self.src.len() - index > 1
+            && self.src[index] == '\''
+            && self.src[index + 1] == '\''
+    }
+
+    fn is_string_expression_delimeter(&self, index: usize) -> bool {
+        self.src.len() - index <= 1
+            && self.src[index] == '\''
+    }
+
+    fn parse_non_word_token(&mut self) -> Option<Token> {
+        self.remove_front_spaces();
+        self.change_query_status(None);
+        if self.status == QueryParseStatus::EmptyLine {
+            None
+        }
+        else {
+            self.parse_lexem()
+        }
+    }
+
+    fn parse_lexem(&mut self) -> Option<Token> {
         if self.has_lexem_in_begining() {
-            match self.src.remove(0) {
-                '(' => return Token::LeftParenthesis,
-                ',' => return Token::Colon,
-                ')' => return Token::RightParenthesis,
-                ';' => return Token::SemiColon,
+            let s = self.src.remove(0);
+            self.change_query_status(Some(s));
+            match s {
+                '(' => return Some(Token::LeftParenthesis),
+                ',' => return Some(Token::Colon),
+                ')' => return Some(Token::RightParenthesis),
+                ';' => return Some(Token::SemiColon),
+                '\'' => return Some(Token::SingleQuote),
                 _ => {}
             }
         }
@@ -52,75 +114,35 @@ impl Lexer {
                 'A'...'Z' |
                 '0'...'9' |
                 '_' => i += 1,
-                '\'' => {
-                    if i == 0 && !self.string_expr {
-                        self.src = self.src.split_off(1);
-                        self.string_expr = !self.string_expr;
-                        return Token::SingleQuote;
-                    }
-                    else if self.src.len() - i > 1
-                            && self.src[i] == '\''
-                            && self.src[i+1] == '\''
-                            && self.string_expr {
-                        self.src.remove(i);
-                        i += 1;
-                    }
-                    else {
-                        self.string_expr = !self.string_expr;
-                        break;
-                    }
-                },
                 ' ' | '\t' | '\n' => {
-                    if self.string_expr {
-                        i += 1;
-                    }
-                    else if i == 0 && !self.string_expr {
-                        self.src.remove(0);
-                    }
-                    else if self.string_expr {
-                        i += 1;
+                    if i == 0 {
+                        self.remove_front_spaces();
                     }
                     else {
                         break;
                     }
                 },
                 '-' => {
-                    if self.string_expr {
-                        i += 1;
+                    if i == 0 && self.src[1] == '-' {
+                        let comment_length = self.src.iter().take_while(|c| **c != '\n').count();
+                        self.src = self.src.split_off(comment_length);
                     }
-                    else if i == 0 && self.src[1] == '-' {
-                        let mut j = 2;
-                        let mut c = self.src[j];
-                        while c != '\n' {
-                            j += 1;
-                            c = self.src[j];
-                        }
-                        self.src = self.src.split_off(j);
-                    }
-                }
-                _ => if self.string_expr {
-                        i += 1;
-                    }
-                    else {
-                        break;
-                    },
+                },
+                _ => break,
             }
         }
-        let mut v = self.src.clone();
-        self.src = v.split_off(i);
-        Token::Word(v.iter().map(|c| *c).collect::<String>().to_lowercase())
+        Some(Token::Word(self.parse_word_lexem(i)))
     }
 
     fn has_lexem_in_begining(&self) -> bool {
         match self.src[0] {
-            '(' | ')' | ',' | ';' => true,
+            '(' | ')' | ',' | ';' | '\'' => true,
             _ => false,
         }
     }
 
     fn remove_front_spaces(&mut self) {
         while !self.src.is_empty()
-                && !self.string_expr
                 && (self.src[0] == ' ' 
                 || self.src[0] == '\t'
                 || self.src[0] == '\n') {
