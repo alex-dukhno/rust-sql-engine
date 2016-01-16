@@ -2,11 +2,11 @@
 name = "rust-sql-engine"
 version = "0.0.1-SNAPSHOT"
 dependencies = [
- "stainless 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "stainless 0.1.3 (git+https://github.com/reem/stainless.git)",
 ]
 
 [[package]]
 name = "stainless"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
+version = "0.1.3"
+source = "git+https://github.com/reem/stainless.git#82392f2e189349470ea565007b9d13b0083295f3"
 
