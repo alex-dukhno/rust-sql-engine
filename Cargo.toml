@@ -12,5 +12,5 @@ plugin = true
 name = "unit_tests"
 path = "tests/unit_tests.rs"
 
-[dependencies]
-stainless = { git = "https://github.com/reem/stainless.git" }
+[dev-dependencies]
+stainless = "*"

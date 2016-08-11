@@ -1,5 +1,6 @@
 #Ignores for Cargo
 target/
+Cargo.lock
 
 #sublime files
 *.sublime*
