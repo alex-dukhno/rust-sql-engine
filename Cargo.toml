@@ -5,12 +5,16 @@ authors = ["Alex-Diez <alexvic.amatory@gmail.com>"]
 
 [lib]
 name = "sql"
-path = "src/sql/sql.rs"
+path = "src/lib.rs"
 plugin = true
 
 [[test]]
 name = "unit_tests"
 path = "tests/unit_tests.rs"
 
+[dependencies]
+clippy = "*"
+
 [dev-dependencies]
 stainless = "*"
+expectest = "*"

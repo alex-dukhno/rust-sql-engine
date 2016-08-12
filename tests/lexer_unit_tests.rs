@@ -1,115 +1,117 @@
 extern crate sql;
 
+pub use expectest::prelude::be_equal_to;
+
 pub use sql::lexer::Lexer;
-pub use sql::lexer::Token::*;
+pub use sql::lexer::Token::{self, Identifier, LeftParenthesis, RightParenthesis, Comma, SingleQuote, Semicolon, EqualSign, Asterisk};
 
-describe! lexer_test {
+describe! lexer {
 
-    it "create lexer" {
-        Lexer::new("some line here");
+    before_each {
+        let lexer = Lexer::default();
     }
 
-    it "emptyline" {
-        let mut lexer = Lexer::new("");
+    describe! lexems {
 
-        assert_eq!(lexer.next_lexem(), None);
+
+        it "emits None when given an empty string" {
+            expect!(lexer.tokenize(""))
+                .to(be_equal_to(vec![]));
+        }
+
+        it "emits identifier token when given a single word string" {
+            expect!(lexer.tokenize("word"))
+                .to(be_equal_to(vec![Identifier("word".to_owned())]));
+        }
+
+        it "emits identifiers when given string of words" {
+            expect!(lexer.tokenize("This is a sentence"))
+                .to(be_equal_to(vec![Identifier("This".to_owned()), Identifier("is".to_owned()), Identifier("a".to_owned()), Identifier("sentence".to_owned())]));
+        }
     }
 
-    it "word token" {
-        let mut lexer = Lexer::new("iNseRt");
+    describe! sql_lexems {
 
-        assert_eq!(lexer.next_lexem(), Some(Word("insert".to_string())));
-        assert_eq!(lexer.next_lexem(), None);
-    }
+        it "emits lexems of sql insert statement" {
+            expect!(lexer.tokenize("insert into table1 values(val1, 'val2');"))
+                .to(be_equal_to(
+                    vec![
+                        Identifier("insert".to_owned()),
+                        Identifier("into".to_owned()),
+                        Identifier("table1".to_owned()),
+                        Identifier("values".to_owned()),
+                        LeftParenthesis,
+                        Identifier("val1".to_owned()),
+                        Comma,
+                        SingleQuote,
+                        Identifier("val2".to_owned()),
+                        SingleQuote,
+                        RightParenthesis,
+                        Semicolon
+                    ]
+                ));
+        }
 
-    it "left parenthesis" {
-        let mut lexer = Lexer::new("(");
+        it "emits lexems of sql delete statement" {
+            expect!(lexer.tokenize("delete from table_name where col_name = 'five';"))
+                .to(be_equal_to(
+                    vec![
+                        Identifier("delete".to_owned()),
+                        Identifier("from".to_owned()),
+                        Identifier("table_name".to_owned()),
+                        Identifier("where".to_owned()),
+                        Identifier("col_name".to_owned()),
+                        EqualSign,
+                        SingleQuote,
+                        Identifier("five".to_owned()),
+                        SingleQuote,
+                        Semicolon
+                    ]
+                ));
+        }
 
-        assert_eq!(lexer.next_lexem(), Some(LeftParenthesis));
-        assert_eq!(lexer.next_lexem(), None);
-    }
+        it "emits lexems of sql update statement" {
+            expect!(lexer.tokenize("update table_name set col1=val1,col2='val2' where col3=val3"))
+                .to(be_equal_to(
+                    vec![
+                        Identifier("update".to_owned()),
+                        Identifier("table_name".to_owned()),
+                        Identifier("set".to_owned()),
+                        Identifier("col1".to_owned()),
+                        EqualSign,
+                        Identifier("val1".to_owned()),
+                        Comma,
+                        Identifier("col2".to_owned()),
+                        EqualSign,
+                        SingleQuote,
+                        Identifier("val2".to_owned()),
+                        SingleQuote,
+                        Identifier("where".to_owned()),
+                        Identifier("col3".to_owned()),
+                        EqualSign,
+                        Identifier("val3".to_owned())
+                    ]
+                ));
+        }
 
-    it "right parenthesis" {
-        let mut lexer = Lexer::new(")");
-
-        assert_eq!(lexer.next_lexem(), Some(RightParenthesis));
-        assert_eq!(lexer.next_lexem(), None);
-    }
-
-    it "semicolon" {
-        let mut lexer = Lexer::new(";");
-
-        assert_eq!(lexer.next_lexem(), Some(SemiColon));
-        assert_eq!(lexer.next_lexem(), None);
-    }
-
-    it "single quote" {
-        let mut lexer = Lexer::new("'");
-
-        assert_eq!(lexer.next_lexem(), Some(SingleQuote));
-        assert_eq!(lexer.next_lexem(), None);
-    }
-
-    it "new lines between words" {
-        let mut lexer = Lexer::new("one\n\n\n\ntwo\n\n\nthree");
-
-        assert_eq!(lexer.next_lexem(), Some(Word("one".to_string())));
-        assert_eq!(lexer.next_lexem(), Some(Word("two".to_string())));
-        assert_eq!(lexer.next_lexem(), Some(Word("three".to_string())));
-        assert_eq!(lexer.next_lexem(), None);
-    }
-
-    it "new lines in the end of lexer line" {
-        let mut lexer = Lexer::new("one two three\n\n\n");
-
-        assert_eq!(lexer.next_lexem(), Some(Word("one".to_string())));
-        assert_eq!(lexer.next_lexem(), Some(Word("two".to_string())));
-        assert_eq!(lexer.next_lexem(), Some(Word("three".to_string())));
-        assert_eq!(lexer.next_lexem(), None);
-    }
-
-    it "bunch of single quotes separeted by spaces as lexer string" {
-        let mut lexer = Lexer::new("' '' '' '' '");
-
-        assert_eq!(lexer.next_lexem(), Some(SingleQuote));
-        assert_eq!(lexer.next_lexem(), Some(Word(" ' ' ' ".to_string())));
-        assert_eq!(lexer.next_lexem(), Some(SingleQuote));
-        assert_eq!(lexer.next_lexem(), None);
-    }
-
-    it "bunch of signle quotes in begin and end of string expression" {
-        let mut lexer = Lexer::new("''''' '' '' '''''");
-
-        assert_eq!(lexer.next_lexem(), Some(SingleQuote));
-        assert_eq!(lexer.next_lexem(), Some(Word("'' ' ' ''".to_string())));
-        assert_eq!(lexer.next_lexem(), Some(SingleQuote));
-        assert_eq!(lexer.next_lexem(), None);
-    }
-
-    it "exclude line comments" {
-        let mut lexer = Lexer::new("one two -- some line comment here \n three");
-
-        assert_eq!(lexer.next_lexem(), Some(Word("one".to_string())));
-        assert_eq!(lexer.next_lexem(), Some(Word("two".to_string())));
-        assert_eq!(lexer.next_lexem(), Some(Word("three".to_string())));
-        assert_eq!(lexer.next_lexem(), None);
-    }
-
-    it "should include diff chars into string expression" {
-        let mut lexer = Lexer::new("'one two --- \n\n\t _ 1123'");
-
-        assert_eq!(lexer.next_lexem(), Some(SingleQuote));
-        assert_eq!(lexer.next_lexem(), Some(Word("one two --- \n\n\t _ 1123".to_string())));
-        assert_eq!(lexer.next_lexem(), Some(SingleQuote));
-    }
-
-
-    it "should exclude multy lines comments" {
-        let mut lexer = Lexer::new("one two /* comment line 1\n comment line 2\n comment line 3\n*/ three");
-
-        assert_eq!(lexer.next_lexem(), Some(Word("one".to_string())));
-        assert_eq!(lexer.next_lexem(), Some(Word("two".to_string())));
-        assert_eq!(lexer.next_lexem(), Some(Word("three".to_string())));
-        assert_eq!(lexer.next_lexem(), None);
+        it "emits lexems of sql select statement" {
+            expect!(lexer.tokenize("select count(*),count(col1)from table_name"))
+                .to(be_equal_to(
+                    vec![
+                        Identifier("select".to_owned()),
+                        Identifier("count".to_owned()),
+                        LeftParenthesis,
+                        Asterisk,
+                        RightParenthesis,
+                        Comma,
+                        Identifier("count".to_owned()),
+                        LeftParenthesis,
+                        Identifier("col1".to_owned()),
+                        RightParenthesis,
+                        Identifier("from".to_owned()),
+                        Identifier("table_name".to_owned())
+                    ]
+                ));
+        }
     }
 }
