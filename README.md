@@ -1,11 +1,7 @@
 # Rust SQL engine
 
-It is my training project to learn [Rust](https://www.rust-lang.org/)
+SQL engine for fun and [Rust](https://www.rust-lang.org/)
 
-### TDD
-Test => Impl => Refactoring
-
-### Me
-Test => Commit => Impl => Commit => Refactoring => Commit
-
-I will try hard to prevent myself to write implementation before test.
+# Status
+[![Travis CI Status](https://travis-ci.org/Alex-Diez/rust-sql-engine.svg?branch=master)](https://travis-ci.org/Alex-Diez/rust-sql-engine)
+[![Coverage Status](https://coveralls.io/repos/github/Alex-Diez/rust-sql-engine/badge.svg)](https://coveralls.io/github/Alex-Diez/rust-sql-engine)
