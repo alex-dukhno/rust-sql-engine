@@ -6,11 +6,10 @@ authors = ["Alex-Diez <alexvic.amatory@gmail.com>"]
 [lib]
 name = "sql"
 path = "src/lib.rs"
-plugin = true
 
 [[test]]
-name = "unit_tests"
-path = "tests/unit_tests.rs"
+name = "test"
+path = "test/lib.rs"
 
 [dependencies]
 clippy = "*"

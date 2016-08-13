@@ -1,5 +1,3 @@
-extern crate sql;
-
 pub use expectest::prelude::be_equal_to;
 
 pub use sql::lexer::Lexer;
