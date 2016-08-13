@@ -14,17 +14,41 @@ pub enum Token {
     Asterisk
 }
 
-pub struct Lexer { }
+pub trait Tokenizer {
+    
+    fn tokenize(&self) -> Vec<Token>;
+}
 
-impl Lexer {
+impl Tokenizer for String {
 
-    pub fn tokenize(&self, src: &str) -> Vec<Token> {
+    fn tokenize(&self) -> Vec<Token> {
+        fn push_identifier(tokens: &mut Vec<Token>, buffer: &mut String) {
+            if !buffer.is_empty() {
+                tokens.push(Identifier(buffer.clone()));
+                buffer.clear();
+            }
+        }
+
+        fn char_to_token(c: char) -> Option<Token> {
+            match c {
+                '('     => Some(LeftParenthesis),
+                ')'     => Some(RightParenthesis),
+                ','     => Some(Comma),
+                '\''    => Some(SingleQuote),
+                ';'     => Some(Semicolon),
+                '='     => Some(EqualSign),
+                '*'     => Some(Asterisk),
+                _       => None
+            }
+        }
+
+
         let mut tokens = vec![];
-        let mut buffer = String::with_capacity(src.len());
-        for c in src.chars() {
+        let mut buffer = String::with_capacity(self.len());
+        for c in self.chars() {
             if DELIMETERS.contains(c) {
-                self.push_identifier(&mut tokens, &mut buffer);
-                if let Some(token) = self.char_to_token(c) {
+                push_identifier(&mut tokens, &mut buffer);
+                if let Some(token) = char_to_token(c) {
                     tokens.push(token);
                 }
             }
@@ -32,34 +56,8 @@ impl Lexer {
                 buffer.push(c);
             }
         }
-        self.push_identifier(&mut tokens, &mut buffer);
+        push_identifier(&mut tokens, &mut buffer);
         tokens
     }
-
-    fn push_identifier(&self, tokens: &mut Vec<Token>, buffer: &mut String) {
-        if !buffer.is_empty() {
-            tokens.push(Identifier(buffer.clone()));
-            buffer.clear();
-        }
-    }
-
-    fn char_to_token(&self, c: char) -> Option<Token> {
-        match c {
-            '('     => Some(LeftParenthesis),
-            ')'     => Some(RightParenthesis),
-            ','     => Some(Comma),
-            '\''    => Some(SingleQuote),
-            ';'     => Some(Semicolon),
-            '='     => Some(EqualSign),
-            '*'     => Some(Asterisk),
-            _       => None
-        }
-    }
-}
-
-impl Default for Lexer {
-
-    fn default() -> Self {
-        Lexer { }
-    }
+    
 }

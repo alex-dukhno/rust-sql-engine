@@ -1,29 +1,25 @@
 pub use expectest::prelude::be_equal_to;
 
-pub use sql::lexer::Lexer;
+pub use sql::lexer::Tokenizer;
 pub use sql::lexer::Token::{self, Identifier, LeftParenthesis, RightParenthesis, Comma, SingleQuote, Semicolon, EqualSign, Asterisk};
 
 describe! lexer {
-
-    before_each {
-        let lexer = Lexer::default();
-    }
 
     describe! lexems {
 
 
         it "emits None when given an empty string" {
-            expect!(lexer.tokenize(""))
+            expect!("".to_owned().tokenize())
                 .to(be_equal_to(vec![]));
         }
 
         it "emits identifier token when given a single word string" {
-            expect!(lexer.tokenize("word"))
+            expect!("word".to_owned().tokenize())
                 .to(be_equal_to(vec![Identifier("word".to_owned())]));
         }
 
         it "emits identifiers when given string of words" {
-            expect!(lexer.tokenize("This is a sentence"))
+            expect!("This is a sentence".to_owned().tokenize())
                 .to(be_equal_to(vec![Identifier("This".to_owned()), Identifier("is".to_owned()), Identifier("a".to_owned()), Identifier("sentence".to_owned())]));
         }
     }
@@ -31,7 +27,7 @@ describe! lexer {
     describe! sql_lexems {
 
         it "emits lexems of sql insert statement" {
-            expect!(lexer.tokenize("insert into table1 values(val1, 'val2');"))
+            expect!("insert into table1 values(val1, 'val2');".to_owned().tokenize())
                 .to(be_equal_to(
                     vec![
                         Identifier("insert".to_owned()),
@@ -51,7 +47,7 @@ describe! lexer {
         }
 
         it "emits lexems of sql delete statement" {
-            expect!(lexer.tokenize("delete from table_name where col_name = 'five';"))
+            expect!("delete from table_name where col_name = 'five';".to_owned().tokenize())
                 .to(be_equal_to(
                     vec![
                         Identifier("delete".to_owned()),
@@ -69,7 +65,7 @@ describe! lexer {
         }
 
         it "emits lexems of sql update statement" {
-            expect!(lexer.tokenize("update table_name set col1=val1,col2='val2' where col3=val3"))
+            expect!("update table_name set col1=val1,col2='val2' where col3=val3".to_owned().tokenize())
                 .to(be_equal_to(
                     vec![
                         Identifier("update".to_owned()),
@@ -93,7 +89,7 @@ describe! lexer {
         }
 
         it "emits lexems of sql select statement" {
-            expect!(lexer.tokenize("select count(*),count(col1)from table_name"))
+            expect!("select count(*),count(col1)from table_name".to_owned().tokenize())
                 .to(be_equal_to(
                     vec![
                         Identifier("select".to_owned()),
