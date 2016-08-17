@@ -1,7 +1,7 @@
 pub use expectest::prelude::{be_ok, be_err};
 
 pub use sql::lexer::Tokenizer;
-pub use sql::lexer::Token::{self, Identifier, LeftParenthesis, RightParenthesis, Comma, SingleQuote, Semicolon, EqualSign, Asterisk, NumberValue, StringValue};
+pub use sql::lexer::Token::{IdentT, LeftParenthesis, RightParenthesis, Comma, SingleQuote, Semicolon, EqualSign, Asterisk, NumberT, StringT};
 
 describe! lexer {
 
@@ -14,22 +14,22 @@ describe! lexer {
 
         it "emits identifier token when given a single word string" {
             expect!("word".to_owned().tokenize())
-                .to(be_ok().value(vec![Identifier("word".to_owned())]));
+                .to(be_ok().value(vec![IdentT("word".to_owned())]));
         }
 
         it "emits identifiers when given string of words" {
             expect!("this is a sentence".to_owned().tokenize())
-                .to(be_ok().value(vec![Identifier("this".to_owned()), Identifier("is".to_owned()), Identifier("a".to_owned()), Identifier("sentence".to_owned())]));
+                .to(be_ok().value(vec![IdentT("this".to_owned()), IdentT("is".to_owned()), IdentT("a".to_owned()), IdentT("sentence".to_owned())]));
         }
 
         it "emits number token when given number" {
             expect!("5".to_owned().tokenize())
-                .to(be_ok().value(vec![NumberValue("5".to_owned())]));
+                .to(be_ok().value(vec![NumberT("5".to_owned())]));
         }
 
         it "emits number token when given number with float point" {
             expect!("2.01".to_owned().tokenize())
-                .to(be_ok().value(vec![NumberValue("2.01".to_owned())]));
+                .to(be_ok().value(vec![NumberT("2.01".to_owned())]));
         }
 
         it "emits error when given number with two delimeters" {
@@ -39,7 +39,7 @@ describe! lexer {
 
         it "escapes single quote inside string token" {
             expect!("\'str\'\'str\'".to_owned().tokenize())
-                .to(be_ok().value(vec![StringValue("str\'str".to_owned())]));
+                .to(be_ok().value(vec![StringT("str\'str".to_owned())]));
         }
     }
 
@@ -49,14 +49,14 @@ describe! lexer {
             expect!("insert into table values(10, 'str');".to_owned().tokenize())
                 .to(be_ok().value(
                     vec![
-                        Identifier("insert".to_owned()),
-                        Identifier("into".to_owned()),
-                        Identifier("table".to_owned()),
-                        Identifier("values".to_owned()),
+                        IdentT("insert".to_owned()),
+                        IdentT("into".to_owned()),
+                        IdentT("table".to_owned()),
+                        IdentT("values".to_owned()),
                         LeftParenthesis,
-                        NumberValue("10".to_owned()),
+                        NumberT("10".to_owned()),
                         Comma,
-                        StringValue("str".to_owned()),
+                        StringT("str".to_owned()),
                         RightParenthesis,
                         Semicolon
                     ]
@@ -67,13 +67,13 @@ describe! lexer {
             expect!("delete from table_name where col_name = 'five';".to_owned().tokenize())
                 .to(be_ok().value(
                     vec![
-                        Identifier("delete".to_owned()),
-                        Identifier("from".to_owned()),
-                        Identifier("table_name".to_owned()),
-                        Identifier("where".to_owned()),
-                        Identifier("col_name".to_owned()),
+                        IdentT("delete".to_owned()),
+                        IdentT("from".to_owned()),
+                        IdentT("table_name".to_owned()),
+                        IdentT("where".to_owned()),
+                        IdentT("col_name".to_owned()),
                         EqualSign,
-                        StringValue("five".to_owned()),
+                        StringT("five".to_owned()),
                         Semicolon
                     ]
                 ));
@@ -83,20 +83,20 @@ describe! lexer {
             expect!("update table_name set col_one=val1,col_two='val2' where col_three=3".to_owned().tokenize())
                 .to(be_ok().value(
                     vec![
-                        Identifier("update".to_owned()),
-                        Identifier("table_name".to_owned()),
-                        Identifier("set".to_owned()),
-                        Identifier("col_one".to_owned()),
+                        IdentT("update".to_owned()),
+                        IdentT("table_name".to_owned()),
+                        IdentT("set".to_owned()),
+                        IdentT("col_one".to_owned()),
                         EqualSign,
-                        Identifier("val1".to_owned()),
+                        IdentT("val1".to_owned()),
                         Comma,
-                        Identifier("col_two".to_owned()),
+                        IdentT("col_two".to_owned()),
                         EqualSign,
-                        StringValue("val2".to_owned()),
-                        Identifier("where".to_owned()),
-                        Identifier("col_three".to_owned()),
+                        StringT("val2".to_owned()),
+                        IdentT("where".to_owned()),
+                        IdentT("col_three".to_owned()),
                         EqualSign,
-                        NumberValue("3".to_owned())
+                        NumberT("3".to_owned())
                     ]
                 ));
         }
@@ -105,18 +105,18 @@ describe! lexer {
             expect!("select count(*),count(col1)from table_name".to_owned().tokenize())
                 .to(be_ok().value(
                     vec![
-                        Identifier("select".to_owned()),
-                        Identifier("count".to_owned()),
+                        IdentT("select".to_owned()),
+                        IdentT("count".to_owned()),
                         LeftParenthesis,
                         Asterisk,
                         RightParenthesis,
                         Comma,
-                        Identifier("count".to_owned()),
+                        IdentT("count".to_owned()),
                         LeftParenthesis,
-                        Identifier("col1".to_owned()),
+                        IdentT("col1".to_owned()),
                         RightParenthesis,
-                        Identifier("from".to_owned()),
-                        Identifier("table_name".to_owned())
+                        IdentT("from".to_owned()),
+                        IdentT("table_name".to_owned())
                     ]
                 ));
         }

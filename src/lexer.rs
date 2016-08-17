@@ -1,13 +1,13 @@
 use std::iter::Peekable;
 use std::str::Chars;
-use self::Token::{Identifier, LeftParenthesis, RightParenthesis, Comma, SingleQuote, EqualSign, Semicolon, Asterisk, StringValue, NumberValue};
+use self::Token::{IdentT, NumberT, StringT, LeftParenthesis, RightParenthesis, Comma, SingleQuote, EqualSign, Semicolon, Asterisk};
 
 #[derive(Debug,PartialEq)]
 pub enum Token {
-    Identifier(String),
+    IdentT(String),
 
-    NumberValue(String),
-    StringValue(String),
+    NumberT(String),
+    StringT(String),
 
     LeftParenthesis,
     RightParenthesis,
@@ -56,7 +56,7 @@ fn ident_token(chars: &mut Peekable<Chars>) -> Token {
             Some(_) | None => break,
         }
     }
-    Identifier(token)
+    IdentT(token)
 }
 
 fn num_token(chars: &mut Peekable<Chars>) -> Result<Token, String> {
@@ -81,7 +81,7 @@ fn num_token(chars: &mut Peekable<Chars>) -> Result<Token, String> {
             Some(_) | None => break,
         }
     }
-    Ok(NumberValue(num))
+    Ok(NumberT(num))
 }
 
 fn string_token(chars: &mut Peekable<Chars>) -> Token {
@@ -102,7 +102,7 @@ fn string_token(chars: &mut Peekable<Chars>) -> Token {
             None => break,
         }
     }
-    StringValue(string)
+    StringT(string)
 }
 
 fn char_to_token(c: char) -> Result<Token, String> {
