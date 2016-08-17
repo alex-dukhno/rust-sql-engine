@@ -22,42 +22,41 @@ pub trait Tokenizer {
 impl Tokenizer for String {
 
     fn tokenize(&self) -> Vec<Token> {
-        fn push_identifier(tokens: &mut Vec<Token>, buffer: &mut String) {
-            if !buffer.is_empty() {
-                tokens.push(Identifier(buffer.clone()));
-                buffer.clear();
-            }
-        }
-
-        fn char_to_token(c: char) -> Option<Token> {
-            match c {
-                '('     => Some(LeftParenthesis),
-                ')'     => Some(RightParenthesis),
-                ','     => Some(Comma),
-                '\''    => Some(SingleQuote),
-                ';'     => Some(Semicolon),
-                '='     => Some(EqualSign),
-                '*'     => Some(Asterisk),
-                _       => None
-            }
-        }
-
-
         let mut tokens = vec![];
-        let mut buffer = String::with_capacity(self.len());
+        let mut end = 0;
+        let mut start = end;
         for c in self.chars() {
             if DELIMETERS.contains(c) {
-                push_identifier(&mut tokens, &mut buffer);
+                if start < end {
+                    tokens.push(Identifier(self.chars().skip(start).take(end - start).collect::<String>()));
+                }
+                end += 1;
+                start = end;
                 if let Some(token) = char_to_token(c) {
                     tokens.push(token);
                 }
             }
             else {
-                buffer.push(c);
+                end += 1;
             }
         }
-        push_identifier(&mut tokens, &mut buffer);
+        if start < end {
+            tokens.push(Identifier(self.chars().skip(start).take(end - start).collect::<String>()));
+        }
         tokens
     }
     
+}
+
+fn char_to_token(c: char) -> Option<Token> {
+    match c {
+        '('     => Some(LeftParenthesis),
+        ')'     => Some(RightParenthesis),
+        ','     => Some(Comma),
+        '\''    => Some(SingleQuote),
+        ';'     => Some(Semicolon),
+        '='     => Some(EqualSign),
+        '*'     => Some(Asterisk),
+        _       => None
+    }
 }
