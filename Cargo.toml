@@ -12,7 +12,7 @@ name = "test"
 path = "test/lib.rs"
 
 [dependencies]
-clippy = "*"
+clippy = "0.0.82"
 
 [dev-dependencies]
 stainless = "*"
