@@ -1,10 +1,14 @@
-use self::Token::{Identifier, LeftParenthesis, RightParenthesis, Comma, SingleQuote, EqualSign, Semicolon, Asterisk};
-
-const DELIMETERS: &'static str = "(),\';=* ";
+use std::iter::Peekable;
+use std::str::Chars;
+use self::Token::{IdentT, NumberT, StringT, LeftParenthesis, RightParenthesis, Comma, SingleQuote, EqualSign, Semicolon, Asterisk};
 
 #[derive(Debug,PartialEq)]
 pub enum Token {
-    Identifier(String),
+    IdentT(String),
+
+    NumberT(String),
+    StringT(String),
+
     LeftParenthesis,
     RightParenthesis,
     Comma,
@@ -14,52 +18,102 @@ pub enum Token {
     Asterisk
 }
 
-pub struct Lexer { }
+pub trait Tokenizer {
 
-impl Lexer {
+    fn tokenize(&self) -> Result<Vec<Token>, String>;
+}
 
-    pub fn tokenize(&self, src: &str) -> Vec<Token> {
-        let mut tokens = vec![];
-        let mut buffer = String::with_capacity(src.len());
-        for c in src.chars() {
-            if DELIMETERS.contains(c) {
-                self.push_identifier(&mut tokens, &mut buffer);
-                if let Some(token) = self.char_to_token(c) {
-                    tokens.push(token);
-                }
-            }
-            else {
-                buffer.push(c);
-            }
-        }
-        self.push_identifier(&mut tokens, &mut buffer);
-        tokens
-    }
+impl Tokenizer for String {
 
-    fn push_identifier(&self, tokens: &mut Vec<Token>, buffer: &mut String) {
-        if !buffer.is_empty() {
-            tokens.push(Identifier(buffer.clone()));
-            buffer.clear();
-        }
-    }
-
-    fn char_to_token(&self, c: char) -> Option<Token> {
-        match c {
-            '('     => Some(LeftParenthesis),
-            ')'     => Some(RightParenthesis),
-            ','     => Some(Comma),
-            '\''    => Some(SingleQuote),
-            ';'     => Some(Semicolon),
-            '='     => Some(EqualSign),
-            '*'     => Some(Asterisk),
-            _       => None
-        }
+    fn tokenize(&self) -> Result<Vec<Token>, String> {
+        tokenize_expression(&mut self.chars().peekable())
     }
 }
 
-impl Default for Lexer {
+fn tokenize_expression(chars: &mut Peekable<Chars>) -> Result<Vec<Token>, String> {
+    let mut tokens = vec![];
+    loop {
+        match chars.peek().cloned() {
+            Some(' ') => { chars.next(); },
+            Some('\'') => { chars.next(); tokens.push(string_token(&mut chars.by_ref())); },
+            Some('a'...'z') => { tokens.push(ident_token(&mut chars.by_ref())); },
+            Some('0'...'9') => { tokens.push(try!(num_token(&mut chars.by_ref()))); },
+            Some(c) => { chars.next(); tokens.push(try!(char_to_token(c))); },
+            None => break,
+        }
+    }
+    Ok(tokens)
+}
 
-    fn default() -> Self {
-        Lexer { }
+fn ident_token(chars: &mut Peekable<Chars>) -> Token {
+    let mut token = String::default();
+    loop {
+        match chars.peek().cloned() {
+            Some(c @ 'a'...'z') | Some(c @ '_') | Some(c @ '0'...'9') => {
+                chars.next();
+                token.push(c);
+            },
+            Some(_) | None => break,
+        }
+    }
+    IdentT(token)
+}
+
+fn num_token(chars: &mut Peekable<Chars>) -> Result<Token, String> {
+    let mut num = String::default();
+    let mut float_point = false;
+    loop {
+        match chars.peek().cloned() {
+            Some(d @ '0'...'9') => {
+                chars.next();
+                num.push(d);
+            },
+            Some('.') => {
+                if !float_point {
+                    chars.next();
+                    num.push('.');
+                    float_point = true;
+                }
+                else {
+                    return Err("Number format error".to_owned());
+                }
+            },
+            Some(_) | None => break,
+        }
+    }
+    Ok(NumberT(num))
+}
+
+fn string_token(chars: &mut Peekable<Chars>) -> Token {
+    let mut string = String::default();
+    loop {
+        match chars.peek().cloned() {
+            Some('\'') => {
+                chars.next();
+                match chars.peek().cloned() {
+                    Some('\'') => {
+                        chars.next();
+                        string.push('\'');
+                    },
+                    _ => break,
+                }
+            },
+            Some(c) => { chars.next(); string.push(c); },
+            None => break,
+        }
+    }
+    StringT(string)
+}
+
+fn char_to_token(c: char) -> Result<Token, String> {
+    match c {
+        '('     => Ok(LeftParenthesis),
+        ')'     => Ok(RightParenthesis),
+        ','     => Ok(Comma),
+        '\''    => Ok(SingleQuote),
+        ';'     => Ok(Semicolon),
+        '='     => Ok(EqualSign),
+        '*'     => Ok(Asterisk),
+        _       => Err(format!("Unexpected character - {:?}", c)),
     }
 }
