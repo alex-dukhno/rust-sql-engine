@@ -13,7 +13,14 @@ pub enum Node {
     Insert(Box<Node>, Box<Node>),
     Table(String, Option<Vec<Node>>),
     Values(Vec<Node>),
-    Column(String)
+    Column(String, Option<Type>),
+
+    Create(Box<Node>)
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Type {
+    Int
 }
 
 #[derive(Debug, PartialEq)]
@@ -63,7 +70,7 @@ impl Parser for Vec<Token> {
                     Some(&Comma) => { peekable.next(); },
                     Some(_) => {
                         if let Some(IdentT(col)) = peekable.next() {
-                            columns.push(Column(col));
+                            columns.push(Column(col, None));
                         }
                     },
                 }

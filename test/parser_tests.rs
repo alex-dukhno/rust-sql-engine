@@ -99,7 +99,7 @@ describe! parser {
             expect!(tokens.parse())
                 .to(be_ok().value(
                     Insert(
-                        Box::new(Table("table_name".to_owned(), Some(vec![Column("col1".to_owned()), Column("col2".to_owned())]))),
+                        Box::new(Table("table_name".to_owned(), Some(vec![Column("col1".to_owned(), None), Column("col2".to_owned(), None)]))),
                         Box::new(Values(vec![Const("10".to_owned()), Const("string".to_owned())]))
                     )
                 ));
