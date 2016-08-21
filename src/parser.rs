@@ -13,14 +13,21 @@ pub enum Node {
     Insert(Box<Node>, Box<Node>),
     Table(String, Option<Vec<Node>>),
     Values(Vec<Node>),
-    Column(String, Option<Type>),
+    Column(String),
 
-    Create(Box<Node>)
+    Create(Box<Node>),
+    TableColumn(String, Option<Type>, Option<Flag>)
 }
 
 #[derive(Debug, PartialEq)]
 pub enum Type {
     Int
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Flag {
+    PrimeryKey,
+    ForeignKey(String),
 }
 
 #[derive(Debug, PartialEq)]
@@ -70,7 +77,7 @@ impl Parser for Vec<Token> {
                     Some(&Comma) => { peekable.next(); },
                     Some(_) => {
                         if let Some(IdentT(col)) = peekable.next() {
-                            columns.push(Column(col, None));
+                            columns.push(Column(col));
                         }
                     },
                 }

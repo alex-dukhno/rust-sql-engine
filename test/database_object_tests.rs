@@ -1,16 +1,72 @@
-pub use expectest::prelude::be_ok;
+pub use expectest::prelude::{be_ok, be_err};
 
-pub use sql::parser::Node::{self, Table, Column};
-pub use sql::parser::Type;
+pub use sql::parser::Node::{Table, TableColumn, Create, Insert, Values, Const};
+pub use sql::parser::Type::{Int};
+pub use sql::parser::Flag::{PrimeryKey, ForeignKey};
 pub use sql::query_executer::QueryExecuter;
 
 describe! database {
 
-    it "creates table from AST" {
-        let table = Node::Create(Box::new(Table("table_name".to_owned(), Some(vec![Column("col".to_owned(), Some(Type::Int))]))));
+    before_each {
+        let mut executer = QueryExecuter::new();
+    }
 
-        let executer = QueryExecuter::new();
+    it "creates table with one column from AST" {
+        let create_table = Create(Box::new(Table(table_name(), Some(vec![TableColumn(column_name(), Some(Int), None)]))));
+
+        expect!(executer.execute(create_table)).to(be_ok());
+    }
+
+    it "could not insert into table that does not exist" {
+        let insert = Insert(Box::new(Table(table_name(), None)), Box::new(Values(vec![Const(ten_int())])));
+
+        expect!(executer.execute(insert)).to(be_err().value(1));
+    }
+
+    it "inserts row into table" {
+        let create_table = Create(Box::new(Table(table_name(), Some(vec![TableColumn(column_name(), Some(Int), None)]))));
+
+        expect!(executer.execute(create_table)).to(be_ok());
+
+        let insert = Insert(Box::new(Table(table_name(), None)), Box::new(Values(vec![Const(ten_int())])));
+
+        expect!(executer.execute(insert)).to(be_ok());
+    }
+
+    it "could not insert row with two columns in table with one column" {
+        let create_table = Create(Box::new(Table(table_name(), Some(vec![TableColumn(column_name(), Some(Int), None)]))));
+
+        expect!(executer.execute(create_table)).to(be_ok());
+
+        let insert = Insert(Box::new(Table(table_name(), None)), Box::new(Values(vec![Const(ten_int()), Const(five_int())])));
+
+        expect!(executer.execute(insert)).to(be_err().value(3));
+    }
+
+    ignore "creates tables with foreign key as reference" {
+
+        let table = Create(Box::new(Table(table_name(), Some(vec![TableColumn(column_name(), Some(Int), Some(PrimeryKey))]))));
 
         expect!(executer.execute(table)).to(be_ok());
+
+        let reference_table = Create(Box::new(Table("reference_table".to_owned(), Some(vec![TableColumn(column_name(), Some(Int), Some(ForeignKey("table_name.col".to_owned())))]))));
+
+        expect!(executer.execute(reference_table)).to(be_ok());
     }
+}
+
+pub fn table_name() -> String {
+    "table_name".to_owned()
+}
+
+pub fn ten_int() -> String {
+    "10".to_owned()
+}
+
+pub fn five_int() -> String {
+    "5".to_owned()
+}
+
+pub fn column_name() -> String {
+    "column_name".to_owned()
 }
