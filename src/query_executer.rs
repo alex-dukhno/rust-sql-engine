@@ -19,15 +19,15 @@ impl QueryExecuter {
          }
     }
 
-    pub fn execute(&mut self, query: Node) -> Result<(), CodeError> {
+    pub fn execute(&mut self, query: Node) -> Result<String, String> {
         match query {
             Create(table) => self.create_table(*table),
             Insert(table, values) => self.insert_into(*table, *values),
-            _ => Err(4),
+            _ => Err("".to_owned()),
         }
     }
 
-    fn create_table(&mut self, table: Node) -> Result<(), CodeError> {
+    fn create_table(&mut self, table: Node) -> Result<String, String> {
         match table {
             Table(name, Some(columns)) => {
                 let columns = columns.into_iter().map(
@@ -38,15 +38,16 @@ impl QueryExecuter {
                         }
                     }
                 ).collect::<Vec<String>>();
+                let s = name.clone();
                 self.tables.push( DatabaseTable { name: name, columns: columns } );
-                Ok(())
-                },
-            Table(name, None) => { self.tables.push( DatabaseTable { name: name, columns: vec![] } ); Ok(()) },
-            _ => Err(2),
+                Ok(format!("'{}' was created", s))
+            },
+            Table(name, None) => { self.tables.push( DatabaseTable { name: name, columns: vec![] } ); Ok("".to_owned()) },
+            _ => Err("".to_owned()),
         }
     }
 
-    fn insert_into(&self, table: Node, values: Node) -> Result<(), CodeError> {
+    fn insert_into(&self, table: Node, values: Node) -> Result<String, String> {
         match table {
             Table(name, _) => {
                 if self.tables.iter().any(|t| t.name == name) {
@@ -54,18 +55,18 @@ impl QueryExecuter {
                         Values(data) => {
                             let ref t = self.tables[0];
                             if data.len() != t.columns.len() {
-                                return Err(3);
+                                return Err("".to_owned());
                             }
                         },
-                        _ => return Err(6),
+                        _ => return Err("".to_owned()),
                     }
-                    Ok(())
+                    Ok("".to_owned())
                 }
                 else {
-                    Err(1)
+                    Err(format!("[ERR 100] table '{}' does not exist", name))
                 }
             },
-            _ => Err(5),
+            _ => Err("".to_owned()),
         }
     }
 }
