@@ -22,53 +22,6 @@ describe! database {
 
         expect!(executer.execute(insert)).to(be_err().value(format!("[ERR 100] table '{}' does not exist", table_name())));
     }
-
-    ignore "inserts row into table" {
-        let create_table = Create(Box::new(Table(table_name(), Some(vec![TableColumn(column_name(), Some(Int), None)]))));
-
-        expect!(executer.execute(create_table)).to(be_ok().value("".to_owned()));
-
-        let insert = Insert(Box::new(Table(table_name(), None)), Box::new(Values(vec![Const(ten_int())])));
-
-        expect!(executer.execute(insert)).to(be_ok().value("".to_owned()));
-    }
-
-    ignore "could not insert row with two columns in table with one column" {
-        let create_table = Create(Box::new(Table(table_name(), Some(vec![TableColumn(column_name(), Some(Int), None)]))));
-
-        expect!(executer.execute(create_table)).to(be_ok().value("".to_owned()));
-
-        let insert = Insert(Box::new(Table(table_name(), None)), Box::new(Values(vec![Const(ten_int()), Const(five_int())])));
-
-        expect!(executer.execute(insert)).to(be_err().value("".to_owned()));
-    }
-
-    ignore "creates tables with foreign key as reference" {
-        let table = Create(Box::new(Table(table_name(), Some(vec![TableColumn(column_name(), Some(Int), Some(PrimeryKey))]))));
-
-        expect!(executer.execute(table)).to(be_ok().value("".to_owned()));
-
-        let reference_table = Create(Box::new(Table("reference_table".to_owned(), Some(vec![TableColumn(column_name(), Some(Int), Some(ForeignKey("table_name.col".to_owned())))]))));
-
-        expect!(executer.execute(reference_table)).to(be_ok().value("".to_owned()));
-    }
-
-    ignore "could not insert into referencing table" {
-        let table = Create(Box::new(Table(table_name(), Some(vec![TableColumn(column_name(), Some(Int), Some(PrimeryKey))]))));
-
-        expect!(executer.execute(table)).to(be_ok().value("".to_owned()));
-
-        let reference_table = Create(Box::new(Table("reference_table".to_owned(), Some(vec![TableColumn(column_name(), Some(Int), Some(ForeignKey("table_name.col".to_owned())))]))));
-
-        expect!(executer.execute(reference_table)).to(be_ok());
-
-        let insert = Insert(
-            Box::new(Table("reference_table".to_owned(), None)),
-            Box::new(Values(vec![Const(ten_int())]))
-        );
-
-        expect!(executer.execute(insert)).to(be_err().value("".to_owned()));
-    }
 }
 
 pub fn table_name() -> String {
