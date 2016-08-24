@@ -3,9 +3,36 @@ pub use expectest::prelude::be_ok;
 pub use sql::lexer::Token::{self, IdentT, NumberT, StringT, Semicolon, EqualSign, LeftParenthesis, RightParenthesis, Comma};
 pub use sql::parser::Condition::{Eq};
 pub use sql::parser::Parser;
-pub use sql::parser::Node::{Delete, From, Where, Id, Const, Table, Values, Insert, Column};
+pub use sql::parser::Node::{self, Delete, From, Where, Id, Const, Table, Values, Insert, Column};
+pub use sql::parser::Type;
 
 describe! parser {
+
+    describe! create_table_statements {
+
+        it "parses create table statement" {
+            let tokens = vec![
+                IdentT("create".to_owned()),
+                IdentT("table".to_owned()),
+                IdentT("table_name".to_owned()),
+                LeftParenthesis,
+                IdentT("col".to_owned()),
+                IdentT("int".to_owned()),
+                RightParenthesis,
+                Semicolon
+            ];
+
+            expect!(tokens.parse())
+                .to(be_ok().value(
+                    Node::Create(
+                        Box::new(Table(
+                            "table_name".to_owned(),
+                            Some(vec![Node::TableColumn("col".to_owned(), Some(Type::Int), None)])
+                        ))
+                    )
+                ));
+        }
+    }
 
     describe! delete_statements {
 

@@ -45,6 +45,22 @@ describe! lexer {
 
     describe! sql_statements {
 
+        it "tokenizes create table query" {
+            expect!("create table table_name (col int);".to_owned().tokenize())
+                .to(be_ok().value(
+                    vec![
+                        IdentT("create".to_owned()),
+                        IdentT("table".to_owned()),
+                        IdentT("table_name".to_owned()),
+                        LeftParenthesis,
+                        IdentT("col".to_owned()),
+                        IdentT("int".to_owned()),
+                        RightParenthesis,
+                        Semicolon
+                    ]
+                ));
+        }
+
         it "emits lexems of sql insert statement" {
             expect!("insert into table values(10, 'str');".to_owned().tokenize())
                 .to(be_ok().value(
