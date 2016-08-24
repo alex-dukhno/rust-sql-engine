@@ -36,7 +36,7 @@ fn tokenize_expression(chars: &mut Peekable<Chars>) -> Result<Vec<Token>, String
         match chars.peek().cloned() {
             Some(' ') | Some('\n') | Some('\t') => { chars.next(); },
             Some('\'') => { chars.next(); tokens.push(try!(string_token(&mut chars.by_ref()))); },
-            Some('a'...'z') => { tokens.push(ident_token(&mut chars.by_ref())); },
+            Some('a'...'z') | Some('A'...'Z') => { tokens.push(ident_token(&mut chars.by_ref())); },
             Some('0'...'9') => { tokens.push(try!(num_token(&mut chars.by_ref()))); },
             Some(c) => { chars.next(); tokens.push(try!(char_to_token(c))); },
             None => break,
@@ -49,6 +49,10 @@ fn ident_token(chars: &mut Peekable<Chars>) -> Token {
     let mut token = String::default();
     loop {
         match chars.peek().cloned() {
+            Some(c @ 'A'...'Z') => {
+                chars.next();
+                token.push_str(c.to_lowercase().collect::<String>().as_str());
+            },
             Some(c @ 'a'...'z') | Some(c @ '_') | Some(c @ '0'...'9') => {
                 chars.next();
                 token.push(c);

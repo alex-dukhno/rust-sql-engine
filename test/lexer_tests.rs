@@ -63,5 +63,10 @@ describe! lexer {
             expect!("\'str".to_owned().tokenize())
                 .to(be_err().value("string const should be closed by \'".to_owned()));
         }
+
+        it "case insensitive" {
+            expect!("ABCDEFGHIJKLMNOPQRSTUVWXYZ".to_owned().tokenize())
+                .to(be_ok().value(vec![IdentT("abcdefghijklmnopqrstuvwxyz".to_owned())]));
+        }
     }
 }
