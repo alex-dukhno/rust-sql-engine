@@ -66,7 +66,7 @@ describe! parser {
                 ));
         }
 
-        it "parses create table without comma in column list" {
+        it "does not parse create table without comma in column list" {
             let tokens = vec![
                 IdentT("create".to_owned()),
                 IdentT("table".to_owned()),
@@ -85,7 +85,7 @@ describe! parser {
                 .to(be_err().value("parsing error missing ','".to_owned()));
         }
 
-        it "parses create table without open parenthesis" {
+        it "does not parse create table without open parenthesis" {
             let tokens = vec![
                 IdentT("create".to_owned()),
                 IdentT("table".to_owned()),
@@ -97,7 +97,22 @@ describe! parser {
             ];
 
             expect!(tokens.parse())
-                .to(be_err().value("parse error missing '('".to_owned()));
+                .to(be_err().value("parsing error missing '('".to_owned()));
+        }
+
+        it "does not parse create table statement without closing parenthesis" {
+            let tokens = vec![
+                IdentT("create".to_owned()),
+                IdentT("table".to_owned()),
+                IdentT("table_name".to_owned()),
+                LeftParenthesis,
+                IdentT("col".to_owned()),
+                IdentT("int".to_owned()),
+                Semicolon
+            ];
+
+            expect!(tokens.parse())
+                .to(be_err().value("parsing error missing ')'".to_owned()));
         }
     }
 

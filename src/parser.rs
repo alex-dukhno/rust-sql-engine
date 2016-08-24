@@ -1,4 +1,4 @@
-use super::lexer::Token::{self, IdentT, LeftParenthesis, RightParenthesis, Comma};
+use super::lexer::Token::{self, IdentT, LeftParenthesis, RightParenthesis, Comma, Semicolon};
 use self::Node::{Delete, From, Where, Id, Const, Insert, Table, Values, Column, TableColumn, Create};
 use self::Condition::{Eq};
 
@@ -76,7 +76,7 @@ fn parse_table_columns<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Vec<No
     let mut tokens = tokens.peekable();
     match tokens.peek() {
         Some(&LeftParenthesis) => { tokens.next(); } //skip '('
-        _ => return Err("parse error missing '('".to_owned()),
+        _ => return Err("parsing error missing '('".to_owned()),
     }
 
     let mut columns = vec![];
@@ -95,15 +95,14 @@ fn parse_table_columns<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Vec<No
 
         match tokens.peek() {
             Some(&Comma) => { tokens.next(); }, //skip ','
-            _ => break,
+            Some(&RightParenthesis) => break,
+            Some(&Semicolon) => return Err("parsing error missing ')'".to_owned()),
+            _ => return Err("parsing error missing ','".to_owned()),
         }
 
     }
 
-    match tokens.next() {
-         Some(RightParenthesis) => {}, //skip ')'
-         _ => return Err("parsing error missing ','".to_owned()),
-    }
+    tokens.next(); //skip ')'
     tokens.next(); // skip ';'
 
     Ok(columns)
