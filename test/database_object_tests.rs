@@ -8,7 +8,7 @@ pub use sql::query_executer::QueryExecuter;
 describe! database {
 
     before_each {
-        let mut executer = QueryExecuter::new();
+        let mut executer = QueryExecuter::default();
     }
 
     it "creates table with one column from AST" {

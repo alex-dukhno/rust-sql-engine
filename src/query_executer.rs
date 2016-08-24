@@ -11,13 +11,16 @@ struct DatabaseTable {
     columns: Vec<String>,
 }
 
-impl QueryExecuter {
+impl Default for QueryExecuter {
 
-    pub fn new() -> QueryExecuter {
-         QueryExecuter {
-             tables: vec![]
-         }
+    fn default() -> Self {
+        QueryExecuter {
+            tables: vec![]
+        }
     }
+}
+
+impl QueryExecuter {
 
     pub fn execute(&mut self, query: Node) -> Result<String, String> {
         match query {

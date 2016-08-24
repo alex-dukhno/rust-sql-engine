@@ -63,25 +63,44 @@ impl Parser for Vec<Token> {
     }
 }
 
-fn parse_create<I: DoubleEndedIterator<Item=Token>>(tokens: &mut I) -> Result<Node, ()> {
+fn parse_create<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, ()> {
     tokens.next(); //skip 'TABLE' keyword
-    let mut reverse = tokens.rev();
-    reverse.next(); // skip ';'
-    reverse.next(); //skip ')'
-    let col_type = match reverse.next() {
-        Some(IdentT(_)) => Type::Int,
-        _ => return Err(()),
-    };
-    let col_name = match reverse.next() {
+    let table_name = match tokens.next() {
         Some(IdentT(name)) => name,
         _ => return Err(()),
     };
-    reverse.next(); //skip '('
-    let table = match reverse.next() {
-        Some(IdentT(table_name)) => Table(table_name, Some(vec![TableColumn(col_name, Some(col_type), None)])),
-        _ => return Err(()),
-    };
-    Ok(table)
+    Ok(Table(table_name, Some(try!(parse_table_columns(&mut tokens.by_ref())))))
+}
+
+fn parse_table_columns<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Vec<Node>, ()> {
+    let mut tokens = tokens.peekable();
+    tokens.next(); //skip '('
+
+    let mut columns = vec![];
+
+    loop {
+        let col_name = match tokens.next() {
+            Some(IdentT(name)) => name,
+            _ => return Err(()),
+        };
+        let col_type = match tokens.next() {
+            Some(IdentT(_)) => Type::Int,
+            _ => return Err(()),
+        };
+
+        columns.push(TableColumn(col_name, Some(col_type), None));
+
+        match tokens.peek() {
+            Some(&Comma) => { tokens.next(); }, //skip ','
+            _ => break,
+        }
+
+    }
+
+    tokens.next(); //skip ')'
+    tokens.next(); // skip ';'
+
+    Ok(columns)
 }
 
 fn parse_from<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, ()> {

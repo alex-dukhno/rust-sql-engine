@@ -34,7 +34,7 @@ fn tokenize_expression(chars: &mut Peekable<Chars>) -> Result<Vec<Token>, String
     let mut tokens = vec![];
     loop {
         match chars.peek().cloned() {
-            Some(' ') => { chars.next(); },
+            Some(' ') | Some('\n') | Some('\t') => { chars.next(); },
             Some('\'') => { chars.next(); tokens.push(string_token(&mut chars.by_ref())); },
             Some('a'...'z') => { tokens.push(ident_token(&mut chars.by_ref())); },
             Some('0'...'9') => { tokens.push(try!(num_token(&mut chars.by_ref()))); },

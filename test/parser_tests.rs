@@ -32,6 +32,35 @@ describe! parser {
                     )
                 ));
         }
+
+        it "parses create table with list of columns statement" {
+            let tokens = vec![
+                IdentT("create".to_owned()),
+                IdentT("table".to_owned()),
+                IdentT("table_name".to_owned()),
+                LeftParenthesis,
+                IdentT("col1".to_owned()),
+                IdentT("int".to_owned()),
+                Comma,
+                IdentT("col2".to_owned()),
+                IdentT("int".to_owned()),
+                Comma,
+                IdentT("col3".to_owned()),
+                IdentT("int".to_owned()),
+                RightParenthesis,
+                Semicolon
+            ];
+
+            expect!(tokens.parse())
+                .to(be_ok().value(
+                    Node::Create(
+                        Box::new(Table(
+                            "table_name".to_owned(),
+                            Some(vec![Node::TableColumn("col1".to_owned(), Some(Type::Int), None), Node::TableColumn("col2".to_owned(), Some(Type::Int), None), Node::TableColumn("col3".to_owned(), Some(Type::Int), None)])
+                        ))
+                    )
+                ));
+        }
     }
 
     describe! delete_statements {
