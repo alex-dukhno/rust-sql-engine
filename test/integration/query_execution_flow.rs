@@ -12,6 +12,11 @@ describe! create_table_queries {
             expect!("create table table_name (col1 int col2 int);".to_owned().tokenize().unwrap().parse())
                 .to(be_err().value("parsing error missing ','".to_owned()));
         }
+
+        it "does not create a table when missing open parenthesis" {
+            expect!("create table table_name col int);".to_owned().tokenize().unwrap().parse())
+                .to(be_err().value("parse error missing '('".to_owned()));
+        }
     }
 
     describe! queries_execution {

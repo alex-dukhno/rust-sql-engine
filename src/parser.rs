@@ -74,7 +74,10 @@ fn parse_create<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, String>
 
 fn parse_table_columns<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Vec<Node>, String> {
     let mut tokens = tokens.peekable();
-    tokens.next(); //skip '('
+    match tokens.peek() {
+        Some(&LeftParenthesis) => { tokens.next(); } //skip '('
+        _ => return Err("parse error missing '('".to_owned()),
+    }
 
     let mut columns = vec![];
 

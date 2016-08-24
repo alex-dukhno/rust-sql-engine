@@ -3,7 +3,7 @@ pub use expectest::prelude::{be_ok, be_err};
 pub use sql::lexer::Token::{self, IdentT, NumberT, StringT, Semicolon, EqualSign, LeftParenthesis, RightParenthesis, Comma};
 pub use sql::parser::Condition::{Eq};
 pub use sql::parser::Parser;
-pub use sql::parser::Node::{self, Delete, From, Where, Id, Const, Table, Values, Insert, Column, TableColumn};
+pub use sql::parser::Node::{self, Delete, From, Where, Id, Const, Table, Values, Insert, Column, TableColumn, Create};
 pub use sql::parser::Type::{self, Int};
 
 describe! parser {
@@ -24,7 +24,7 @@ describe! parser {
 
             expect!(tokens.parse())
                 .to(be_ok().value(
-                    Node::Create(
+                    Create(
                         Box::new(Table(
                             "table_name".to_owned(),
                             vec![TableColumn("col".to_owned(), Some(Int), None)]
@@ -53,7 +53,7 @@ describe! parser {
 
             expect!(tokens.parse())
                 .to(be_ok().value(
-                    Node::Create(
+                    Create(
                         Box::new(Table(
                             "table_name".to_owned(),
                             vec![
@@ -83,6 +83,21 @@ describe! parser {
 
             expect!(tokens.parse())
                 .to(be_err().value("parsing error missing ','".to_owned()));
+        }
+
+        it "parses create table without open parenthesis" {
+            let tokens = vec![
+                IdentT("create".to_owned()),
+                IdentT("table".to_owned()),
+                IdentT("table_name".to_owned()),
+                IdentT("col".to_owned()),
+                IdentT("int".to_owned()),
+                RightParenthesis,
+                Semicolon
+            ];
+
+            expect!(tokens.parse())
+                .to(be_err().value("parse error missing '('".to_owned()));
         }
     }
 
