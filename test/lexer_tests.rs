@@ -19,7 +19,14 @@ describe! lexer {
 
         it "emits identifiers when given string of words" {
             expect!("this is a sentence".to_owned().tokenize())
-                .to(be_ok().value(vec![IdentT("this".to_owned()), IdentT("is".to_owned()), IdentT("a".to_owned()), IdentT("sentence".to_owned())]));
+                .to(be_ok().value(
+                    vec![
+                        IdentT("this".to_owned()),
+                        IdentT("is".to_owned()),
+                        IdentT("a".to_owned()),
+                        IdentT("sentence".to_owned())
+                    ]
+                ));
         }
 
         it "emits number token when given number" {
@@ -50,6 +57,11 @@ describe! lexer {
         it "escapes tabs" {
             expect!("\tword".to_owned().tokenize())
                 .to(be_ok().value(vec![IdentT("word".to_owned())]));
+        }
+
+        it "emits error when string token is not closed" {
+            expect!("\'str".to_owned().tokenize())
+                .to(be_err().value("string const should be closed by \'".to_owned()));
         }
     }
 }

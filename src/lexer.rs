@@ -35,7 +35,7 @@ fn tokenize_expression(chars: &mut Peekable<Chars>) -> Result<Vec<Token>, String
     loop {
         match chars.peek().cloned() {
             Some(' ') | Some('\n') | Some('\t') => { chars.next(); },
-            Some('\'') => { chars.next(); tokens.push(string_token(&mut chars.by_ref())); },
+            Some('\'') => { chars.next(); tokens.push(try!(string_token(&mut chars.by_ref()))); },
             Some('a'...'z') => { tokens.push(ident_token(&mut chars.by_ref())); },
             Some('0'...'9') => { tokens.push(try!(num_token(&mut chars.by_ref()))); },
             Some(c) => { chars.next(); tokens.push(try!(char_to_token(c))); },
@@ -84,7 +84,7 @@ fn num_token(chars: &mut Peekable<Chars>) -> Result<Token, String> {
     Ok(NumberT(num))
 }
 
-fn string_token(chars: &mut Peekable<Chars>) -> Token {
+fn string_token(chars: &mut Peekable<Chars>) -> Result<Token, String> {
     let mut string = String::default();
     loop {
         match chars.peek().cloned() {
@@ -99,10 +99,10 @@ fn string_token(chars: &mut Peekable<Chars>) -> Token {
                 }
             },
             Some(c) => { chars.next(); string.push(c); },
-            None => break,
+            None => return Err("string const should be closed by \'".to_owned()),
         }
     }
-    StringT(string)
+    Ok(StringT(string))
 }
 
 fn char_to_token(c: char) -> Result<Token, String> {
