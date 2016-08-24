@@ -12,13 +12,13 @@ describe! database {
     }
 
     it "creates table with one column from AST" {
-        let create_table = Create(Box::new(Table(table_name(), Some(vec![TableColumn(column_name(), Some(Int), None)]))));
+        let create_table = Create(Box::new(Table(table_name(), vec![TableColumn(column_name(), Some(Int), None)])));
 
         expect!(executer.execute(create_table)).to(be_ok().value(format!("'{}' was created", table_name())));
     }
 
     it "could not insert into table that does not exist" {
-        let insert = Insert(Box::new(Table(table_name(), None)), Box::new(Values(vec![Const(ten_int())])));
+        let insert = Insert(Box::new(Table(table_name(), vec![])), Box::new(Values(vec![Const(ten_int())])));
 
         expect!(executer.execute(insert)).to(be_err().value(format!("[ERR 100] table '{}' does not exist", table_name())));
     }

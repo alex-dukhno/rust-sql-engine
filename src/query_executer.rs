@@ -32,7 +32,7 @@ impl QueryExecuter {
 
     fn create_table(&mut self, table: Node) -> Result<String, String> {
         match table {
-            Table(name, Some(columns)) => {
+            Table(name, columns) => {
                 let columns = columns.into_iter().map(
                     |tc| {
                         match tc {
@@ -45,7 +45,7 @@ impl QueryExecuter {
                 self.tables.push( DatabaseTable { name: name, columns: columns } );
                 Ok(format!("'{}' was created", s))
             },
-            Table(name, None) => { self.tables.push( DatabaseTable { name: name, columns: vec![] } ); Ok("".to_owned()) },
+            //Table(name, _) => { self.tables.push( DatabaseTable { name: name, columns: vec![] } ); Ok("".to_owned()) },
             _ => Err("".to_owned()),
         }
     }

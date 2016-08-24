@@ -83,6 +83,24 @@ describe! lexer {
                 ));
         }
 
+        it "tokenize table creation without comma in column list" {
+            expect!("create table table_name (col1 int col2 int);".to_owned().tokenize())
+                .to(be_ok().value(
+                    vec![
+                        IdentT("create".to_owned()),
+                        IdentT("table".to_owned()),
+                        IdentT("table_name".to_owned()),
+                        LeftParenthesis,
+                        IdentT("col1".to_owned()),
+                        IdentT("int".to_owned()),
+                        IdentT("col2".to_owned()),
+                        IdentT("int".to_owned()),
+                        RightParenthesis,
+                        Semicolon
+                    ]
+                ));
+        }
+
         it "emits lexems of sql insert statement" {
             expect!("insert into table values(10, 'str');".to_owned().tokenize())
                 .to(be_ok().value(

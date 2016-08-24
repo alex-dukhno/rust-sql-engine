@@ -11,7 +11,7 @@ pub enum Node {
     Const(String),
 
     Insert(Box<Node>, Box<Node>),
-    Table(String, Option<Vec<Node>>),
+    Table(String, Vec<Node>),
     Values(Vec<Node>),
     Column(String),
 
@@ -37,12 +37,12 @@ pub enum Condition {
 
 pub trait Parser {
 
-    fn parse(self) -> Result<Node, ()>;
+    fn parse(self) -> Result<Node, String>;
 }
 
 impl Parser for Vec<Token> {
 
-    fn parse(self) -> Result<Node, ()> {
+    fn parse(self) -> Result<Node, String> {
 
         let mut iter = self.into_iter();
         match iter.next() {
@@ -58,21 +58,21 @@ impl Parser for Vec<Token> {
                     Ok(Insert(Box::new(try!(parse_table(&mut iter.by_ref()))), Box::new(Values(vec![Const("10".to_owned()), Const("string".to_owned())]))))
                 }
             },
-            _ => Err(()),
+            _ => Err("".to_owned()),
         }
     }
 }
 
-fn parse_create<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, ()> {
+fn parse_create<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, String> {
     tokens.next(); //skip 'TABLE' keyword
     let table_name = match tokens.next() {
         Some(IdentT(name)) => name,
-        _ => return Err(()),
+        _ => return Err("".to_owned()),
     };
-    Ok(Table(table_name, Some(try!(parse_table_columns(&mut tokens.by_ref())))))
+    Ok(Table(table_name, try!(parse_table_columns(&mut tokens.by_ref()))))
 }
 
-fn parse_table_columns<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Vec<Node>, ()> {
+fn parse_table_columns<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Vec<Node>, String> {
     let mut tokens = tokens.peekable();
     tokens.next(); //skip '('
 
@@ -81,11 +81,11 @@ fn parse_table_columns<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Vec<No
     loop {
         let col_name = match tokens.next() {
             Some(IdentT(name)) => name,
-            _ => return Err(()),
+            _ => return Err("".to_owned()),
         };
         let col_type = match tokens.next() {
             Some(IdentT(_)) => Type::Int,
-            _ => return Err(()),
+            _ => return Err("".to_owned()),
         };
 
         columns.push(TableColumn(col_name, Some(col_type), None));
@@ -97,21 +97,24 @@ fn parse_table_columns<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Vec<No
 
     }
 
-    tokens.next(); //skip ')'
+    match tokens.next() {
+         Some(RightParenthesis) => {}, //skip ')'
+         _ => return Err("parsing error missing ','".to_owned()),
+    }
     tokens.next(); // skip ';'
 
     Ok(columns)
 }
 
-fn parse_from<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, ()> {
+fn parse_from<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, String> {
     tokens.next(); //skip 'FROM' keyword
     match tokens.next() {
         Some(IdentT(table_name)) => Ok(From(table_name)),
-        _ => Err(()),
+        _ => Err("".to_owned()),
     }
 }
 
-fn parse_where<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, ()> {
+fn parse_where<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, String> {
     tokens.next(); //skip 'WHERE' keyword
     match tokens.next() {
         Some(_) => Ok(Where(Some(Eq(Box::new(Id("col".to_owned())), Box::new(Const("5".to_owned())))))),
@@ -119,16 +122,16 @@ fn parse_where<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, ()> {
     }
 }
 
-fn parse_table<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, ()> {
+fn parse_table<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, String> {
     tokens.next(); //skip table name
     Ok(Table("table_name".to_owned(), parse_columns(&mut tokens.by_ref())))
 }
 
-fn parse_columns<I: Iterator<Item=Token>>(tokens: &mut I) -> Option<Vec<Node>> {
+fn parse_columns<I: Iterator<Item=Token>>(tokens: &mut I) -> Vec<Node> {
     let mut peekable = tokens.peekable();
     match peekable.peek() {
         Some(&LeftParenthesis) => { peekable.next(); },
-        _ => return None,
+        _ => return vec![],
     }
     let mut columns = vec![];
     loop {
@@ -142,5 +145,5 @@ fn parse_columns<I: Iterator<Item=Token>>(tokens: &mut I) -> Option<Vec<Node>> {
             },
         }
     }
-    Some(columns)
+    columns
 }

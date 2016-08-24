@@ -1,10 +1,10 @@
-pub use expectest::prelude::be_ok;
+pub use expectest::prelude::{be_ok, be_err};
 
 pub use sql::lexer::Token::{self, IdentT, NumberT, StringT, Semicolon, EqualSign, LeftParenthesis, RightParenthesis, Comma};
 pub use sql::parser::Condition::{Eq};
 pub use sql::parser::Parser;
-pub use sql::parser::Node::{self, Delete, From, Where, Id, Const, Table, Values, Insert, Column};
-pub use sql::parser::Type;
+pub use sql::parser::Node::{self, Delete, From, Where, Id, Const, Table, Values, Insert, Column, TableColumn};
+pub use sql::parser::Type::{self, Int};
 
 describe! parser {
 
@@ -27,7 +27,7 @@ describe! parser {
                     Node::Create(
                         Box::new(Table(
                             "table_name".to_owned(),
-                            Some(vec![Node::TableColumn("col".to_owned(), Some(Type::Int), None)])
+                            vec![TableColumn("col".to_owned(), Some(Int), None)]
                         ))
                     )
                 ));
@@ -56,10 +56,33 @@ describe! parser {
                     Node::Create(
                         Box::new(Table(
                             "table_name".to_owned(),
-                            Some(vec![Node::TableColumn("col1".to_owned(), Some(Type::Int), None), Node::TableColumn("col2".to_owned(), Some(Type::Int), None), Node::TableColumn("col3".to_owned(), Some(Type::Int), None)])
+                            vec![
+                                TableColumn("col1".to_owned(), Some(Int), None),
+                                TableColumn("col2".to_owned(), Some(Int), None),
+                                TableColumn("col3".to_owned(), Some(Int), None)
+                            ]
                         ))
                     )
                 ));
+        }
+
+        it "parses create table without comma in column list" {
+            let tokens = vec![
+                IdentT("create".to_owned()),
+                IdentT("table".to_owned()),
+                IdentT("table_name".to_owned()),
+                LeftParenthesis,
+                IdentT("col1".to_owned()),
+                IdentT("int".to_owned()),
+                IdentT("col2".to_owned()),
+                IdentT("int".to_owned()),
+                RightParenthesis,
+                Semicolon
+            ];
+
+
+            expect!(tokens.parse())
+                .to(be_err().value("parsing error missing ','".to_owned()));
         }
     }
 
@@ -103,7 +126,7 @@ describe! parser {
             expect!(tokens.parse())
                 .to(be_ok().value(
                     Insert(
-                        Box::new(Table("table_name".to_owned(), None)),
+                        Box::new(Table("table_name".to_owned(), vec![])),
                         Box::new(Values(vec![Const("10".to_owned()), Const("string".to_owned())]))
                     )
                 ));
@@ -118,7 +141,7 @@ describe! parser {
             expect!(tokens.parse())
                 .to(be_ok().value(
                     Insert(
-                        Box::new(Table("table_name".to_owned(), Some(vec![Column("col1".to_owned()), Column("col2".to_owned())]))),
+                        Box::new(Table("table_name".to_owned(), vec![Column("col1".to_owned()), Column("col2".to_owned())])),
                         Box::new(Values(vec![Const("10".to_owned()), Const("string".to_owned())]))
                     )
                 ));
