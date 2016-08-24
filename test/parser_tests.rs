@@ -114,6 +114,21 @@ describe! parser {
             expect!(tokens.parse())
                 .to(be_err().value("parsing error missing ')'".to_owned()));
         }
+
+        it "does not parse create table statement without semicolon" {
+            let tokens = vec![
+                IdentT("create".to_owned()),
+                IdentT("table".to_owned()),
+                IdentT("table_name".to_owned()),
+                LeftParenthesis,
+                IdentT("col".to_owned()),
+                IdentT("int".to_owned()),
+                RightParenthesis
+            ];
+
+            expect!(tokens.parse())
+                .to(be_err().value("parsing error missing ';'"));
+        }
     }
 
     describe! delete_statements {

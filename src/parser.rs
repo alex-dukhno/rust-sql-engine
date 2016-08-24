@@ -103,7 +103,10 @@ fn parse_table_columns<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Vec<No
     }
 
     tokens.next(); //skip ')'
-    tokens.next(); // skip ';'
+    match tokens.peek() {
+        Some(&Semicolon) => { tokens.next(); } // skip ';'
+        _ => return Err("parsing error missing ';'".to_owned()),
+    }
 
     Ok(columns)
 }
