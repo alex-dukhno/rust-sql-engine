@@ -21,5 +21,14 @@ describe! create_table_queries {
             expect!(executer.execute("create table table_name (col1 int, col2 int, col3 int);".to_owned().tokenize().unwrap().parse().unwrap()))
                 .to(be_ok().value("'table_name' was created".to_owned()));
         }
+
+        it "inserts row in created table" {
+            let r = executer.execute("create table table_name (col int);".to_owned().tokenize().unwrap().parse().unwrap());
+
+            println!("result {:?}", r);
+
+            expect!(executer.execute("insert into table_name values(1);".to_owned().tokenize().unwrap().parse().unwrap()))
+                .to(be_ok().value("row was inserted".to_owned()));
+        }
     }
 }

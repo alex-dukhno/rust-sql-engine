@@ -1,4 +1,6 @@
-use super::lexer::Token::{self, IdentT, LeftParenthesis, RightParenthesis, Comma, Semicolon};
+use std::fmt::Debug;
+
+use super::lexer::Token::{self, IdentT, LeftParenthesis, RightParenthesis, Comma, Semicolon, NumberT, StringT};
 use self::Node::{Delete, From, Where, Id, Const, Insert, Table, Values, Column, TableColumn, Create};
 use self::Condition::{Eq};
 
@@ -54,8 +56,7 @@ impl Parser for Vec<Token> {
                     Ok(Delete(Box::new(try!(parse_from(&mut iter.by_ref()))), Box::new(try!(parse_where(&mut iter.by_ref())))))
                 }
                 else {
-                    iter.next(); //skip 'INTO' keyword
-                    Ok(Insert(Box::new(try!(parse_table(&mut iter.by_ref()))), Box::new(Values(vec![Const("10".to_owned()), Const("string".to_owned())]))))
+                    Ok(Insert(Box::new(try!(parse_table(&mut iter.by_ref()))), Box::new(Values(parse_values(&mut iter.by_ref())))))
                 }
             },
             _ => Err("".to_owned()),
@@ -128,27 +129,41 @@ fn parse_where<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, String> 
 }
 
 fn parse_table<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, String> {
+    tokens.next(); //skip 'INTO' keyword
     tokens.next(); //skip table name
     Ok(Table("table_name".to_owned(), parse_columns(&mut tokens.by_ref())))
 }
 
 fn parse_columns<I: Iterator<Item=Token>>(tokens: &mut I) -> Vec<Node> {
-    let mut peekable = tokens.peekable();
-    match peekable.peek() {
-        Some(&LeftParenthesis) => { peekable.next(); },
+    match tokens.next() {
+        Some(LeftParenthesis) => { }, //skip '('
         _ => return vec![],
     }
+    println!("columns exist");
     let mut columns = vec![];
     loop {
-        match peekable.peek() {
-            Some(&RightParenthesis) | None => break,
-            Some(&Comma) => { peekable.next(); },
-            Some(_) => {
-                if let Some(IdentT(col)) = peekable.next() {
-                    columns.push(Column(col));
-                }
-            },
+        match tokens.next() {
+            Some(Comma) => {},
+            Some(IdentT(col)) => { columns.push(Column(col)); },
+            _ => break,
         }
     }
     columns
+}
+
+fn parse_values<I: Debug + Iterator<Item=Token>>(tokens: &mut I) -> Vec<Node> {
+    // tokens.next(); //skip 'VALUES' keyword
+    println!("left tokens - {:?}", tokens);
+    tokens.next(); //skip '('
+    let mut values = vec![];
+    loop {
+        match tokens.next() {
+            Some(NumberT(val)) | Some(StringT(val)) => values.push(Const(val)),
+            Some(Comma) => {},
+            _ => break,
+        }
+    }
+
+    tokens.next(); // skip ';'
+    values
 }

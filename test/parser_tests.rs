@@ -165,7 +165,19 @@ describe! parser {
 
     describe! insert_statements {
 
-        it "parses insert statement" {
+        it "parse insert statement with one column" {
+            let tokens = vec![insert(), into(), table_name(), values(), LeftParenthesis, ten_int(), RightParenthesis, Semicolon];
+
+            expect!(tokens.parse())
+                .to(be_ok().value(
+                    Insert(
+                        Box::new(Table("table_name".to_owned(), vec![])),
+                        Box::new(Values(vec![Const("10".to_owned())]))
+                    )
+                ));
+        }
+
+        it "parses insert statement with list of columns" {
             let tokens = vec![insert(), into(), table_name(), values(), LeftParenthesis, ten_int(), Comma, string(), RightParenthesis, Semicolon];
 
             expect!(tokens.parse())
@@ -177,7 +189,7 @@ describe! parser {
                 ));
         }
 
-        it "parses insert statement with columns" {
+        ignore "parses insert statement with columns" {
             let tokens = vec![
                 insert(), into(), table_name(), LeftParenthesis, column_1_name(), Comma, column_2_name(), RightParenthesis,
                                     values(), LeftParenthesis, ten_int(), Comma, string(), RightParenthesis, Semicolon
