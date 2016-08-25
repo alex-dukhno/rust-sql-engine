@@ -23,11 +23,16 @@ describe! create_table_queries {
         }
 
         it "inserts row in created table" {
-            let r = executer.execute("create table table_name (col int);".to_owned().tokenize().unwrap().parse().unwrap());
-
-            println!("result {:?}", r);
+            executer.execute("create table table_name (col int);".to_owned().tokenize().unwrap().parse().unwrap());
 
             expect!(executer.execute("insert into table_name values(1);".to_owned().tokenize().unwrap().parse().unwrap()))
+                .to(be_ok().value("row was inserted".to_owned()));
+        }
+
+        it "inserts row in table with many columns" {
+            executer.execute("create table table_name (col1 int, col2 int);".to_owned().tokenize().unwrap().parse().unwrap());
+
+            expect!(executer.execute("insert into table_name values(1, 2);".to_owned().tokenize().unwrap().parse().unwrap()))
                 .to(be_ok().value("row was inserted".to_owned()));
         }
     }
