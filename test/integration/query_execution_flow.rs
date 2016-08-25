@@ -35,5 +35,10 @@ describe! create_table_queries {
             expect!(executer.execute("insert into table_name values(1, 2);".to_owned().tokenize().unwrap().parse().unwrap()))
                 .to(be_ok().value("row was inserted".to_owned()));
         }
+
+        it "does not insert into table that does not exist" {
+            expect!(executer.execute("insert into table_name values(1);".to_owned().tokenize().unwrap().parse().unwrap()))
+                .to(be_err().value("[ERR 100] table 'table_name' does not exist".to_owned()));
+        }
     }
 }
