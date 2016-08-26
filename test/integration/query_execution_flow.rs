@@ -40,5 +40,12 @@ describe! create_table_queries {
             expect!(executer.execute("insert into table_name values(1);".to_owned().tokenize().unwrap().parse().unwrap()))
                 .to(be_err().value("[ERR 100] table 'table_name' does not exist".to_owned()));
         }
+
+        it "does not insert when column type does not match" {
+            executer.execute("create table table_name (col int);".to_owned().tokenize().unwrap().parse().unwrap());
+
+            expect!(executer.execute("insert into table_name values('string');".to_owned().tokenize().unwrap().parse().unwrap()))
+                .to(be_err().value("column type is INT find VARCHAR".to_owned()));
+        }
     }
 }

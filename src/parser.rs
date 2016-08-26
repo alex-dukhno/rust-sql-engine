@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 use super::lexer::Token::{self, IdentT, LeftParenthesis, RightParenthesis, Comma, Semicolon, NumberT, StringT};
-use self::Node::{Delete, From, Where, Id, Const, Insert, Table, Values, Column, TableColumn, Create};
+use self::Node::{Delete, From, Where, Id, NumberC, StringC, Insert, Table, Values, Column, TableColumn, Create};
 use self::Condition::{Eq};
 
 #[derive(Debug, PartialEq)]
@@ -10,7 +10,8 @@ pub enum Node {
     From(String),
     Where(Option<Condition>),
     Id(String),
-    Const(String),
+    NumberC(String),
+    StringC(String),
 
     Insert(Box<Node>, Box<Node>),
     Table(String, Vec<Node>),
@@ -18,12 +19,13 @@ pub enum Node {
     Column(String),
 
     Create(Box<Node>),
-    TableColumn(String, Option<Type>, Option<Flag>)
+    TableColumn(String, Type, Option<Flag>)
 }
 
 #[derive(Debug, PartialEq)]
 pub enum Type {
-    Int
+    Int,
+    Varchar
 }
 
 #[derive(Debug, PartialEq)]
@@ -92,7 +94,7 @@ fn parse_table_columns<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Vec<No
             _ => return Err("".to_owned()),
         };
 
-        columns.push(TableColumn(col_name, Some(col_type), None));
+        columns.push(TableColumn(col_name, col_type, None));
 
         match tokens.peek() {
             Some(&Comma) => { tokens.next(); }, //skip ','
@@ -123,7 +125,7 @@ fn parse_from<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, String> {
 fn parse_where<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, String> {
     tokens.next(); //skip 'WHERE' keyword
     match tokens.next() {
-        Some(_) => Ok(Where(Some(Eq(Box::new(Id("col".to_owned())), Box::new(Const("5".to_owned())))))),
+        Some(_) => Ok(Where(Some(Eq(Box::new(Id("col".to_owned())), Box::new(NumberC("5".to_owned())))))),
         _ => Ok(Where(None)),
     }
 }
@@ -158,7 +160,8 @@ fn parse_values<I: Debug + Iterator<Item=Token>>(tokens: &mut I) -> Vec<Node> {
     let mut values = vec![];
     loop {
         match tokens.next() {
-            Some(NumberT(val)) | Some(StringT(val)) => values.push(Const(val)),
+            Some(NumberT(val)) => values.push(NumberC(val)),
+            Some(StringT(val)) => values.push(StringC(val)),
             Some(Comma) => {},
             _ => break,
         }

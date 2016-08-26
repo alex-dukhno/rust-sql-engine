@@ -1,4 +1,5 @@
-use super::parser::Node::{self, Create, Table, Insert, Values, TableColumn};
+use super::parser::Node::{self, Create, Table, Insert, Values, TableColumn, NumberC, StringC};
+use super::parser::Type::{self, Int, Varchar};
 
 type CodeError = i32;
 
@@ -9,7 +10,13 @@ pub struct QueryExecuter {
 #[derive(Debug)]
 struct DatabaseTable {
     name: String,
-    columns: Vec<String>,
+    columns: Vec<DatabaseColumn>,
+}
+
+#[derive(Debug)]
+struct DatabaseColumn {
+    name: String,
+    column_type: Type,
 }
 
 impl Default for QueryExecuter {
@@ -38,11 +45,11 @@ impl QueryExecuter {
                 let columns = columns.into_iter().map(
                     |tc| {
                         match tc {
-                            TableColumn(name, _, _) => name,
-                            _ => "not a table column".to_owned(),
+                            TableColumn(name, column_type, _) => DatabaseColumn { name: name, column_type: column_type },
+                            _ => DatabaseColumn { name: "not a column".to_owned(), column_type: Int },
                         }
                     }
-                ).collect::<Vec<String>>();
+                ).collect::<Vec<DatabaseColumn>>();
                 println!("columns - {:?}", columns);
                 let s = name.clone();
                 self.tables.push( DatabaseTable { name: name, columns: columns } );
@@ -64,6 +71,17 @@ impl QueryExecuter {
                             println!("table - {:?}", t);
                             if data.len() != t.columns.len() {
                                 return Err("more column than expected".to_owned());
+                            }
+                            for (index, datum) in data.into_iter().enumerate() {
+                                match datum {
+                                    NumberC(_) => if t.columns[index].column_type != Int {
+                                        return Err("column type is VARCHAR find INT".to_owned());
+                                    },
+                                    StringC(_) => if t.columns[index].column_type != Varchar {
+                                        return Err("column type is INT find VARCHAR".to_owned());
+                                    },
+                                    _ => return Err("wrong node".to_owned()),
+                                }
                             }
                         },
                         _ => return Err("not a values".to_owned()),

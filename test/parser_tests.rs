@@ -3,7 +3,7 @@ pub use expectest::prelude::{be_ok, be_err};
 pub use sql::lexer::Token::{self, IdentT, NumberT, StringT, Semicolon, EqualSign, LeftParenthesis, RightParenthesis, Comma};
 pub use sql::parser::Condition::{Eq};
 pub use sql::parser::Parser;
-pub use sql::parser::Node::{self, Delete, From, Where, Id, Const, Table, Values, Insert, Column, TableColumn, Create};
+pub use sql::parser::Node::{self, Delete, From, Where, Id, NumberC, StringC, Table, Values, Insert, Column, TableColumn, Create};
 pub use sql::parser::Type::{self, Int};
 
 describe! parser {
@@ -27,7 +27,7 @@ describe! parser {
                     Create(
                         Box::new(Table(
                             "table_name".to_owned(),
-                            vec![TableColumn("col".to_owned(), Some(Int), None)]
+                            vec![TableColumn("col".to_owned(), Int, None)]
                         ))
                     )
                 ));
@@ -57,9 +57,9 @@ describe! parser {
                         Box::new(Table(
                             "table_name".to_owned(),
                             vec![
-                                TableColumn("col1".to_owned(), Some(Int), None),
-                                TableColumn("col2".to_owned(), Some(Int), None),
-                                TableColumn("col3".to_owned(), Some(Int), None)
+                                TableColumn("col1".to_owned(), Int, None),
+                                TableColumn("col2".to_owned(), Int, None),
+                                TableColumn("col3".to_owned(), Int, None)
                             ]
                         ))
                     )
@@ -155,7 +155,7 @@ describe! parser {
                         Box::new(Where(Some(
                             Eq(
                                 Box::new(Id("col".to_owned())),
-                                Box::new(Const("5".to_owned()))
+                                Box::new(NumberC("5".to_owned()))
                             )
                         )))
                     )
@@ -172,7 +172,7 @@ describe! parser {
                 .to(be_ok().value(
                     Insert(
                         Box::new(Table("table_name".to_owned(), vec![])),
-                        Box::new(Values(vec![Const("10".to_owned())]))
+                        Box::new(Values(vec![NumberC("10".to_owned())]))
                     )
                 ));
         }
@@ -184,7 +184,7 @@ describe! parser {
                 .to(be_ok().value(
                     Insert(
                         Box::new(Table("table_name".to_owned(), vec![])),
-                        Box::new(Values(vec![Const("10".to_owned()), Const("string".to_owned())]))
+                        Box::new(Values(vec![NumberC("10".to_owned()), StringC("string".to_owned())]))
                     )
                 ));
         }
@@ -199,7 +199,7 @@ describe! parser {
                 .to(be_ok().value(
                     Insert(
                         Box::new(Table("table_name".to_owned(), vec![Column("col1".to_owned()), Column("col2".to_owned())])),
-                        Box::new(Values(vec![Const("10".to_owned()), Const("string".to_owned())]))
+                        Box::new(Values(vec![NumberC("10".to_owned()), StringC("string".to_owned())]))
                     )
                 ));
         }
