@@ -13,38 +13,38 @@ describe! create_table_queries {
         }
 
         it "creates single column table" {
-            expect!(executer.execute("create table table_name (col int);".to_owned().tokenize().unwrap().parse().unwrap()))
+            expect!(executer.execute("create table table_name (col int);".tokenize().unwrap().parse().unwrap()))
                 .to(be_ok().value("'table_name' was created".to_owned()));
         }
 
         it "creates a table with list of columns" {
-            expect!(executer.execute("create table table_name (col1 int, col2 int, col3 int);".to_owned().tokenize().unwrap().parse().unwrap()))
+            expect!(executer.execute("create table table_name (col1 int, col2 int, col3 int);".tokenize().unwrap().parse().unwrap()))
                 .to(be_ok().value("'table_name' was created".to_owned()));
         }
 
         it "inserts row in created table" {
-            executer.execute("create table table_name (col int);".to_owned().tokenize().unwrap().parse().unwrap());
+            executer.execute("create table table_name (col int);".tokenize().unwrap().parse().unwrap());
 
-            expect!(executer.execute("insert into table_name values(1);".to_owned().tokenize().unwrap().parse().unwrap()))
+            expect!(executer.execute("insert into table_name values(1);".tokenize().unwrap().parse().unwrap()))
                 .to(be_ok().value("row was inserted".to_owned()));
         }
 
         it "inserts row in table with many columns" {
-            executer.execute("create table table_name (col1 int, col2 int);".to_owned().tokenize().unwrap().parse().unwrap());
+            executer.execute("create table table_name (col1 int, col2 int);".tokenize().unwrap().parse().unwrap());
 
-            expect!(executer.execute("insert into table_name values(1, 2);".to_owned().tokenize().unwrap().parse().unwrap()))
+            expect!(executer.execute("insert into table_name values(1, 2);".tokenize().unwrap().parse().unwrap()))
                 .to(be_ok().value("row was inserted".to_owned()));
         }
 
         it "does not insert into table that does not exist" {
-            expect!(executer.execute("insert into table_name values(1);".to_owned().tokenize().unwrap().parse().unwrap()))
+            expect!(executer.execute("insert into table_name values(1);".tokenize().unwrap().parse().unwrap()))
                 .to(be_err().value("[ERR 100] table 'table_name' does not exist".to_owned()));
         }
 
         it "does not insert when column type does not match" {
-            executer.execute("create table table_name (col int);".to_owned().tokenize().unwrap().parse().unwrap());
+            executer.execute("create table table_name (col int);".tokenize().unwrap().parse().unwrap());
 
-            expect!(executer.execute("insert into table_name values('string');".to_owned().tokenize().unwrap().parse().unwrap()))
+            expect!(executer.execute("insert into table_name values('string');".tokenize().unwrap().parse().unwrap()))
                 .to(be_err().value("column type is INT find VARCHAR".to_owned()));
         }
     }

@@ -23,7 +23,7 @@ pub trait Tokenizer {
     fn tokenize(&self) -> Result<Vec<Token>, String>;
 }
 
-impl Tokenizer for String {
+impl Tokenizer for str {
 
     fn tokenize(&self) -> Result<Vec<Token>, String> {
         tokenize_expression(&mut self.chars().peekable())
