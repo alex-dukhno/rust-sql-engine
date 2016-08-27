@@ -13,7 +13,7 @@ pub trait Parser {
     fn parse(self) -> Result<Node, String>;
 }
 
-impl Parser for Vec<Token> {
+impl <T: IntoIterator<Item = Token>> Parser for T {
     fn parse(self) -> Result<Node, String> {
         let mut iter = self.into_iter().peekable();
         match iter.next() {
