@@ -1,10 +1,10 @@
 pub use expectest::prelude::{be_ok, be_err};
 
 pub use sql::lexer::Token::{self, IdentT, NumberT, StringT, Semicolon, EqualSign, LeftParenthesis, RightParenthesis, Comma};
-pub use sql::parser::Condition::{Eq};
 pub use sql::parser::Parser;
-pub use sql::parser::Node::{self, Delete, From, Where, Id, NumberC, StringC, Table, Values, Insert, Column, TableColumn, Create};
-pub use sql::parser::Type::{self, Int};
+pub use sql::parser::ast::Condition::{Eq};
+pub use sql::parser::ast::Node::{self, Delete, From, Where, Id, NumberC, StringC, Table, Values, Insert, Column, TableColumn, Create};
+pub use sql::parser::ast::Type::{self, Int};
 
 describe! parser {
 
@@ -189,7 +189,7 @@ describe! parser {
                 ));
         }
 
-        ignore "parses insert statement with columns" {
+        it "parses insert statement with columns" {
             let tokens = vec![
                 insert(), into(), table_name(), LeftParenthesis, column_1_name(), Comma, column_2_name(), RightParenthesis,
                                     values(), LeftParenthesis, ten_int(), Comma, string(), RightParenthesis, Semicolon

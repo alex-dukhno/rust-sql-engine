@@ -1,5 +1,5 @@
-use super::parser::Node::{self, Create, Table, Insert, Values, TableColumn, NumberC, StringC};
-use super::parser::Type::{self, Int, Varchar};
+use super::parser::ast::Node::{self, Create, Table, Insert, Values, TableColumn, NumberC, StringC};
+use super::parser::ast::Type::{self, Int, Varchar};
 
 type CodeError = i32;
 

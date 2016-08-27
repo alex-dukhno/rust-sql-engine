@@ -1,43 +1,12 @@
+pub mod ast;
+
 use std::fmt::Debug;
+use std::iter::Peekable;
 
 use super::lexer::Token::{self, IdentT, LeftParenthesis, RightParenthesis, Comma, Semicolon, NumberT, StringT};
-use self::Node::{Delete, From, Where, Id, NumberC, StringC, Insert, Table, Values, Column, TableColumn, Create};
-use self::Condition::{Eq};
-
-#[derive(Debug, PartialEq)]
-pub enum Node {
-    Delete(Box<Node>, Box<Node>),
-    From(String),
-    Where(Option<Condition>),
-    Id(String),
-    NumberC(String),
-    StringC(String),
-
-    Insert(Box<Node>, Box<Node>),
-    Table(String, Vec<Node>),
-    Values(Vec<Node>),
-    Column(String),
-
-    Create(Box<Node>),
-    TableColumn(String, Type, Option<Flag>)
-}
-
-#[derive(Debug, PartialEq)]
-pub enum Type {
-    Int,
-    Varchar
-}
-
-#[derive(Debug, PartialEq)]
-pub enum Flag {
-    PrimeryKey,
-    ForeignKey(String),
-}
-
-#[derive(Debug, PartialEq)]
-pub enum Condition {
-    Eq(Box<Node>, Box<Node>)
-}
+use self::ast::Node::{self, Delete, From, Where, Id, NumberC, StringC, Insert, Table, Values, Column, TableColumn, Create};
+use self::ast::Type;
+use self::ast::Condition::{Eq};
 
 pub trait Parser {
 
@@ -48,7 +17,7 @@ impl Parser for Vec<Token> {
 
     fn parse(self) -> Result<Node, String> {
 
-        let mut iter = self.into_iter();
+        let mut iter = self.into_iter().peekable();
         match iter.next() {
             Some(IdentT(statement)) => {
                 if statement == "create" {
@@ -66,7 +35,7 @@ impl Parser for Vec<Token> {
     }
 }
 
-fn parse_create<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, String> {
+fn parse_create<I: Iterator<Item=Token>>(tokens: &mut Peekable<I>) -> Result<Node, String> {
     tokens.next(); //skip 'TABLE' keyword
     let table_name = match tokens.next() {
         Some(IdentT(name)) => name,
@@ -75,8 +44,7 @@ fn parse_create<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, String>
     Ok(Table(table_name, try!(parse_table_columns(&mut tokens.by_ref()))))
 }
 
-fn parse_table_columns<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Vec<Node>, String> {
-    let mut tokens = tokens.peekable();
+fn parse_table_columns<I: Iterator<Item=Token>>(tokens: &mut Peekable<I>) -> Result<Vec<Node>, String> {
     match tokens.peek() {
         Some(&LeftParenthesis) => { tokens.next(); } //skip '('
         _ => return Err("parsing error missing '('".to_owned()),
@@ -114,7 +82,7 @@ fn parse_table_columns<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Vec<No
     Ok(columns)
 }
 
-fn parse_from<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, String> {
+fn parse_from<I: Iterator<Item=Token>>(tokens: &mut Peekable<I>) -> Result<Node, String> {
     tokens.next(); //skip 'FROM' keyword
     match tokens.next() {
         Some(IdentT(table_name)) => Ok(From(table_name)),
@@ -130,15 +98,15 @@ fn parse_where<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, String> 
     }
 }
 
-fn parse_table<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, String> {
+fn parse_table<I: Iterator<Item=Token>>(tokens: &mut Peekable<I>) -> Result<Node, String> {
     tokens.next(); //skip 'INTO' keyword
     tokens.next(); //skip table name
     Ok(Table("table_name".to_owned(), parse_columns(&mut tokens.by_ref())))
 }
 
-fn parse_columns<I: Iterator<Item=Token>>(tokens: &mut I) -> Vec<Node> {
-    match tokens.next() {
-        Some(LeftParenthesis) => { }, //skip '('
+fn parse_columns<I: Iterator<Item=Token>>(tokens: &mut Peekable<I>) -> Vec<Node> {
+    match tokens.peek() {
+        Some(&LeftParenthesis) => { tokens.next(); }, //skip '('
         _ => return vec![],
     }
     println!("columns exist");
@@ -153,8 +121,8 @@ fn parse_columns<I: Iterator<Item=Token>>(tokens: &mut I) -> Vec<Node> {
     columns
 }
 
-fn parse_values<I: Debug + Iterator<Item=Token>>(tokens: &mut I) -> Vec<Node> {
-    // tokens.next(); //skip 'VALUES' keyword
+fn parse_values<I: Debug + Iterator<Item=Token>>(tokens: &mut Peekable<I>) -> Vec<Node> {
+    tokens.next(); //skip 'VALUES' keyword
     println!("left tokens - {:?}", tokens);
     tokens.next(); //skip '('
     let mut values = vec![];
