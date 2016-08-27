@@ -1,8 +1,6 @@
 use super::parser::ast::Node::{self, Create, Table, Insert, Values, TableColumn, NumberC, StringC};
 use super::parser::ast::Type::{self, Int, Varchar};
 
-type CodeError = i32;
-
 pub struct QueryExecuter {
     tables: Vec<DatabaseTable>
 }
@@ -20,7 +18,6 @@ struct DatabaseColumn {
 }
 
 impl Default for QueryExecuter {
-
     fn default() -> Self {
         QueryExecuter {
             tables: vec![]
@@ -29,7 +26,6 @@ impl Default for QueryExecuter {
 }
 
 impl QueryExecuter {
-
     pub fn execute(&mut self, query: Node) -> Result<String, String> {
         println!("query - {:?}", query);
         match query {
@@ -52,7 +48,7 @@ impl QueryExecuter {
                 ).collect::<Vec<DatabaseColumn>>();
                 println!("columns - {:?}", columns);
                 let s = name.clone();
-                self.tables.push( DatabaseTable { name: name, columns: columns } );
+                self.tables.push(DatabaseTable { name: name, columns: columns });
                 Ok(format!("'{}' was created", s))
             },
             //Table(name, _) => { self.tables.push( DatabaseTable { name: name, columns: vec![] } ); Ok("".to_owned()) },
@@ -87,8 +83,7 @@ impl QueryExecuter {
                         _ => return Err("not a values".to_owned()),
                     }
                     Ok("row was inserted".to_owned())
-                }
-                else {
+                } else {
                     Err(format!("[ERR 100] table '{}' does not exist", name))
                 }
             },

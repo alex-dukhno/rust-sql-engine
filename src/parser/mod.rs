@@ -8,42 +8,41 @@ use self::ast::Type;
 use self::ast::Condition::{Eq};
 
 pub trait Parser {
-
     fn parse(self) -> Result<Node, String>;
 }
 
 impl Parser for Vec<Token> {
-
     fn parse(self) -> Result<Node, String> {
-
         let mut iter = self.into_iter().peekable();
         match iter.next() {
             Some(IdentT(statement)) => {
-                if statement == "create" {
-                    Ok(Create(Box::new(try!(parse_create(&mut iter.by_ref())))))
+                match statement.as_str() {
+                    "create" => Ok(Create(Box::new(try!(parse_create(&mut iter.by_ref()))))),
+                    "delete" => Ok(Delete(Box::new(try!(parse_from(&mut iter.by_ref()))), Box::new(try!(parse_where(&mut iter.by_ref()))))),
+                    "insert" => Ok(Insert(Box::new(try!(parse_table(&mut iter.by_ref()))), Box::new(Values(parse_values(&mut iter.by_ref()))))),
+                    _ => Err("undefined query type".to_owned()),
                 }
-                else if statement == "delete" {
-                    Ok(Delete(Box::new(try!(parse_from(&mut iter.by_ref()))), Box::new(try!(parse_where(&mut iter.by_ref())))))
-                }
-                else {
-                    Ok(Insert(Box::new(try!(parse_table(&mut iter.by_ref()))), Box::new(Values(parse_values(&mut iter.by_ref())))))
-                }
-            },
+            }
             _ => Err("".to_owned()),
         }
     }
 }
 
-fn parse_create<I: Iterator<Item=Token>>(tokens: &mut Peekable<I>) -> Result<Node, String> {
+fn parse_create<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Result<Node, String> {
     tokens.next(); //skip 'TABLE' keyword
     let table_name = match tokens.next() {
         Some(IdentT(name)) => name,
+        Some(token) => return Err(expected_table_name_found_something_else(token)),
         _ => return Err("".to_owned()),
     };
     Ok(Table(table_name, try!(parse_table_columns(&mut tokens.by_ref()))))
 }
 
-fn parse_table_columns<I: Iterator<Item=Token>>(tokens: &mut Peekable<I>) -> Result<Vec<Node>, String> {
+fn expected_table_name_found_something_else(token: Token) -> String {
+    format!("error: expected <table name> found <{}>", token)
+}
+
+fn parse_table_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Result<Vec<Node>, String> {
     match tokens.peek() {
         Some(&LeftParenthesis) => { tokens.next(); } //skip '('
         _ => return Err("parsing error missing '('".to_owned()),
@@ -69,7 +68,6 @@ fn parse_table_columns<I: Iterator<Item=Token>>(tokens: &mut Peekable<I>) -> Res
             Some(&Semicolon) => return Err("parsing error missing ')'".to_owned()),
             _ => return Err("parsing error missing ','".to_owned()),
         }
-
     }
 
     tokens.next(); //skip ')'
@@ -81,7 +79,7 @@ fn parse_table_columns<I: Iterator<Item=Token>>(tokens: &mut Peekable<I>) -> Res
     Ok(columns)
 }
 
-fn parse_from<I: Iterator<Item=Token>>(tokens: &mut Peekable<I>) -> Result<Node, String> {
+fn parse_from<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Result<Node, String> {
     tokens.next(); //skip 'FROM' keyword
     match tokens.next() {
         Some(IdentT(table_name)) => Ok(From(table_name)),
@@ -89,7 +87,7 @@ fn parse_from<I: Iterator<Item=Token>>(tokens: &mut Peekable<I>) -> Result<Node,
     }
 }
 
-fn parse_where<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, String> {
+fn parse_where<I: Iterator<Item = Token>>(tokens: &mut I) -> Result<Node, String> {
     tokens.next(); //skip 'WHERE' keyword
     match tokens.next() {
         Some(_) => Ok(Where(Some(Eq(Box::new(Id("col".to_owned())), Box::new(NumberC("5".to_owned())))))),
@@ -97,13 +95,13 @@ fn parse_where<I: Iterator<Item=Token>>(tokens: &mut I) -> Result<Node, String> 
     }
 }
 
-fn parse_table<I: Iterator<Item=Token>>(tokens: &mut Peekable<I>) -> Result<Node, String> {
+fn parse_table<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Result<Node, String> {
     tokens.next(); //skip 'INTO' keyword
     tokens.next(); //skip table name
     Ok(Table("table_name".to_owned(), parse_columns(&mut tokens.by_ref())))
 }
 
-fn parse_columns<I: Iterator<Item=Token>>(tokens: &mut Peekable<I>) -> Vec<Node> {
+fn parse_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Vec<Node> {
     match tokens.peek() {
         Some(&LeftParenthesis) => { tokens.next(); }, //skip '('
         _ => return vec![],
@@ -120,9 +118,9 @@ fn parse_columns<I: Iterator<Item=Token>>(tokens: &mut Peekable<I>) -> Vec<Node>
     columns
 }
 
-fn parse_values<I: Iterator<Item=Token>>(tokens: &mut Peekable<I>) -> Vec<Node> {
+fn parse_values<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Vec<Node> {
     tokens.next(); //skip 'VALUES' keyword
-//    println!("left tokens - {:?}", tokens);
+    //    println!("left tokens - {:?}", tokens);
     tokens.next(); //skip '('
     let mut values = vec![];
     loop {

@@ -1,8 +1,10 @@
 use std::iter::Peekable;
 use std::str::Chars;
+use std::fmt;
+
 use self::Token::{IdentT, NumberT, StringT, LeftParenthesis, RightParenthesis, Comma, SingleQuote, EqualSign, Semicolon, Asterisk};
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Token {
     IdentT(String),
 
@@ -18,13 +20,22 @@ pub enum Token {
     Asterisk
 }
 
-pub trait Tokenizer {
+impl fmt::Display for Token {
 
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            RightParenthesis => ")",
+            LeftParenthesis => "(",
+            _ => "unimplemented formatting",
+        }.fmt(f)
+    }
+}
+
+pub trait Tokenizer {
     fn tokenize(&self) -> Result<Vec<Token>, String>;
 }
 
 impl Tokenizer for str {
-
     fn tokenize(&self) -> Result<Vec<Token>, String> {
         tokenize_expression(&mut self.chars().peekable())
     }
@@ -35,10 +46,16 @@ fn tokenize_expression(chars: &mut Peekable<Chars>) -> Result<Vec<Token>, String
     loop {
         match chars.peek().cloned() {
             Some(' ') | Some('\n') | Some('\t') => { chars.next(); },
-            Some('\'') => { chars.next(); tokens.push(try!(string_token(&mut chars.by_ref()))); },
+            Some('\'') => {
+                chars.next();
+                tokens.push(try!(string_token(&mut chars.by_ref())));
+            },
             Some('a'...'z') | Some('A'...'Z') => { tokens.push(ident_token(&mut chars.by_ref())); },
             Some('0'...'9') => { tokens.push(try!(num_token(&mut chars.by_ref()))); },
-            Some(c) => { chars.next(); tokens.push(try!(char_to_token(c))); },
+            Some(c) => {
+                chars.next();
+                tokens.push(try!(char_to_token(c)));
+            },
             None => break,
         }
     }
@@ -77,8 +94,7 @@ fn num_token(chars: &mut Peekable<Chars>) -> Result<Token, String> {
                     chars.next();
                     num.push('.');
                     float_point = true;
-                }
-                else {
+                } else {
                     return Err("Number format error".to_owned());
                 }
             },
@@ -102,7 +118,10 @@ fn string_token(chars: &mut Peekable<Chars>) -> Result<Token, String> {
                     _ => break,
                 }
             },
-            Some(c) => { chars.next(); string.push(c); },
+            Some(c) => {
+                chars.next();
+                string.push(c);
+            },
             None => return Err("string const should be closed by \'".to_owned()),
         }
     }
@@ -111,13 +130,13 @@ fn string_token(chars: &mut Peekable<Chars>) -> Result<Token, String> {
 
 fn char_to_token(c: char) -> Result<Token, String> {
     match c {
-        '('     => Ok(LeftParenthesis),
-        ')'     => Ok(RightParenthesis),
-        ','     => Ok(Comma),
-        '\''    => Ok(SingleQuote),
-        ';'     => Ok(Semicolon),
-        '='     => Ok(EqualSign),
-        '*'     => Ok(Asterisk),
-        _       => Err(format!("Unexpected character - {:?}", c)),
+        '(' => Ok(LeftParenthesis),
+        ')' => Ok(RightParenthesis),
+        ',' => Ok(Comma),
+        '\'' => Ok(SingleQuote),
+        ';' => Ok(Semicolon),
+        '=' => Ok(EqualSign),
+        '*' => Ok(Asterisk),
+        _ => Err(format!("Unexpected character - {:?}", c)),
     }
 }

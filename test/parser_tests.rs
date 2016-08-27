@@ -1,15 +1,16 @@
 #[cfg(test)]
 mod create_table_statements {
-    use expectest::prelude::{be_ok, be_err};
+    mod parses_create_table_statement {
+        use expectest::prelude::be_ok;
 
-    use sql::parser::ast::Type::Int;
-    use sql::lexer::Token::{IdentT, Semicolon, LeftParenthesis, RightParenthesis, Comma};
-    use sql::parser::ast::Node::{Table, TableColumn, Create};
-    use sql::parser::Parser;
+        use sql::lexer::Token::{IdentT, Semicolon, LeftParenthesis, RightParenthesis, Comma};
+        use sql::parser::Parser;
+        use sql::parser::ast::Type::Int;
+        use sql::parser::ast::Node::{Table, TableColumn, Create};
 
-    #[test]
-    fn it_parses_create_table_statement() {
-        let tokens = vec![
+        #[test]
+        fn with_one_column() {
+            let tokens = vec![
             IdentT("create".to_owned()),
             IdentT("table".to_owned()),
             IdentT("table_name".to_owned()),
@@ -20,20 +21,20 @@ mod create_table_statements {
             Semicolon
         ];
 
-        expect!(tokens.parse())
-            .to(be_ok().value(
-                Create(
-                    Box::new(Table(
-                        "table_name".to_owned(),
-                        vec![TableColumn("col".to_owned(), Int, None)]
-                    ))
-                )
-            ));
-    }
+            expect!(tokens.parse())
+                .to(be_ok().value(
+                    Create(
+                        Box::new(Table(
+                            "table_name".to_owned(),
+                            vec![TableColumn("col".to_owned(), Int, None)]
+                        ))
+                    )
+                ));
+        }
 
-    #[test]
-    fn it_parses_create_table_with_list_of_columns_statement() {
-        let tokens = vec![
+        #[test]
+        fn with_list_of_columns() {
+            let tokens = vec![
             IdentT("create".to_owned()),
             IdentT("table".to_owned()),
             IdentT("table_name".to_owned()),
@@ -50,24 +51,31 @@ mod create_table_statements {
             Semicolon
         ];
 
-        expect!(tokens.parse())
-            .to(be_ok().value(
-                Create(
-                    Box::new(Table(
-                        "table_name".to_owned(),
-                        vec![
+            expect!(tokens.parse())
+                .to(be_ok().value(
+                    Create(
+                        Box::new(Table(
+                            "table_name".to_owned(),
+                            vec![
                             TableColumn("col1".to_owned(), Int, None),
                             TableColumn("col2".to_owned(), Int, None),
                             TableColumn("col3".to_owned(), Int, None)
                         ]
-                    ))
-                )
-            ));
+                        ))
+                    )
+                ));
+        }
     }
 
-    #[test]
-    fn it_does_not_parse_create_table_without_comma_in_column_list() {
-        let tokens = vec![
+    mod does_not_parse_create_table_statement {
+        use expectest::prelude::be_err;
+
+        use sql::lexer::Token::{IdentT, Semicolon, LeftParenthesis, RightParenthesis};
+        use sql::parser::Parser;
+
+        #[test]
+        fn without_comma_in_column_list() {
+            let tokens = vec![
             IdentT("create".to_owned()),
             IdentT("table".to_owned()),
             IdentT("table_name".to_owned()),
@@ -81,13 +89,13 @@ mod create_table_statements {
         ];
 
 
-        expect!(tokens.parse())
-            .to(be_err().value("parsing error missing ','".to_owned()));
-    }
+            expect!(tokens.parse())
+                .to(be_err().value("parsing error missing ','".to_owned()));
+        }
 
-    #[test]
-    fn it_does_not_parse_create_table_without_open_parenthesis() {
-        let tokens = vec![
+        #[test]
+        fn without_open_parenthesis() {
+            let tokens = vec![
             IdentT("create".to_owned()),
             IdentT("table".to_owned()),
             IdentT("table_name".to_owned()),
@@ -97,13 +105,13 @@ mod create_table_statements {
             Semicolon
         ];
 
-        expect!(tokens.parse())
-            .to(be_err().value("parsing error missing '('".to_owned()));
-    }
+            expect!(tokens.parse())
+                .to(be_err().value("parsing error missing '('".to_owned()));
+        }
 
-    #[test]
-    fn it_does_not_parse_create_table_statement_without_closing_parenthesis() {
-        let tokens = vec![
+        #[test]
+        fn without_closing_parenthesis() {
+            let tokens = vec![
             IdentT("create".to_owned()),
             IdentT("table".to_owned()),
             IdentT("table_name".to_owned()),
@@ -113,13 +121,13 @@ mod create_table_statements {
             Semicolon
         ];
 
-        expect!(tokens.parse())
-            .to(be_err().value("parsing error missing ')'".to_owned()));
-    }
+            expect!(tokens.parse())
+                .to(be_err().value("parsing error missing ')'".to_owned()));
+        }
 
-    #[test]
-    fn it_does_not_parse_create_table_statement_without_semicolon() {
-        let tokens = vec![
+        #[test]
+        fn without_semicolon() {
+            let tokens = vec![
             IdentT("create".to_owned()),
             IdentT("table".to_owned()),
             IdentT("table_name".to_owned()),
@@ -129,14 +137,41 @@ mod create_table_statements {
             RightParenthesis
         ];
 
-        expect!(tokens.parse())
-            .to(be_err().value("parsing error missing ';'"));
+            expect!(tokens.parse())
+                .to(be_err().value("parsing error missing ';'"));
+        }
+
+        #[test]
+        fn found_left_parenthesis() {
+            let tokens = vec![
+            IdentT("create".to_owned()),
+            IdentT("table".to_owned()),
+            LeftParenthesis,
+            IdentT("col".to_owned()),
+            IdentT("int".to_owned()),
+            RightParenthesis
+        ];
+
+            expect!(tokens.parse())
+                .to(be_err().value("error: expected <table name> found <(>".to_owned()));
+        }
+
+        #[test]
+        fn found_right_parenthesis_token() {
+            let tokens = vec![
+            IdentT("create".to_owned()),
+            IdentT("table".to_owned()),
+            RightParenthesis
+        ];
+
+            expect!(tokens.parse())
+                .to(be_err().value("error: expected <table name> found <)>".to_owned()));
+        }
     }
 }
 
 #[cfg(test)]
 mod delete_statements {
-
     use expectest::prelude::be_ok;
 
     use sql::parser::Parser;
@@ -192,7 +227,6 @@ mod delete_statements {
 
 #[cfg(test)]
 mod insert_statements {
-
     use expectest::prelude::be_ok;
 
     use sql::parser::Parser;
