@@ -11,9 +11,5 @@ path = "src/lib.rs"
 name = "test"
 path = "test/lib.rs"
 
-[dependencies]
-clippy = "0.0.84"
-
 [dev-dependencies]
-stainless = "*"
 expectest = "*"

@@ -1,259 +1,276 @@
-pub use expectest::prelude::{be_ok, be_err};
+#[cfg(test)]
+mod create_table_statements {
+    use expectest::prelude::{be_ok, be_err};
 
-pub use sql::lexer::Token::{self, IdentT, NumberT, StringT, Semicolon, EqualSign, LeftParenthesis, RightParenthesis, Comma};
-pub use sql::parser::Parser;
-pub use sql::parser::ast::Condition::{Eq};
-pub use sql::parser::ast::Node::{self, Delete, From, Where, Id, NumberC, StringC, Table, Values, Insert, Column, TableColumn, Create};
-pub use sql::parser::ast::Type::{self, Int};
+    use sql::parser::ast::Type::Int;
+    use sql::lexer::Token::{IdentT, Semicolon, LeftParenthesis, RightParenthesis, Comma};
+    use sql::parser::ast::Node::{Table, TableColumn, Create};
+    use sql::parser::Parser;
 
-describe! parser {
+    #[test]
+    fn it_parses_create_table_statement() {
+        let tokens = vec![
+            IdentT("create".to_owned()),
+            IdentT("table".to_owned()),
+            IdentT("table_name".to_owned()),
+            LeftParenthesis,
+            IdentT("col".to_owned()),
+            IdentT("int".to_owned()),
+            RightParenthesis,
+            Semicolon
+        ];
 
-    describe! create_table_statements {
-
-        it "parses create table statement" {
-            let tokens = vec![
-                IdentT("create".to_owned()),
-                IdentT("table".to_owned()),
-                IdentT("table_name".to_owned()),
-                LeftParenthesis,
-                IdentT("col".to_owned()),
-                IdentT("int".to_owned()),
-                RightParenthesis,
-                Semicolon
-            ];
-
-            expect!(tokens.parse())
-                .to(be_ok().value(
-                    Create(
-                        Box::new(Table(
-                            "table_name".to_owned(),
-                            vec![TableColumn("col".to_owned(), Int, None)]
-                        ))
-                    )
-                ));
-        }
-
-        it "parses create table with list of columns statement" {
-            let tokens = vec![
-                IdentT("create".to_owned()),
-                IdentT("table".to_owned()),
-                IdentT("table_name".to_owned()),
-                LeftParenthesis,
-                IdentT("col1".to_owned()),
-                IdentT("int".to_owned()),
-                Comma,
-                IdentT("col2".to_owned()),
-                IdentT("int".to_owned()),
-                Comma,
-                IdentT("col3".to_owned()),
-                IdentT("int".to_owned()),
-                RightParenthesis,
-                Semicolon
-            ];
-
-            expect!(tokens.parse())
-                .to(be_ok().value(
-                    Create(
-                        Box::new(Table(
-                            "table_name".to_owned(),
-                            vec![
-                                TableColumn("col1".to_owned(), Int, None),
-                                TableColumn("col2".to_owned(), Int, None),
-                                TableColumn("col3".to_owned(), Int, None)
-                            ]
-                        ))
-                    )
-                ));
-        }
-
-        it "does not parse create table without comma in column list" {
-            let tokens = vec![
-                IdentT("create".to_owned()),
-                IdentT("table".to_owned()),
-                IdentT("table_name".to_owned()),
-                LeftParenthesis,
-                IdentT("col1".to_owned()),
-                IdentT("int".to_owned()),
-                IdentT("col2".to_owned()),
-                IdentT("int".to_owned()),
-                RightParenthesis,
-                Semicolon
-            ];
-
-
-            expect!(tokens.parse())
-                .to(be_err().value("parsing error missing ','".to_owned()));
-        }
-
-        it "does not parse create table without open parenthesis" {
-            let tokens = vec![
-                IdentT("create".to_owned()),
-                IdentT("table".to_owned()),
-                IdentT("table_name".to_owned()),
-                IdentT("col".to_owned()),
-                IdentT("int".to_owned()),
-                RightParenthesis,
-                Semicolon
-            ];
-
-            expect!(tokens.parse())
-                .to(be_err().value("parsing error missing '('".to_owned()));
-        }
-
-        it "does not parse create table statement without closing parenthesis" {
-            let tokens = vec![
-                IdentT("create".to_owned()),
-                IdentT("table".to_owned()),
-                IdentT("table_name".to_owned()),
-                LeftParenthesis,
-                IdentT("col".to_owned()),
-                IdentT("int".to_owned()),
-                Semicolon
-            ];
-
-            expect!(tokens.parse())
-                .to(be_err().value("parsing error missing ')'".to_owned()));
-        }
-
-        it "does not parse create table statement without semicolon" {
-            let tokens = vec![
-                IdentT("create".to_owned()),
-                IdentT("table".to_owned()),
-                IdentT("table_name".to_owned()),
-                LeftParenthesis,
-                IdentT("col".to_owned()),
-                IdentT("int".to_owned()),
-                RightParenthesis
-            ];
-
-            expect!(tokens.parse())
-                .to(be_err().value("parsing error missing ';'"));
-        }
+        expect!(tokens.parse())
+            .to(be_ok().value(
+                Create(
+                    Box::new(Table(
+                        "table_name".to_owned(),
+                        vec![TableColumn("col".to_owned(), Int, None)]
+                    ))
+                )
+            ));
     }
 
-    describe! delete_statements {
+    #[test]
+    fn it_parses_create_table_with_list_of_columns_statement() {
+        let tokens = vec![
+            IdentT("create".to_owned()),
+            IdentT("table".to_owned()),
+            IdentT("table_name".to_owned()),
+            LeftParenthesis,
+            IdentT("col1".to_owned()),
+            IdentT("int".to_owned()),
+            Comma,
+            IdentT("col2".to_owned()),
+            IdentT("int".to_owned()),
+            Comma,
+            IdentT("col3".to_owned()),
+            IdentT("int".to_owned()),
+            RightParenthesis,
+            Semicolon
+        ];
 
-        it "parses delete statement" {
-            let tokens = vec![delete(), from(), table_name(), Semicolon];
-
-            expect!(tokens.parse())
-                .to(be_ok().value(
-                    Delete(
-                        Box::new(From("table_name".to_owned())),
-                        Box::new(Where(None))
-                    )
-                ));
-        }
-
-        it "parses delete statement with predicate" {
-            let tokens = vec![delete(), from(), table_name(), where_t(), column_name(), EqualSign, five_int(), Semicolon];
-
-            expect!(tokens.parse())
-                .to(be_ok().value(
-                    Delete(
-                        Box::new(From("table_name".to_owned())),
-                        Box::new(Where(Some(
-                            Eq(
-                                Box::new(Id("col".to_owned())),
-                                Box::new(NumberC("5".to_owned()))
-                            )
-                        )))
-                    )
-                ));
-        }
+        expect!(tokens.parse())
+            .to(be_ok().value(
+                Create(
+                    Box::new(Table(
+                        "table_name".to_owned(),
+                        vec![
+                            TableColumn("col1".to_owned(), Int, None),
+                            TableColumn("col2".to_owned(), Int, None),
+                            TableColumn("col3".to_owned(), Int, None)
+                        ]
+                    ))
+                )
+            ));
     }
 
-    describe! insert_statements {
+    #[test]
+    fn it_does_not_parse_create_table_without_comma_in_column_list() {
+        let tokens = vec![
+            IdentT("create".to_owned()),
+            IdentT("table".to_owned()),
+            IdentT("table_name".to_owned()),
+            LeftParenthesis,
+            IdentT("col1".to_owned()),
+            IdentT("int".to_owned()),
+            IdentT("col2".to_owned()),
+            IdentT("int".to_owned()),
+            RightParenthesis,
+            Semicolon
+        ];
 
-        it "parse insert statement with one column" {
-            let tokens = vec![insert(), into(), table_name(), values(), LeftParenthesis, ten_int(), RightParenthesis, Semicolon];
 
-            expect!(tokens.parse())
-                .to(be_ok().value(
-                    Insert(
-                        Box::new(Table("table_name".to_owned(), vec![])),
-                        Box::new(Values(vec![NumberC("10".to_owned())]))
-                    )
-                ));
-        }
+        expect!(tokens.parse())
+            .to(be_err().value("parsing error missing ','".to_owned()));
+    }
 
-        it "parses insert statement with list of columns" {
-            let tokens = vec![insert(), into(), table_name(), values(), LeftParenthesis, ten_int(), Comma, string(), RightParenthesis, Semicolon];
+    #[test]
+    fn it_does_not_parse_create_table_without_open_parenthesis() {
+        let tokens = vec![
+            IdentT("create".to_owned()),
+            IdentT("table".to_owned()),
+            IdentT("table_name".to_owned()),
+            IdentT("col".to_owned()),
+            IdentT("int".to_owned()),
+            RightParenthesis,
+            Semicolon
+        ];
 
-            expect!(tokens.parse())
-                .to(be_ok().value(
-                    Insert(
-                        Box::new(Table("table_name".to_owned(), vec![])),
-                        Box::new(Values(vec![NumberC("10".to_owned()), StringC("string".to_owned())]))
-                    )
-                ));
-        }
+        expect!(tokens.parse())
+            .to(be_err().value("parsing error missing '('".to_owned()));
+    }
 
-        it "parses insert statement with columns" {
-            let tokens = vec![
-                insert(), into(), table_name(), LeftParenthesis, column_1_name(), Comma, column_2_name(), RightParenthesis,
-                                    values(), LeftParenthesis, ten_int(), Comma, string(), RightParenthesis, Semicolon
-            ];
+    #[test]
+    fn it_does_not_parse_create_table_statement_without_closing_parenthesis() {
+        let tokens = vec![
+            IdentT("create".to_owned()),
+            IdentT("table".to_owned()),
+            IdentT("table_name".to_owned()),
+            LeftParenthesis,
+            IdentT("col".to_owned()),
+            IdentT("int".to_owned()),
+            Semicolon
+        ];
 
-            expect!(tokens.parse())
-                .to(be_ok().value(
-                    Insert(
-                        Box::new(Table("table_name".to_owned(), vec![Column("col1".to_owned()), Column("col2".to_owned())])),
-                        Box::new(Values(vec![NumberC("10".to_owned()), StringC("string".to_owned())]))
-                    )
-                ));
-        }
+        expect!(tokens.parse())
+            .to(be_err().value("parsing error missing ')'".to_owned()));
+    }
+
+    #[test]
+    fn it_does_not_parse_create_table_statement_without_semicolon() {
+        let tokens = vec![
+            IdentT("create".to_owned()),
+            IdentT("table".to_owned()),
+            IdentT("table_name".to_owned()),
+            LeftParenthesis,
+            IdentT("col".to_owned()),
+            IdentT("int".to_owned()),
+            RightParenthesis
+        ];
+
+        expect!(tokens.parse())
+            .to(be_err().value("parsing error missing ';'"));
     }
 }
 
-pub fn delete() -> Token {
-    IdentT("delete".to_owned())
+#[cfg(test)]
+mod delete_statements {
+
+    use expectest::prelude::be_ok;
+
+    use sql::parser::Parser;
+    use sql::parser::ast::Node::{Delete, From, Where, Id, NumberC};
+    use sql::parser::ast::Condition::Eq;
+    use sql::lexer::Token::{IdentT, Semicolon, EqualSign, NumberT};
+
+    #[test]
+    fn it_parses_delete_statement() {
+        let tokens = vec![
+            IdentT("delete".to_owned()),
+            IdentT("from".to_owned()),
+            IdentT("table_name".to_owned()),
+            Semicolon
+        ];
+
+        expect!(tokens.parse())
+            .to(be_ok().value(
+                Delete(
+                    Box::new(From("table_name".to_owned())),
+                    Box::new(Where(None))
+                )
+            ));
+    }
+
+    #[test]
+    fn it_parses_delete_statement_with_predicate() {
+        let tokens = vec![
+            IdentT("delete".to_owned()),
+            IdentT("from".to_owned()),
+            IdentT("table_name".to_owned()),
+            IdentT("where".to_owned()),
+            IdentT("col".to_owned()),
+            EqualSign,
+            NumberT("5".to_owned()),
+            Semicolon
+        ];
+
+        expect!(tokens.parse())
+            .to(be_ok().value(
+                Delete(
+                    Box::new(From("table_name".to_owned())),
+                    Box::new(Where(Some(
+                        Eq(
+                            Box::new(Id("col".to_owned())),
+                            Box::new(NumberC("5".to_owned()))
+                        )
+                    )))
+                )
+            ));
+    }
 }
 
-pub fn from() -> Token {
-    IdentT("from".to_owned())
-}
+#[cfg(test)]
+mod insert_statements {
 
-pub fn where_t() -> Token {
-    IdentT("where".to_owned())
-}
+    use expectest::prelude::be_ok;
 
-pub fn column_name() -> Token {
-    IdentT("col".to_owned())
-}
+    use sql::parser::Parser;
+    use sql::lexer::Token::{IdentT, LeftParenthesis, NumberT, RightParenthesis, Semicolon, Comma, StringT};
+    use sql::parser::ast::Node::{Insert, Table, Values, NumberC, Column, StringC};
 
-pub fn five_int() -> Token {
-    NumberT("5".to_owned())
-}
+    #[test]
+    fn it_parse_insert_statement_with_one_column() {
+        let tokens = vec![
+            IdentT("insert".to_owned()),
+            IdentT("into".to_owned()),
+            IdentT("table_name".to_owned()),
+            IdentT("values".to_owned()),
+            LeftParenthesis,
+            NumberT("10".to_owned()),
+            RightParenthesis,
+            Semicolon
+        ];
 
-pub fn insert() -> Token {
-    IdentT("insert".to_owned())
-}
+        expect!(tokens.parse())
+            .to(be_ok().value(
+                Insert(
+                    Box::new(Table("table_name".to_owned(), vec![])),
+                    Box::new(Values(vec![NumberC("10".to_owned())]))
+                )
+            ));
+    }
 
-pub fn into() -> Token {
-    IdentT("into".to_owned())
-}
+    #[test]
+    fn it_parses_insert_statement_with_list_of_columns() {
+        let tokens = vec![
+            IdentT("insert".to_owned()),
+            IdentT("into".to_owned()),
+            IdentT("table_name".to_owned()),
+            IdentT("values".to_owned()),
+            LeftParenthesis,
+            NumberT("10".to_owned()),
+            Comma,
+            StringT("string".to_owned()),
+            RightParenthesis,
+            Semicolon
+        ];
 
-pub fn table_name() -> Token {
-    IdentT("table_name".to_owned())
-}
+        expect!(tokens.parse())
+            .to(be_ok().value(
+                Insert(
+                    Box::new(Table("table_name".to_owned(), vec![])),
+                    Box::new(Values(vec![NumberC("10".to_owned()), StringC("string".to_owned())]))
+                )
+            ));
+    }
 
-pub fn column_1_name() -> Token {
-    IdentT("col1".to_owned())
-}
+    #[test]
+    fn it_parses_insert_statement_with_columns() {
+        let tokens = vec![
+            IdentT("insert".to_owned()),
+            IdentT("into".to_owned()),
+            IdentT("table_name".to_owned()),
+            LeftParenthesis,
+            IdentT("col1".to_owned()),
+            Comma,
+            IdentT("col2".to_owned()),
+            RightParenthesis,
+            IdentT("values".to_owned()),
+            LeftParenthesis,
+            NumberT("10".to_owned()),
+            Comma,
+            StringT("string".to_owned()),
+            RightParenthesis,
+            Semicolon
+        ];
 
-pub fn column_2_name() -> Token {
-    IdentT("col2".to_owned())
-}
-
-pub fn values() -> Token {
-    IdentT("values".to_owned())
-}
-
-pub fn ten_int() -> Token {
-    NumberT("10".to_owned())
-}
-
-pub fn string() -> Token {
-    StringT("string".to_owned())
+        expect!(tokens.parse())
+            .to(be_ok().value(
+                Insert(
+                    Box::new(Table("table_name".to_owned(), vec![Column("col1".to_owned()), Column("col2".to_owned())])),
+                    Box::new(Values(vec![NumberC("10".to_owned()), StringC("string".to_owned())]))
+                )
+            ));
+    }
 }

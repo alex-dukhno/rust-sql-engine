@@ -1,6 +1,5 @@
 pub mod ast;
 
-use std::fmt::Debug;
 use std::iter::Peekable;
 
 use super::lexer::Token::{self, IdentT, LeftParenthesis, RightParenthesis, Comma, Semicolon, NumberT, StringT};
@@ -121,9 +120,9 @@ fn parse_columns<I: Iterator<Item=Token>>(tokens: &mut Peekable<I>) -> Vec<Node>
     columns
 }
 
-fn parse_values<I: Debug + Iterator<Item=Token>>(tokens: &mut Peekable<I>) -> Vec<Node> {
+fn parse_values<I: Iterator<Item=Token>>(tokens: &mut Peekable<I>) -> Vec<Node> {
     tokens.next(); //skip 'VALUES' keyword
-    println!("left tokens - {:?}", tokens);
+//    println!("left tokens - {:?}", tokens);
     tokens.next(); //skip '('
     let mut values = vec![];
     loop {
