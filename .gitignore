@@ -2,5 +2,6 @@
 target/
 Cargo.lock
 
-#sublime files
-*.sublime*
+#JetBrains Idea
+.idea/
+*.iml
