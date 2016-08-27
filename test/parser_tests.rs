@@ -76,17 +76,17 @@ mod create_table_statements {
         #[test]
         fn without_comma_in_column_list() {
             let tokens = vec![
-            IdentT("create".to_owned()),
-            IdentT("table".to_owned()),
-            IdentT("table_name".to_owned()),
-            LeftParenthesis,
-            IdentT("col1".to_owned()),
-            IdentT("int".to_owned()),
-            IdentT("col2".to_owned()),
-            IdentT("int".to_owned()),
-            RightParenthesis,
-            Semicolon
-        ];
+                IdentT("create".to_owned()),
+                IdentT("table".to_owned()),
+                IdentT("table_name".to_owned()),
+                LeftParenthesis,
+                IdentT("col1".to_owned()),
+                IdentT("int".to_owned()),
+                IdentT("col2".to_owned()),
+                IdentT("int".to_owned()),
+                RightParenthesis,
+                Semicolon
+            ];
 
 
             expect!(tokens.parse())
@@ -96,14 +96,14 @@ mod create_table_statements {
         #[test]
         fn without_open_parenthesis() {
             let tokens = vec![
-            IdentT("create".to_owned()),
-            IdentT("table".to_owned()),
-            IdentT("table_name".to_owned()),
-            IdentT("col".to_owned()),
-            IdentT("int".to_owned()),
-            RightParenthesis,
-            Semicolon
-        ];
+                IdentT("create".to_owned()),
+                IdentT("table".to_owned()),
+                IdentT("table_name".to_owned()),
+                IdentT("col".to_owned()),
+                IdentT("int".to_owned()),
+                RightParenthesis,
+                Semicolon
+            ];
 
             expect!(tokens.parse())
                 .to(be_err().value("error: expected <(> found <col>".to_owned()));
@@ -144,13 +144,13 @@ mod create_table_statements {
         #[test]
         fn found_left_parenthesis() {
             let tokens = vec![
-            IdentT("create".to_owned()),
-            IdentT("table".to_owned()),
-            LeftParenthesis,
-            IdentT("col".to_owned()),
-            IdentT("int".to_owned()),
-            RightParenthesis
-        ];
+                IdentT("create".to_owned()),
+                IdentT("table".to_owned()),
+                LeftParenthesis,
+                IdentT("col".to_owned()),
+                IdentT("int".to_owned()),
+                RightParenthesis
+            ];
 
             expect!(tokens.parse())
                 .to(be_err().value("error: expected <table name> found <(>".to_owned()));
@@ -159,10 +159,10 @@ mod create_table_statements {
         #[test]
         fn found_right_parenthesis() {
             let tokens = vec![
-            IdentT("create".to_owned()),
-            IdentT("table".to_owned()),
-            RightParenthesis
-        ];
+                IdentT("create".to_owned()),
+                IdentT("table".to_owned()),
+                RightParenthesis
+            ];
 
             expect!(tokens.parse())
                 .to(be_err().value("error: expected <table name> found <)>".to_owned()));
