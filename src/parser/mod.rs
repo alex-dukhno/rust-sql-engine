@@ -1,6 +1,8 @@
 pub mod ast;
 
 use std::iter::Peekable;
+use std::marker::Sized;
+use std::fmt;
 
 use super::lexer::Token::{self, IdentT, LeftParenthesis, RightParenthesis, Comma, Semicolon, NumberT, StringT};
 use self::ast::Node::{self, Delete, From, Where, Id, NumberC, StringC, Insert, Table, Values, Column, TableColumn, Create};
@@ -32,20 +34,16 @@ fn parse_create<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Result<N
     tokens.next(); //skip 'TABLE' keyword
     let table_name = match tokens.next() {
         Some(IdentT(name)) => name,
-        Some(token) => return Err(expected_table_name_found_something_else(token)),
+        Some(token) => return Err(format_unexpected_token("table name", Some(&token))),
         _ => return Err("".to_owned()),
     };
     Ok(Table(table_name, try!(parse_table_columns(&mut tokens.by_ref()))))
 }
 
-fn expected_table_name_found_something_else(token: Token) -> String {
-    format!("error: expected <table name> found <{}>", token)
-}
-
 fn parse_table_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Result<Vec<Node>, String> {
-    match tokens.peek() {
-        Some(&LeftParenthesis) => { tokens.next(); } //skip '('
-        _ => return Err("parsing error missing '('".to_owned()),
+    match tokens.next() {
+        Some(LeftParenthesis) => { } //skip '('
+        token => return Err(format_unexpected_token(LeftParenthesis, token.as_ref())),
     }
 
     let mut columns = vec![];
@@ -62,21 +60,29 @@ fn parse_table_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> R
 
         columns.push(TableColumn(col_name, col_type, None));
 
-        match tokens.peek() {
-            Some(&Comma) => { tokens.next(); }, //skip ','
-            Some(&RightParenthesis) => break,
-            Some(&Semicolon) => return Err("parsing error missing ')'".to_owned()),
-            _ => return Err("parsing error missing ','".to_owned()),
+        match tokens.next() {
+            Some(Comma) => { }, //skip ','
+            Some(RightParenthesis) => break,
+            Some(IdentT(id)) => return Err(format_unexpected_token(Comma, Some(&IdentT(id)))),
+            Some(token) => return Err(format_unexpected_token(RightParenthesis, Some(&token))),
+            None => return Err("parsing error missing ','".to_owned()),
         }
     }
 
-    tokens.next(); //skip ')'
+//    tokens.next(); //skip ')'
     match tokens.peek() {
         Some(&Semicolon) => { tokens.next(); } // skip ';'
-        _ => return Err("parsing error missing ';'".to_owned()),
+        _ => return Err(format_unexpected_token(Semicolon, None)),
     }
 
     Ok(columns)
+}
+
+fn format_unexpected_token<D: fmt::Display + Sized>(expected: D, found: Option<&Token>) -> String {
+    match found {
+        Some(ref token) => format!("error: expected <{}> found <{}>", expected, token),
+        None => format!("error: expected <{}>", expected)
+    }
 }
 
 fn parse_from<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Result<Node, String> {

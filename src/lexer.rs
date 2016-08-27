@@ -26,6 +26,9 @@ impl fmt::Display for Token {
         match *self {
             RightParenthesis => ")",
             LeftParenthesis => "(",
+            Semicolon => ";",
+            Comma => ",",
+            IdentT(ref id) => id.as_str(),
             _ => "unimplemented formatting",
         }.fmt(f)
     }

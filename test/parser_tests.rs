@@ -90,7 +90,7 @@ mod create_table_statements {
 
 
             expect!(tokens.parse())
-                .to(be_err().value("parsing error missing ','".to_owned()));
+                .to(be_err().value("error: expected <,> found <col2>".to_owned()));
         }
 
         #[test]
@@ -106,7 +106,7 @@ mod create_table_statements {
         ];
 
             expect!(tokens.parse())
-                .to(be_err().value("parsing error missing '('".to_owned()));
+                .to(be_err().value("error: expected <(> found <col>".to_owned()));
         }
 
         #[test]
@@ -122,7 +122,7 @@ mod create_table_statements {
         ];
 
             expect!(tokens.parse())
-                .to(be_err().value("parsing error missing ')'".to_owned()));
+                .to(be_err().value("error: expected <)> found <;>".to_owned()));
         }
 
         #[test]
@@ -138,7 +138,7 @@ mod create_table_statements {
         ];
 
             expect!(tokens.parse())
-                .to(be_err().value("parsing error missing ';'"));
+                .to(be_err().value("error: expected <;>"));
         }
 
         #[test]
@@ -157,7 +157,7 @@ mod create_table_statements {
         }
 
         #[test]
-        fn found_right_parenthesis_token() {
+        fn found_right_parenthesis() {
             let tokens = vec![
             IdentT("create".to_owned()),
             IdentT("table".to_owned()),
