@@ -6,7 +6,7 @@ mod create_table_statements {
         use sql::lexer::Token::{IdentT, Semicolon, LeftParenthesis, RightParenthesis, Comma};
         use sql::parser::Parser;
         use sql::parser::ast::Type::Int;
-        use sql::parser::ast::Node::{Table, TableColumn, Create};
+        use sql::parser::ast::Node::{TableN, TableColumn, Create};
 
         #[test]
         fn with_one_column() {
@@ -24,7 +24,7 @@ mod create_table_statements {
             expect!(tokens.parse())
                 .to(be_ok().value(
                     Create(
-                        Box::new(Table(
+                        Box::new(TableN(
                             "table_name".to_owned(),
                             vec![TableColumn("col".to_owned(), Int, None)]
                         ))
@@ -54,7 +54,7 @@ mod create_table_statements {
             expect!(tokens.parse())
                 .to(be_ok().value(
                     Create(
-                        Box::new(Table(
+                        Box::new(TableN(
                             "table_name".to_owned(),
                             vec![
                             TableColumn("col1".to_owned(), Int, None),
@@ -231,7 +231,7 @@ mod insert_statements {
 
     use sql::parser::Parser;
     use sql::lexer::Token::{IdentT, LeftParenthesis, NumberT, RightParenthesis, Semicolon, Comma, StringT};
-    use sql::parser::ast::Node::{Insert, Table, Values, NumberC, Column, StringC};
+    use sql::parser::ast::Node::{Insert, TableN, Values, NumberC, Column, StringC};
 
     #[test]
     fn it_parse_insert_statement_with_one_column() {
@@ -249,7 +249,7 @@ mod insert_statements {
         expect!(tokens.parse())
             .to(be_ok().value(
                 Insert(
-                    Box::new(Table("table_name".to_owned(), vec![])),
+                    Box::new(TableN("table_name".to_owned(), vec![])),
                     Box::new(Values(vec![NumberC("10".to_owned())]))
                 )
             ));
@@ -273,7 +273,7 @@ mod insert_statements {
         expect!(tokens.parse())
             .to(be_ok().value(
                 Insert(
-                    Box::new(Table("table_name".to_owned(), vec![])),
+                    Box::new(TableN("table_name".to_owned(), vec![])),
                     Box::new(Values(vec![NumberC("10".to_owned()), StringC("string".to_owned())]))
                 )
             ));
@@ -302,7 +302,7 @@ mod insert_statements {
         expect!(tokens.parse())
             .to(be_ok().value(
                 Insert(
-                    Box::new(Table("table_name".to_owned(), vec![Column("col1".to_owned()), Column("col2".to_owned())])),
+                    Box::new(TableN("table_name".to_owned(), vec![Column("col1".to_owned()), Column("col2".to_owned())])),
                     Box::new(Values(vec![NumberC("10".to_owned()), StringC("string".to_owned())]))
                 )
             ));

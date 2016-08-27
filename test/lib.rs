@@ -6,3 +6,4 @@ extern crate sql;
 pub mod lexer_tests;
 pub mod parser_tests;
 pub mod integration;
+pub mod catalog_manager_tests;

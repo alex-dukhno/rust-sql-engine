@@ -8,7 +8,7 @@ pub enum Node {
     StringC(String),
 
     Insert(Box<Node>, Box<Node>),
-    Table(String, Vec<Node>),
+    TableN(String, Vec<Node>),
     Values(Vec<Node>),
     Column(String),
 

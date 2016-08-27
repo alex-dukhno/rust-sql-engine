@@ -5,7 +5,7 @@ use std::marker::Sized;
 use std::fmt;
 
 use super::lexer::Token::{self, IdentT, LeftParenthesis, RightParenthesis, Comma, Semicolon, NumberT, StringT};
-use self::ast::Node::{self, Delete, From, Where, Id, NumberC, StringC, Insert, Table, Values, Column, TableColumn, Create};
+use self::ast::Node::{self, Delete, From, Where, Id, NumberC, StringC, Insert, TableN, Values, Column, TableColumn, Create};
 use self::ast::Type;
 use self::ast::Condition::{Eq};
 
@@ -37,7 +37,7 @@ fn parse_create<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Result<N
         Some(token) => return Err(format_unexpected_token("table name", Some(&token))),
         _ => return Err("".to_owned()),
     };
-    Ok(Table(table_name, try!(parse_table_columns(&mut tokens.by_ref()))))
+    Ok(TableN(table_name, try!(parse_table_columns(&mut tokens.by_ref()))))
 }
 
 fn parse_table_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Result<Vec<Node>, String> {
@@ -104,7 +104,7 @@ fn parse_where<I: Iterator<Item = Token>>(tokens: &mut I) -> Result<Node, String
 fn parse_table<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Result<Node, String> {
     tokens.next(); //skip 'INTO' keyword
     tokens.next(); //skip table name
-    Ok(Table("table_name".to_owned(), parse_columns(&mut tokens.by_ref())))
+    Ok(TableN("table_name".to_owned(), parse_columns(&mut tokens.by_ref())))
 }
 
 fn parse_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Vec<Node> {
@@ -112,7 +112,6 @@ fn parse_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Vec<Nod
         Some(&LeftParenthesis) => { tokens.next(); }, //skip '('
         _ => return vec![],
     }
-    println!("columns exist");
     let mut columns = vec![];
     loop {
         match tokens.next() {
@@ -126,7 +125,6 @@ fn parse_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Vec<Nod
 
 fn parse_values<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Vec<Node> {
     tokens.next(); //skip 'VALUES' keyword
-    //    println!("left tokens - {:?}", tokens);
     tokens.next(); //skip '('
     let mut values = vec![];
     loop {
