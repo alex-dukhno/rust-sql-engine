@@ -4,7 +4,7 @@ use sql::parser::ast::Type;
 use sql::catalog_manager::{CatalogManager, LockBasedCatalogManager, Table, Column};
 
 #[test]
-fn add_table_to_catalog_manger() {
+fn adds_table_to_catalog_manger() {
     let catalog_manager: LockBasedCatalogManager = CatalogManager::create();
 
     let table = Table::new("table_name");
@@ -24,7 +24,7 @@ fn does_not_contain_table_that_was_not_add() {
 }
 
 #[test]
-fn add_column_to_table() {
+fn adds_column_to_table() {
     let catalog_manager: LockBasedCatalogManager = CatalogManager::create();
 
     let table = Table::new("table");
