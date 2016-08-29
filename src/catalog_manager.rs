@@ -60,7 +60,7 @@ impl CatalogManager for LockBasedCatalogManager {
     fn match_type(&self, table_name: &str, column_index: usize, column_type: Type) -> bool {
         let mut guard = self.tables.lock().unwrap();
         if let Some(table) = (*guard).get_mut(table_name) {
-            match (*table).columns.iter().nth(column_index) {
+            match (*table).columns.get(column_index) {
                 Some(col) => {
                     col.column_type == column_type
                 },

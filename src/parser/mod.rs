@@ -80,7 +80,7 @@ fn parse_table_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> R
 
 fn format_unexpected_token<D: fmt::Display + Sized>(expected: D, found: Option<&Token>) -> String {
     match found {
-        Some(ref token) => format!("error: expected <{}> found <{}>", expected, token),
+        Some(token) => format!("error: expected <{}> found <{}>", expected, token),
         None => format!("error: expected <{}>", expected)
     }
 }

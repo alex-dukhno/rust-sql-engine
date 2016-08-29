@@ -21,7 +21,7 @@ fn creates_a_table_with_list_of_columns() {
 #[test]
 fn inserts_row_in_created_table() {
     let executer = QueryExecuter::default();
-    executer.execute("create table table_name (col int);".tokenize().unwrap().parse().unwrap());
+    drop(executer.execute("create table table_name (col int);".tokenize().unwrap().parse().unwrap()));
 
     expect!(executer.execute("insert into table_name values(1);".tokenize().unwrap().parse().unwrap()))
         .to(be_ok().value("row was inserted".to_owned()));
@@ -30,7 +30,7 @@ fn inserts_row_in_created_table() {
 #[test]
 fn inserts_row_in_table_with_many_columns() {
     let executer = QueryExecuter::default();
-    executer.execute("create table table_name (col1 int, col2 int);".tokenize().unwrap().parse().unwrap());
+    drop(executer.execute("create table table_name (col1 int, col2 int);".tokenize().unwrap().parse().unwrap()));
 
     expect!(executer.execute("insert into table_name values(1, 2);".tokenize().unwrap().parse().unwrap()))
         .to(be_ok().value("row was inserted".to_owned()));
@@ -46,7 +46,7 @@ fn does_not_insert_into_table_that_does_not_exist() {
 #[test]
 fn does_not_insert_when_column_type_does_not_match() {
     let executer = QueryExecuter::default();
-    executer.execute("create table table_name (col int);".tokenize().unwrap().parse().unwrap());
+    drop(executer.execute("create table table_name (col int);".tokenize().unwrap().parse().unwrap()));
 
     expect!(executer.execute("insert into table_name values('string');".tokenize().unwrap().parse().unwrap()))
         .to(be_err().value("column type is INT find VARCHAR".to_owned()));

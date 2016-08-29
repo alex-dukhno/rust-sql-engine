@@ -28,11 +28,8 @@ impl QueryExecuter {
             TableN(name, columns) => {
                 self.catalog_manager.add_table(Table::new(name.as_str()));
                 for column in columns.into_iter() {
-                    match column {
-                        TableColumn(column_name, column_type, _) => {
-                            self.catalog_manager.add_column_to(name.as_str(), Column::new(column_name, column_type))
-                        },
-                        _ => {},
+                    if let TableColumn(column_name, column_type, _) = column {
+                        self.catalog_manager.add_column_to(name.as_str(), Column::new(column_name, column_type))
                     }
                 }
                 let s = name.clone();
