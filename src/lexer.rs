@@ -27,32 +27,32 @@ impl fmt::Display for Token {
             Token::Semicolon => ";",
             Token::Comma => ",",
             Token::Ident(ref id) => id.as_str(),
-            _ => "unimplemented formatting",
+            _ => unimplemented!(),
         }.fmt(f)
     }
 }
 
 pub trait Tokenizer {
-    fn tokenize(&self) -> Result<Vec<Token>, String>;
+    fn tokenize(&self) -> Vec<Token>;
 }
 
 impl Tokenizer for str {
-    fn tokenize(&self) -> Result<Vec<Token>, String> {
+    fn tokenize(&self) -> Vec<Token> {
         tokenize_expression(&mut self.chars().peekable())
     }
 }
 
-fn tokenize_expression(chars: &mut Peekable<Chars>) -> Result<Vec<Token>, String> {
+fn tokenize_expression(chars: &mut Peekable<Chars>) -> Vec<Token> {
     let mut tokens = vec![];
     loop {
         match chars.peek().cloned() {
             Some(' ') | Some('\n') | Some('\t') => { chars.next(); },
             Some('\'') => {
                 chars.next();
-                tokens.push(try!(string_token(&mut chars.by_ref())));
+                tokens.push(string_token(&mut chars.by_ref()));
             },
             Some('a'...'z') | Some('A'...'Z') => { tokens.push(ident_token(&mut chars.by_ref())); },
-            Some('0'...'9') => { tokens.push(try!(num_token(&mut chars.by_ref()))); },
+            Some('0'...'9') => { tokens.push(num_token(&mut chars.by_ref())); },
             Some(c) => {
                 chars.next();
                 tokens.push(char_to_token(c));
@@ -60,37 +60,36 @@ fn tokenize_expression(chars: &mut Peekable<Chars>) -> Result<Vec<Token>, String
             None => break,
         }
     }
-    Ok(tokens)
+    tokens
 }
 
 fn ident_token(chars: &mut Peekable<Chars>) -> Token {
     let mut token = String::default();
     loop {
         match chars.peek().cloned() {
-            Some(c @ 'A'...'Z') => {
-                chars.next();
-                token.push_str(c.to_lowercase().collect::<String>().as_str());
-            },
-            Some(c @ 'a'...'z') | Some(c @ '_') | Some(c @ '0'...'9') => {
+            Some(c @ 'A'...'Z') |
+            Some(c @ 'a'...'z') |
+            Some(c @ '_') |
+            Some(c @ '0'...'9') => {
                 chars.next();
                 token.push(c);
             },
-            Some(_) | None => break,
+            _ => break,
         }
     }
-    Token::Ident(token)
+    Token::Ident(token.to_lowercase())
 }
 
-fn num_token(chars: &mut Peekable<Chars>) -> Result<Token, String> {
+fn num_token(chars: &mut Peekable<Chars>) -> Token {
     let mut num = String::default();
     while let Some(d @ '0'...'9') = chars.peek().cloned() {
         chars.next();
         num.push(d);
     }
-    Ok(Token::NumericConstant(num))
+    Token::NumericConstant(num)
 }
 
-fn string_token(chars: &mut Peekable<Chars>) -> Result<Token, String> {
+fn string_token(chars: &mut Peekable<Chars>) -> Token {
     let mut string = String::default();
     loop {
         match chars.peek().cloned() {
@@ -108,10 +107,10 @@ fn string_token(chars: &mut Peekable<Chars>) -> Result<Token, String> {
                 chars.next();
                 string.push(c);
             },
-            None => return Err("string const should be closed by \'".to_owned()),
+            _ => break,
         }
     }
-    Ok(Token::CharactersConstant(string))
+    Token::CharactersConstant(string)
 }
 
 fn char_to_token(c: char) -> Token {
