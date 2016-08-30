@@ -2,14 +2,12 @@ use std::iter::Peekable;
 use std::str::Chars;
 use std::fmt;
 
-use self::Token::{IdentT, NumberT, StringT, LeftParenthesis, RightParenthesis, Comma, SingleQuote, EqualSign, Semicolon, Asterisk};
-
 #[derive(Debug, PartialEq)]
 pub enum Token {
-    IdentT(String),
+    Ident(String),
 
-    NumberT(String),
-    StringT(String),
+    NumericConstant(String),
+    CharactersConstant(String),
 
     LeftParenthesis,
     RightParenthesis,
@@ -24,11 +22,11 @@ impl fmt::Display for Token {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            RightParenthesis => ")",
-            LeftParenthesis => "(",
-            Semicolon => ";",
-            Comma => ",",
-            IdentT(ref id) => id.as_str(),
+            Token::RightParenthesis => ")",
+            Token::LeftParenthesis => "(",
+            Token::Semicolon => ";",
+            Token::Comma => ",",
+            Token::Ident(ref id) => id.as_str(),
             _ => "unimplemented formatting",
         }.fmt(f)
     }
@@ -57,7 +55,7 @@ fn tokenize_expression(chars: &mut Peekable<Chars>) -> Result<Vec<Token>, String
             Some('0'...'9') => { tokens.push(try!(num_token(&mut chars.by_ref()))); },
             Some(c) => {
                 chars.next();
-                tokens.push(try!(char_to_token(c)));
+                tokens.push(char_to_token(c));
             },
             None => break,
         }
@@ -80,7 +78,7 @@ fn ident_token(chars: &mut Peekable<Chars>) -> Token {
             Some(_) | None => break,
         }
     }
-    IdentT(token)
+    Token::Ident(token)
 }
 
 fn num_token(chars: &mut Peekable<Chars>) -> Result<Token, String> {
@@ -104,7 +102,7 @@ fn num_token(chars: &mut Peekable<Chars>) -> Result<Token, String> {
             Some(_) | None => break,
         }
     }
-    Ok(NumberT(num))
+    Ok(Token::NumericConstant(num))
 }
 
 fn string_token(chars: &mut Peekable<Chars>) -> Result<Token, String> {
@@ -128,18 +126,18 @@ fn string_token(chars: &mut Peekable<Chars>) -> Result<Token, String> {
             None => return Err("string const should be closed by \'".to_owned()),
         }
     }
-    Ok(StringT(string))
+    Ok(Token::CharactersConstant(string))
 }
 
-fn char_to_token(c: char) -> Result<Token, String> {
+fn char_to_token(c: char) -> Token {
     match c {
-        '(' => Ok(LeftParenthesis),
-        ')' => Ok(RightParenthesis),
-        ',' => Ok(Comma),
-        '\'' => Ok(SingleQuote),
-        ';' => Ok(Semicolon),
-        '=' => Ok(EqualSign),
-        '*' => Ok(Asterisk),
-        _ => Err(format!("Unexpected character - {:?}", c)),
+        '('     => Token::LeftParenthesis,
+        ')'     => Token::RightParenthesis,
+        ','     => Token::Comma,
+        '\''    => Token::SingleQuote,
+        ';'     => Token::Semicolon,
+        '='     => Token::EqualSign,
+        '*'     => Token::Asterisk,
+        _       => unimplemented!(),
     }
 }

@@ -4,11 +4,11 @@ pub enum Node {
     From(String),
     Where(Option<Condition>),
     Id(String),
-    NumberC(String),
-    StringC(String),
+    Numeric(String),
+    CharSequence(String),
 
     Insert(Box<Node>, Box<Node>),
-    TableN(String, Vec<Node>),
+    Table(String, Vec<Node>),
     Values(Vec<Node>),
     Column(String),
 
