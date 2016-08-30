@@ -53,7 +53,6 @@ fn does_not_insert_when_column_type_does_not_match() {
 }
 
 #[test]
-#[ignore]
 fn selects_inserted_data_from_table() {
     let executer = QueryExecuter::default();
 

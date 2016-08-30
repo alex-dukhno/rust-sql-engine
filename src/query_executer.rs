@@ -84,17 +84,10 @@ impl QueryExecuter {
     }
 
     fn select_data(&self, table: Node, columns: Vec<Node>) -> Result<ExecutionResult, String> {
-        let mut result = vec![];
-        println!("columns = {:?}", columns);
-        match table {
-            TableN(table_name, _) => {
-                for (index, _) in columns.into_iter().enumerate() {
-                    println!("index = {:?}", index);
-                    result.push(self.data_manager.get_row_from(table_name.as_str(), index));
-                }
-            }
+        let result = match table {
+            TableN(table_name, _) => self.data_manager.get_range_till_end(table_name.as_str(), 0),
             _ => return Err("parsing error".to_owned()),
-        }
+        };
         Ok(Data(result))
     }
 }

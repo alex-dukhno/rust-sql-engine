@@ -57,4 +57,18 @@ impl DataManager {
         drop(guard);
         result
     }
+
+    pub fn get_range_till_end(&self, table_name: &str, start_from: usize) -> Vec<Vec<String>> {
+        let guard = self.data.lock().unwrap();
+        let result = match (*guard).get(table_name) {
+            None => vec![],
+            Some(table_data) =>
+                table_data.into_iter()
+                    .skip(start_from)
+                    .map(|v| v.into_iter().map(|s| s.clone()).collect::<Vec<String>>())
+                    .collect::<Vec<Vec<String>>>(),
+        };
+        drop(guard);
+        result
+    }
 }

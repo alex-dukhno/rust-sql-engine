@@ -24,7 +24,7 @@ fn retrievs_data_from_table() {
 }
 
 #[test]
-fn retrives_range_of_rows_from_table() {
+fn retrievs_range_of_rows_from_table() {
     let data_manager = DataManager::default();
 
     drop(data_manager.save_to("table_name", vec!["1", "2", "3"]));
@@ -47,6 +47,26 @@ fn retrives_range_of_rows_from_table() {
             vec![
                 vec!["7", "8", "9"],
                 vec!["10", "11", "12"]
+            ]
+        ));
+}
+
+#[test]
+fn retrievs_range_from_index_till_end() {
+    let data_manager = DataManager::default();
+
+    drop(data_manager.save_to("table_name", vec!["1", "2", "3"]));
+    drop(data_manager.save_to("table_name", vec!["4", "5", "6"]));
+    drop(data_manager.save_to("table_name", vec!["7", "8", "9"]));
+    drop(data_manager.save_to("table_name", vec!["10", "11", "12"]));
+    drop(data_manager.save_to("table_name", vec!["13", "14", "15"]));
+
+    expect!(data_manager.get_range_till_end("table_name", 2))
+        .to(be_equal_to(
+            vec![
+                vec!["7", "8", "9"],
+                vec!["10", "11", "12"],
+                vec!["13", "14", "15"]
             ]
         ));
 }
