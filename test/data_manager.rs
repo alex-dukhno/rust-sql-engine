@@ -4,7 +4,7 @@ use sql::data_manager::DataManager;
 
 #[test]
 fn saves_to_one_row_table() {
-    let mut data_manger = DataManager::default();
+    let data_manger = DataManager::default();
 
     expect!(data_manger.save_to("table_name", vec!["1"]))
         .to(be_ok());
@@ -12,7 +12,7 @@ fn saves_to_one_row_table() {
 
 #[test]
 fn retrievs_data_from_table() {
-    let mut data_manager = DataManager::default();
+    let data_manager = DataManager::default();
 
     drop(data_manager.save_to("table_name", vec!["1", "2"]));
     drop(data_manager.save_to("table_name", vec!["3", "4"]));
@@ -25,7 +25,7 @@ fn retrievs_data_from_table() {
 
 #[test]
 fn retrives_range_of_rows_from_table() {
-    let mut data_manager = DataManager::default();
+    let data_manager = DataManager::default();
 
     drop(data_manager.save_to("table_name", vec!["1", "2", "3"]));
     drop(data_manager.save_to("table_name", vec!["4", "5", "6"]));
