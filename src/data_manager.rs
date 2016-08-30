@@ -51,7 +51,7 @@ impl DataManager {
                 table_data.into_iter()
                     .skip(start_from)
                     .take(number_of_rows)
-                    .map(|v| v.iter().cloned().collect::<Vec<String>>())
+                    .cloned()
                     .collect::<Vec<Vec<String>>>(),
         };
         drop(guard);
@@ -65,7 +65,7 @@ impl DataManager {
             Some(table_data) =>
                 table_data.into_iter()
                     .skip(start_from)
-                    .map(|v| v.into_iter().cloned().collect::<Vec<String>>())
+                    .cloned()
                     .collect::<Vec<Vec<String>>>(),
         };
         drop(guard);
