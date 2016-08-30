@@ -12,6 +12,8 @@ pub enum Node {
     Values(Vec<Node>),
     Column(String),
 
+    Select(Box<Node>, Vec<Node>),
+
     Create(Box<Node>),
     TableColumn(String, Type, Option<Flag>)
 }

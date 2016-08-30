@@ -307,3 +307,31 @@ mod parses_insert_statements {
             ));
     }
 }
+
+#[cfg(test)]
+mod parse_select_statements {
+
+    use expectest::prelude::be_ok;
+
+    use sql::lexer::Token::IdentT;
+    use sql::parser::Parser;
+    use sql::parser::ast::Node::{Select, TableN, Column};
+
+    #[test]
+    fn without_predicates() {
+        let tokens = vec![
+            IdentT("select".to_owned()),
+            IdentT("col".to_owned()),
+            IdentT("from".to_owned()),
+            IdentT("table_name".to_owned())
+        ];
+
+        expect!(tokens.parse())
+            .to(be_ok().value(
+                Select(
+                    Box::new(TableN("table_name".to_owned(), vec![])),
+                    vec![Column("col".to_owned())]
+                )
+            ));
+    }
+}

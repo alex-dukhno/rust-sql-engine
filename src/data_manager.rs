@@ -27,32 +27,32 @@ impl DataManager {
         Ok(())
     }
 
-    pub fn get_row_from(&self, table_name: &str, row_id: usize) -> Option<Vec<String>> {
+    pub fn get_row_from(&self, table_name: &str, row_id: usize) -> Vec<String> {
         let guard = self.data.lock().unwrap();
         let result = match (*guard).get(table_name) {
-            None => None,
+            None => vec![],
             Some(table_data) => {
                 match table_data.into_iter().nth(row_id) {
-                    None => None,
-                    Some(vec) => Some(vec.iter().map(|s| s.clone()).collect::<Vec<String>>())
+                    None => vec![],
+                    Some(vec) => vec.iter().map(|s| s.clone()).collect::<Vec<String>>()
                 }
             },
         };
         drop(guard);
+        println!("result = {:?}", result);
         result
     }
 
-    pub fn get_range(&self, table_name: &str, start_from: usize, number_of_rows: usize) -> Option<Vec<Vec<String>>> {
+    pub fn get_range(&self, table_name: &str, start_from: usize, number_of_rows: usize) -> Vec<Vec<String>> {
         let guard = self.data.lock().unwrap();
         let result = match (*guard).get(table_name) {
-            None => None,
+            None => vec![],
             Some(table_data) =>
-                Some(table_data.into_iter()
-                        .skip(start_from)
-                        .take(number_of_rows)
-                        .map(|v| v.iter().map(|s| s.clone()).collect::<Vec<String>>())
-                        .collect::<Vec<Vec<String>>>()
-                ),
+                table_data.into_iter()
+                    .skip(start_from)
+                    .take(number_of_rows)
+                    .map(|v| v.iter().map(|s| s.clone()).collect::<Vec<String>>())
+                    .collect::<Vec<Vec<String>>>(),
         };
         drop(guard);
         result
