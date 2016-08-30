@@ -140,11 +140,10 @@ fn parse_values<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Vec<Node
 }
 
 fn parse_select<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Result<Node, String> {
-    match tokens.peek() {
-        Some(&Token::Ident(ref v)) => if v == "from" {
+    if let Some(&Token::Ident(ref v)) = tokens.peek() {
+        if v == "from" {
             return Err("parsing error".to_owned());
-        },
-        _ => {},
+        }
     }
 
     let mut columns = vec![];

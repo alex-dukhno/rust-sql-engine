@@ -83,24 +83,9 @@ fn ident_token(chars: &mut Peekable<Chars>) -> Token {
 
 fn num_token(chars: &mut Peekable<Chars>) -> Result<Token, String> {
     let mut num = String::default();
-    let mut float_point = false;
-    loop {
-        match chars.peek().cloned() {
-            Some(d @ '0'...'9') => {
-                chars.next();
-                num.push(d);
-            },
-            Some('.') => {
-                if !float_point {
-                    chars.next();
-                    num.push('.');
-                    float_point = true;
-                } else {
-                    return Err("Number format error".to_owned());
-                }
-            },
-            Some(_) | None => break,
-        }
+    while let Some(d @ '0'...'9') = chars.peek().cloned() {
+        chars.next();
+        num.push(d);
     }
     Ok(Token::NumericConstant(num))
 }

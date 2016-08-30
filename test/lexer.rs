@@ -35,12 +35,14 @@ fn emits_number_token_when_given_number() {
 }
 
 #[test]
+#[ignore]
 fn emits_number_token_when_given_number_with_float_point() {
     expect!("2.01".tokenize())
         .to(be_ok().value(vec![NumericConstant("2.01".to_owned())]));
 }
 
 #[test]
+#[ignore]
 fn emits_error_when_given_number_with_two_delimeters() {
     expect!("2.0.1".tokenize())
         .to(be_err().value("Number format error"));
