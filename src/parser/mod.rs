@@ -8,41 +8,39 @@ use super::lexer::Token;
 use self::ast::{Node, Type, Condition};
 
 pub trait Parser {
-    fn parse(self) -> Result<Node, String>;
+    fn parse(self) -> Node;
 }
 
 impl<T: IntoIterator<Item = Token>> Parser for T {
-    fn parse(self) -> Result<Node, String> {
+    fn parse(self) -> Node {
         let mut iter = self.into_iter().peekable();
-        match iter.next() {
-            Some(Token::Ident(statement)) => {
-                match statement.as_str() {
-                    "create" => Ok(Node::Create(Box::new(try!(parse_create(&mut iter.by_ref()))))),
-                    "delete" => Ok(Node::Delete(Box::new(try!(parse_from(&mut iter.by_ref()))), Box::new(try!(parse_where(&mut iter.by_ref()))))),
-                    "insert" => Ok(Node::Insert(Box::new(try!(parse_table(&mut iter.by_ref()))), Box::new(Node::Values(parse_values(&mut iter.by_ref()))))),
-                    "select" => Ok(try!(parse_select(&mut iter.by_ref()))),
-                    _ => Err("undefined query type".to_owned()),
-                }
+        if let Some(Token::Ident(statement)) = iter.next() {
+            match statement.as_str() {
+                "create" => Node::Create(Box::new(parse_create(&mut iter.by_ref()))),
+                "delete" => Node::Delete(Box::new(parse_from(&mut iter.by_ref())), Box::new(parse_where(&mut iter.by_ref()))),
+                "insert" => Node::Insert(Box::new(parse_table(&mut iter.by_ref())), Box::new(Node::Values(parse_values(&mut iter.by_ref())))),
+                "select" => parse_select(&mut iter.by_ref()),
+                _ => unimplemented!(),
             }
-            _ => Err("".to_owned()),
+        } else {
+            unimplemented!()
         }
     }
 }
 
-fn parse_create<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Result<Node, String> {
+fn parse_create<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Node {
     tokens.next(); //skip 'TABLE' keyword
-    let table_name = match tokens.next() {
-        Some(Token::Ident(name)) => name,
-        Some(token) => return Err(format_unexpected_token("table name", Some(&token))),
-        _ => return Err("".to_owned()),
-    };
-    Ok(Node::Table(table_name, try!(parse_table_columns(&mut tokens.by_ref()))))
+    if let Some(Token::Ident(name)) = tokens.next() {
+        Node::Table(name, parse_table_columns(&mut tokens.by_ref()))
+    } else {
+        unimplemented!()
+    }
 }
 
-fn parse_table_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Result<Vec<Node>, String> {
+fn parse_table_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Vec<Node> {
     match tokens.next() {
         Some(Token::LeftParenthesis) => {} //skip '('
-        token => return Err(format_unexpected_token(Token::LeftParenthesis, token.as_ref())),
+        _ => unimplemented!()
     }
 
     let mut columns = vec![];
@@ -50,11 +48,11 @@ fn parse_table_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> R
     loop {
         let col_name = match tokens.next() {
             Some(Token::Ident(name)) => name,
-            _ => return Err("".to_owned()),
+            _ => unimplemented!(),
         };
         let col_type = match tokens.next() {
             Some(Token::Ident(_)) => Type::Int,
-            _ => return Err("".to_owned()),
+            _ => unimplemented!(),
         };
 
         columns.push(Node::TableColumn(col_name, col_type, None));
@@ -62,48 +60,39 @@ fn parse_table_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> R
         match tokens.next() {
             Some(Token::Comma) => {}, //skip ','
             Some(Token::RightParenthesis) => break,
-            Some(Token::Ident(id)) => return Err(format_unexpected_token(Token::Comma, Some(&Token::Ident(id)))),
-            Some(token) => return Err(format_unexpected_token(Token::RightParenthesis, Some(&token))),
-            None => return Err("parsing error missing ','".to_owned()),
+            _ => unimplemented!()
         }
     }
 
     //    tokens.next(); //skip ')'
     match tokens.peek() {
         Some(&Token::Semicolon) => { tokens.next(); } // skip ';'
-        _ => return Err(format_unexpected_token(Token::Semicolon, None)),
+        _ => unimplemented!()
     }
 
-    Ok(columns)
+    columns
 }
 
-fn format_unexpected_token<D: fmt::Display + Sized>(expected: D, found: Option<&Token>) -> String {
-    match found {
-        Some(token) => format!("error: expected <{}> found <{}>", expected, token),
-        None => format!("error: expected <{}>", expected)
-    }
-}
-
-fn parse_from<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Result<Node, String> {
+fn parse_from<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Node {
     tokens.next(); //skip 'FROM' keyword
     match tokens.next() {
-        Some(Token::Ident(table_name)) => Ok(Node::From(table_name)),
-        _ => Err("".to_owned()),
+        Some(Token::Ident(table_name)) => Node::From(table_name),
+        _ => unimplemented!(),
     }
 }
 
-fn parse_where<I: Iterator<Item = Token>>(tokens: &mut I) -> Result<Node, String> {
+fn parse_where<I: Iterator<Item = Token>>(tokens: &mut I) -> Node {
     tokens.next(); //skip 'WHERE' keyword
     match tokens.next() {
-        Some(_) => Ok(Node::Where(Some(Condition::Eq(Box::new(Node::Id("col".to_owned())), Box::new(Node::Numeric("5".to_owned())))))),
-        _ => Ok(Node::Where(None)),
+        Some(_) => Node::Where(Some(Condition::Eq(Box::new(Node::Id("col".to_owned())), Box::new(Node::Numeric("5".to_owned()))))),
+        _ => Node::Where(None),
     }
 }
 
-fn parse_table<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Result<Node, String> {
+fn parse_table<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Node {
     tokens.next(); //skip 'INTO' keyword
     tokens.next(); //skip table name
-    Ok(Node::Table("table_name".to_owned(), parse_columns(&mut tokens.by_ref())))
+    Node::Table("table_name".to_owned(), parse_columns(&mut tokens.by_ref()))
 }
 
 fn parse_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Vec<Node> {
@@ -139,10 +128,10 @@ fn parse_values<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Vec<Node
     values
 }
 
-fn parse_select<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Result<Node, String> {
+fn parse_select<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Node {
     if let Some(&Token::Ident(ref v)) = tokens.peek() {
         if v == "from" {
-            return Err("parsing error".to_owned());
+            unimplemented!()
         }
     }
 
@@ -156,14 +145,14 @@ fn parse_select<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Result<N
                 columns.push(Node::Column(v))
             },
             Some(Token::Comma) => {},
-            _ => return Err("parsing error".to_owned()),
+            _ => unimplemented!()
         }
     }
 
     let table = match tokens.next() {
         Some(Token::Ident(table_name)) => Node::Table(table_name, vec![]),
-        _ => return Err("parsing error".to_owned()),
+        _ => unimplemented!()
     };
 
-    Ok(Node::Select(Box::new(table), columns))
+    Node::Select(Box::new(table), columns)
 }
