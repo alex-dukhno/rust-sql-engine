@@ -5,19 +5,19 @@ use sql::lexer::Token::{Ident, NumericConstant, CharactersConstant};
 
 #[test]
 fn emits_none_when_given_an_empty_string() {
-    expect!("".tokenize())
+    expect!(Tokenizer::from("").tokenize())
         .to(be_equal_to(vec![]));
 }
 
 #[test]
 fn emits_identifier_token_when_given_a_single_word_string() {
-    expect!("word".tokenize())
+    expect!(Tokenizer::from("word").tokenize())
         .to(be_equal_to(vec![Ident("word".to_owned())]));
 }
 
 #[test]
 fn emits_identifiers_when_given_string_of_words() {
-    expect!("this is a sentence".tokenize())
+    expect!(Tokenizer::from("this is a sentence").tokenize())
         .to(be_equal_to(
             vec![
                 Ident("this".to_owned()),
@@ -30,36 +30,36 @@ fn emits_identifiers_when_given_string_of_words() {
 
 #[test]
 fn emits_number_token_when_given_number() {
-    expect!("5".tokenize())
+    expect!(Tokenizer::from("5").tokenize())
         .to(be_equal_to(vec![NumericConstant("5".to_owned())]));
 }
 
 #[test]
 fn escapes_single_quote_inside_string_token() {
-    expect!("\'str\'\'str\'".tokenize())
+    expect!(Tokenizer::from("\'str\'\'str\'").tokenize())
         .to(be_equal_to(vec![CharactersConstant("str\'str".to_owned())]));
 }
 
 #[test]
 fn escapes_new_line_chars() {
-    expect!("\nword".tokenize())
+    expect!(Tokenizer::from("\nword").tokenize())
         .to(be_equal_to(vec![Ident("word".to_owned())]));
 }
 
 #[test]
 fn escapes_tabs() {
-    expect!("\tword".tokenize())
+    expect!(Tokenizer::from("\tword").tokenize())
         .to(be_equal_to(vec![Ident("word".to_owned())]));
 }
 
 #[test]
 fn emits_string_when_only_open_signle_quote() {
-    expect!("\'str".tokenize())
+    expect!(Tokenizer::from("\'str").tokenize())
         .to(be_equal_to(vec![CharactersConstant("str".to_owned())]));
 }
 
 #[test]
 fn case_insensitive() {
-    expect!("ABCDEFGHIJKLMNOPQRSTUVWXYZ".tokenize())
+    expect!(Tokenizer::from("ABCDEFGHIJKLMNOPQRSTUVWXYZ").tokenize())
         .to(be_equal_to(vec![Ident("abcdefghijklmnopqrstuvwxyz".to_owned())]));
 }

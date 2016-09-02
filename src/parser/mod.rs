@@ -1,8 +1,6 @@
 pub mod ast;
 
 use std::iter::Peekable;
-use std::marker::Sized;
-use std::fmt;
 
 use super::lexer::Token;
 use self::ast::{Node, Type, Condition};
