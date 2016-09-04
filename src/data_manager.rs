@@ -1,20 +1,32 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
 
-pub struct DataManager {
+pub trait DataManager {
+    fn create() -> Self;
+
+    fn save_to<I, D>(&self, table_name: I, data: D)
+        where I: Into<String>,
+              D: IntoIterator<Item = I>;
+
+    fn get_row_from(&self, table_name: &str, row_id: usize) -> Vec<String>;
+
+    fn get_range(&self, table_name: &str, start_from: usize, number_of_rows: usize) -> Vec<Vec<String>>;
+
+    fn get_range_till_end(&self, table_name: &str, start_from: usize) -> Vec<Vec<String>>;
+}
+
+pub struct LockBaseDataManager {
     data: Mutex<HashMap<String, Vec<Vec<String>>>>
 }
 
-impl Default for DataManager {
-    fn default() -> DataManager {
-        DataManager {
+impl DataManager for LockBaseDataManager {
+    fn create() -> LockBaseDataManager {
+        LockBaseDataManager {
             data: Mutex::new(HashMap::default())
         }
     }
-}
 
-impl DataManager {
-    pub fn save_to<I, D>(&self, table_name: I, data: D) -> Result<(), ()>
+    fn save_to<I, D>(&self, table_name: I, data: D)
         where I: Into<String>,
               D: IntoIterator<Item = I> {
         let mut guard = self.data.lock().unwrap();
@@ -24,10 +36,9 @@ impl DataManager {
                 data.into_iter().map(Into::into).collect::<Vec<String>>()
             );
         drop(guard);
-        Ok(())
     }
 
-    pub fn get_row_from(&self, table_name: &str, row_id: usize) -> Vec<String> {
+    fn get_row_from(&self, table_name: &str, row_id: usize) -> Vec<String> {
         let guard = self.data.lock().unwrap();
         let result = match (*guard).get(table_name) {
             None => vec![],
@@ -39,11 +50,10 @@ impl DataManager {
             },
         };
         drop(guard);
-        println!("result = {:?}", result);
         result
     }
 
-    pub fn get_range(&self, table_name: &str, start_from: usize, number_of_rows: usize) -> Vec<Vec<String>> {
+    fn get_range(&self, table_name: &str, start_from: usize, number_of_rows: usize) -> Vec<Vec<String>> {
         let guard = self.data.lock().unwrap();
         let result = match (*guard).get(table_name) {
             None => vec![],
@@ -58,7 +68,7 @@ impl DataManager {
         result
     }
 
-    pub fn get_range_till_end(&self, table_name: &str, start_from: usize) -> Vec<Vec<String>> {
+    fn get_range_till_end(&self, table_name: &str, start_from: usize) -> Vec<Vec<String>> {
         let guard = self.data.lock().unwrap();
         let result = match (*guard).get(table_name) {
             None => vec![],

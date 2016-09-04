@@ -1,17 +1,17 @@
 use super::parser::ast::{Node, Type};
 use super::catalog_manager::{CatalogManager, LockBasedCatalogManager, Table, Column};
-use super::data_manager::DataManager;
+use super::data_manager::{DataManager, LockBaseDataManager};
 
 pub struct QueryExecuter {
     catalog_manager: LockBasedCatalogManager,
-    data_manager: DataManager
+    data_manager: LockBaseDataManager
 }
 
 impl Default for QueryExecuter {
     fn default() -> Self {
         QueryExecuter {
             catalog_manager: CatalogManager::create(),
-            data_manager: DataManager::default()
+            data_manager: DataManager::create()
         }
     }
 }

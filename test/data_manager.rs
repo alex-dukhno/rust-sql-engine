@@ -1,18 +1,20 @@
-use expectest::prelude::{be_ok, be_equal_to};
+use expectest::prelude::be_ok;
 
-use sql::data_manager::DataManager;
+use sql::data_manager::{DataManager, LockBaseDataManager};
 
 #[test]
 fn saves_to_one_row_table() {
-    let data_manger = DataManager::default();
+    let data_manger = LockBaseDataManager::create();
 
-    expect!(data_manger.save_to("table_name", vec!["1"]))
-        .to(be_ok());
+    drop(data_manger.save_to("table_name", vec!["1"]));
+
+    expect!(data_manger.get_range_till_end("table_name", 0))
+        .to(be_equal_to(vec![vec!["1"]]));
 }
 
 #[test]
 fn retrievs_data_from_table() {
-    let data_manager = DataManager::default();
+    let data_manager = LockBaseDataManager::create();
 
     drop(data_manager.save_to("table_name", vec!["1", "2"]));
     drop(data_manager.save_to("table_name", vec!["3", "4"]));
@@ -25,7 +27,7 @@ fn retrievs_data_from_table() {
 
 #[test]
 fn retrievs_range_of_rows_from_table() {
-    let data_manager = DataManager::default();
+    let data_manager = LockBaseDataManager::create();
 
     drop(data_manager.save_to("table_name", vec!["1", "2", "3"]));
     drop(data_manager.save_to("table_name", vec!["4", "5", "6"]));
@@ -53,7 +55,7 @@ fn retrievs_range_of_rows_from_table() {
 
 #[test]
 fn retrievs_range_from_index_till_end() {
-    let data_manager = DataManager::default();
+    let data_manager = LockBaseDataManager::create();
 
     drop(data_manager.save_to("table_name", vec!["1", "2", "3"]));
     drop(data_manager.save_to("table_name", vec!["4", "5", "6"]));
