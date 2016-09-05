@@ -1,4 +1,4 @@
-use expectest::prelude::be_ok;
+use expectest::prelude::be_equal_to;
 
 use sql::data_manager::{DataManager, LockBaseDataManager};
 
