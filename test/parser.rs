@@ -2,7 +2,7 @@
 mod parses_create_table_statement {
     use expectest::prelude::be_equal_to;
 
-    use sql::lexer::Token::{Ident, Semicolon, LeftParenthesis, RightParenthesis, Comma};
+    use sql::lexer::Tokenizer;
     use sql::parser::Parser;
     use sql::parser::ast::Type::Int;
     use sql::parser::ast::Statement::Create;
@@ -11,41 +11,14 @@ mod parses_create_table_statement {
 
     #[test]
     fn with_one_column() {
-        let tokens = vec![
-            Ident("create".to_owned()),
-            Ident("table".to_owned()),
-            Ident("table_name_1".to_owned()),
-            LeftParenthesis,
-            Ident("col".to_owned()),
-            Ident("int".to_owned()),
-            RightParenthesis,
-            Semicolon
-        ];
-
-        expect!(tokens.parse())
+        expect!(Tokenizer::from("create table table_name_1 (col int);").tokenize().parse())
             .to(be_equal_to(Create(CreateTableQuery::new("table_name_1", vec![Column::new("col", Int)]))));
     }
 
     #[test]
     fn with_list_of_columns() {
-        let tokens = vec![
-            Ident("create".to_owned()),
-            Ident("table".to_owned()),
-            Ident("table_name_2".to_owned()),
-            LeftParenthesis,
-            Ident("col1".to_owned()),
-            Ident("int".to_owned()),
-            Comma,
-            Ident("col2".to_owned()),
-            Ident("int".to_owned()),
-            Comma,
-            Ident("col3".to_owned()),
-            Ident("int".to_owned()),
-            RightParenthesis,
-            Semicolon
-        ];
 
-        expect!(tokens.parse())
+        expect!(Tokenizer::from("create table table_name_2 (col1 int, col2 int, col3 int);").tokenize().parse())
             .to(
                 be_equal_to(
                     Create(
@@ -67,7 +40,7 @@ mod parses_create_table_statement {
 mod parses_delete_statements {
     use expectest::prelude::be_equal_to;
 
-    use sql::lexer::Token::{Ident, Semicolon, EqualSign, NumericConstant, CharactersConstant};
+    use sql::lexer::Tokenizer;
     use sql::parser::Parser;
     use sql::parser::ast::Statement::Delete;
     use sql::parser::ast::DeleteQuery;
@@ -76,31 +49,13 @@ mod parses_delete_statements {
 
     #[test]
     fn without_any_predicates() {
-        let tokens = vec![
-            Ident("delete".to_owned()),
-            Ident("from".to_owned()),
-            Ident("table_name_1".to_owned()),
-            Semicolon
-        ];
-
-        expect!(tokens.parse())
+        expect!(Tokenizer::from("delete from table_name_1;").tokenize().parse())
             .to(be_equal_to(Delete(DeleteQuery::new("table_name_1", None))));
     }
 
     #[test]
     fn with_column_const_predicate() {
-        let tokens = vec![
-            Ident("delete".to_owned()),
-            Ident("from".to_owned()),
-            Ident("table_name_2".to_owned()),
-            Ident("where".to_owned()),
-            Ident("col_1".to_owned()),
-            EqualSign,
-            NumericConstant("5".to_owned()),
-            Semicolon
-        ];
-
-        expect!(tokens.parse())
+        expect!(Tokenizer::from("delete from table_name_2 where col_1 = 5;").tokenize().parse())
             .to(
                 be_equal_to(
                     Delete(
@@ -120,18 +75,7 @@ mod parses_delete_statements {
 
     #[test]
     fn with_const_column_predicate() {
-        let tokens = vec![
-            Ident("delete".to_owned()),
-            Ident("from".to_owned()),
-            Ident("table_name_3".to_owned()),
-            Ident("where".to_owned()),
-            CharactersConstant("str".to_owned()),
-            EqualSign,
-            Ident("col_2".to_owned()),
-            Semicolon
-        ];
-
-        expect!(tokens.parse())
+        expect!(Tokenizer::from("delete from table_name_3 where 'str' = col_2;").tokenize().parse())
             .to(
                 be_equal_to(
                     Delete(
@@ -154,7 +98,7 @@ mod parses_delete_statements {
 mod parses_insert_statements {
     use expectest::prelude::be_equal_to;
 
-    use sql::lexer::Token::{Ident, LeftParenthesis, NumericConstant, RightParenthesis, Semicolon, Comma, CharactersConstant};
+    use sql::lexer::Tokenizer;
     use sql::parser::Parser;
     use sql::parser::ast::InsertQuery;
     use sql::parser::ast::Statement::Insert;
@@ -162,18 +106,7 @@ mod parses_insert_statements {
 
     #[test]
     fn with_one_column() {
-        let tokens = vec![
-            Ident("insert".to_owned()),
-            Ident("into".to_owned()),
-            Ident("table_name_1".to_owned()),
-            Ident("values".to_owned()),
-            LeftParenthesis,
-            NumericConstant("10".to_owned()),
-            RightParenthesis,
-            Semicolon
-        ];
-
-        expect!(tokens.parse())
+        expect!(Tokenizer::from("insert into table_name_1 values(10);").tokenize().parse())
             .to(
                 be_equal_to(
                     Insert(
@@ -185,20 +118,7 @@ mod parses_insert_statements {
 
     #[test]
     fn with_list_of_columns() {
-        let tokens = vec![
-                Ident("insert".to_owned()),
-                Ident("into".to_owned()),
-                Ident("table_name_2".to_owned()),
-                Ident("values".to_owned()),
-                LeftParenthesis,
-                NumericConstant("10".to_owned()),
-                Comma,
-                CharactersConstant("string".to_owned()),
-                RightParenthesis,
-                Semicolon
-            ];
-
-        expect!(tokens.parse())
+        expect!(Tokenizer::from("insert into table_name_2 values (10, 'string');").tokenize().parse())
             .to(
                 be_equal_to(
                     Insert(
@@ -214,25 +134,7 @@ mod parses_insert_statements {
 
     #[test]
     fn with_columns() {
-        let tokens = vec![
-                Ident("insert".to_owned()),
-                Ident("into".to_owned()),
-                Ident("table_name_3".to_owned()),
-                LeftParenthesis,
-                Ident("col_1".to_owned()),
-                Comma,
-                Ident("col_2".to_owned()),
-                RightParenthesis,
-                Ident("values".to_owned()),
-                LeftParenthesis,
-                NumericConstant("10".to_owned()),
-                Comma,
-                CharactersConstant("string".to_owned()),
-                RightParenthesis,
-                Semicolon
-            ];
-
-        expect!(tokens.parse())
+        expect!(Tokenizer::from("insert into table_name_3 (col_1, col_2) values (10, 'string');").tokenize().parse())
             .to(
                 be_equal_to(
                     Insert(
@@ -252,7 +154,7 @@ mod parse_select_statements {
 
     use expectest::prelude::be_equal_to;
 
-    use sql::lexer::Token::{Ident, EqualSign, NumericConstant};
+    use sql::lexer::Tokenizer;
     use sql::parser::Parser;
     use sql::parser::ast::Statement::Select;
     use sql::parser::ast::SelectQuery;
@@ -261,14 +163,7 @@ mod parse_select_statements {
 
     #[test]
     fn without_predicates() {
-        let tokens = vec![
-            Ident("select".to_owned()),
-            Ident("col_1".to_owned()),
-            Ident("from".to_owned()),
-            Ident("table_name_1".to_owned())
-        ];
-
-        expect!(tokens.parse())
+        expect!(Tokenizer::from("select col_1 from table_name_1").tokenize().parse())
             .to(
                 be_equal_to(
                     Select(
@@ -280,18 +175,7 @@ mod parse_select_statements {
 
     #[test]
     fn with_predicates() {
-        let tokens = vec![
-            Ident("select".to_owned()),
-            Ident("col_2".to_owned()),
-            Ident("from".to_owned()),
-            Ident("table_name_2".to_owned()),
-            Ident("where".to_owned()),
-            Ident("col_2".to_owned()),
-            EqualSign,
-            NumericConstant("10".to_owned())
-        ];
-
-        expect!(tokens.parse())
+        expect!(Tokenizer::from("select col_2 from table_name_2 where col_2 = 10;").tokenize().parse())
             .to(
                 be_equal_to(
                     Select(
@@ -309,18 +193,7 @@ mod parse_select_statements {
 
     #[test]
     fn with_limit_predicate() {
-        let tokens = vec![
-            Ident("select".to_owned()),
-            Ident("col_2".to_owned()),
-            Ident("from".to_owned()),
-            Ident("table_name_2".to_owned()),
-            Ident("where".to_owned()),
-            Ident("limit".to_owned()),
-            EqualSign,
-            NumericConstant("10".to_owned())
-        ];
-
-        expect!(tokens.parse())
+        expect!(Tokenizer::from("select col_2 from table_name_2 where limit = 10;").tokenize().parse())
             .to(
                 be_equal_to(
                     Select(
