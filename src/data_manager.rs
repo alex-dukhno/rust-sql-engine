@@ -13,6 +13,8 @@ pub trait DataManager {
     fn get_range(&self, table_name: &str, start_from: usize, number_of_rows: usize) -> Vec<Vec<String>>;
 
     fn get_range_till_end(&self, table_name: &str, start_from: usize) -> Vec<Vec<String>>;
+
+    fn get_not_equal(&self, table_name: &str, column_index: usize, value: &String) -> Vec<Vec<String>>;
 }
 
 #[derive(Debug)]
@@ -72,12 +74,24 @@ impl DataManager for LockBaseDataManager {
     fn get_range_till_end(&self, table_name: &str, start_from: usize) -> Vec<Vec<String>> {
         let guard = self.data.lock().unwrap();
         let result = match (*guard).get(table_name) {
-            None => vec![],
+            None => unimplemented!(),
             Some(table_data) =>
                 table_data.into_iter()
                     .skip(start_from)
                     .cloned()
                     .collect::<Vec<Vec<String>>>(),
+        };
+        drop(guard);
+        result
+    }
+
+    fn get_not_equal(&self, table_name: &str, column_index: usize, value: &String) -> Vec<Vec<String>> {
+        let guard = self.data.lock().unwrap();
+        let result = match (*guard).get(table_name) {
+            None => unimplemented!(),
+            Some(table_data) => {
+                table_data.into_iter().filter(|v| v.get(column_index) != Some(value)).cloned().collect::<Vec<Vec<String>>>()
+            },
         };
         drop(guard);
         result

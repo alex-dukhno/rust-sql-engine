@@ -1,4 +1,4 @@
-use super::parser::ast::{Statement, Type, CreateTableQuery, InsertQuery, SelectQuery, Value, Condition, CondArg};
+use super::parser::ast::{Statement, Type, CreateTableQuery, InsertQuery, SelectQuery, Value, Condition, CondType, CondArg};
 use super::parser::ast;
 use super::catalog_manager::{CatalogManager, LockBasedCatalogManager, Table, Column};
 use super::data_manager::{DataManager, LockBaseDataManager};
@@ -49,13 +49,15 @@ impl QueryExecuter {
             let mut data = Vec::with_capacity(values.len());
             for (index, datum) in values.into_iter().enumerate() {
                 match datum {
-                    Value::NumConst(n) => if self.catalog_manager.match_type(table_name.as_str(), index, Type::Varchar) {
+                    Value::NumConst(n) => if self.catalog_manager.match_type(table_name.as_str(), index, Type::VarChar(0)) {
                         return ExecutionResult::Message("column type is VARCHAR find INT".to_owned());
                     } else {
                         data.push(n);
                     },
-                    Value::StrConst(_) => if self.catalog_manager.match_type(table_name.as_str(), index, Type::Int) {
+                    Value::StrConst(s) => if self.catalog_manager.match_type(table_name.as_str(), index, Type::Int) {
                         return ExecutionResult::Message("column type is INT find VARCHAR".to_owned());
+                    } else {
+                        data.push(s);
                     },
                 }
             }
@@ -69,14 +71,25 @@ impl QueryExecuter {
     fn select_data(&self, query: SelectQuery) -> ExecutionResult {
         let SelectQuery { table_name, columns, condition } = query;
         match condition {
-            Some(Condition::Eq(CondArg::Limit, CondArg::NumConst(n))) => {
-                let limit = match n.parse::<usize>() {
-                    Ok(v) => v,
-                    Err(e) => panic!(e),
-                };
-                ExecutionResult::Data(self.data_manager.get_range(table_name.as_str(), 0, limit))
-            },
-            Some(_) => unimplemented!(),
+            Some(Condition { left, right, cond_type }) => {
+                match (left, right, cond_type) {
+                    (CondArg::Limit, CondArg::NumConst(n), CondType::Eq) => {
+                        let limit = match n.parse::<usize>() {
+                            Ok(v) => v,
+                            Err(e) => panic!(e),
+                        };
+                        ExecutionResult::Data(self.data_manager.get_range(table_name.as_str(), 0, limit))
+                    },
+                    (CondArg::ColumnName(name), CondArg::StringConstant(value), CondType::NotEq) => {
+                        if let Some(index) = self.catalog_manager.get_column_index(table_name.as_str(), &name) {
+                            ExecutionResult::Data(self.data_manager.get_not_equal(table_name.as_str(), index, &value))
+                        } else {
+                            unimplemented!()
+                        }
+                    }
+                    _ => unimplemented!(),
+                }
+            }
             None => ExecutionResult::Data(self.data_manager.get_range_till_end(table_name.as_str(), 0))
         }
     }

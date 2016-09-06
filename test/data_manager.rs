@@ -72,3 +72,20 @@ fn retrievs_range_from_index_till_end() {
             ]
         ));
 }
+
+#[test]
+fn retrievs_by_not_equal_predicate_on_column() {
+    let data_manager = LockBaseDataManager::create();
+
+    drop(data_manager.save_to("table_name", vec!["10".to_owned(), "11".to_owned(), "12".to_owned()]));
+    drop(data_manager.save_to("table_name", vec!["1".to_owned(), "2".to_owned(), "3".to_owned()]));
+    drop(data_manager.save_to("table_name", vec!["7".to_owned(), "8".to_owned(), "9".to_owned()]));
+
+    expect!(data_manager.get_not_equal("table_name", 0, &("1".to_owned())))
+        .to(be_equal_to(
+            vec![
+                vec!["10", "11", "12"],
+                vec!["7", "8", "9"]
+            ]
+        ));
+}

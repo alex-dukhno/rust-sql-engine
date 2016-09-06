@@ -11,6 +11,10 @@ pub enum Token {
 
     LParent,
     RParent,
+
+    LAngle,
+    RAngle,
+
     Comma,
     SingleQuote,
     EqualSign,
@@ -42,6 +46,8 @@ impl From<char> for Token {
             ';' => Token::Semicolon,
             '=' => Token::EqualSign,
             '*' => Token::Asterisk,
+            '<' => Token::LAngle,
+            '>' => Token::RAngle,
             _ => unimplemented!(),
         }
     }

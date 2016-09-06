@@ -3,7 +3,7 @@ pub mod ast;
 use std::iter::Peekable;
 
 use super::lexer::Token;
-use self::ast::{Type, Condition, Statement, CreateTableQuery, DeleteQuery, InsertQuery, SelectQuery, CondArg, Value};
+use self::ast::{Type, CondType, Statement, CreateTableQuery, DeleteQuery, InsertQuery, SelectQuery, Condition, CondArg, Value};
 use self::ast::table::Column;
 
 pub trait Parser {
@@ -50,7 +50,18 @@ fn parse_table_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> V
             _ => unimplemented!(),
         };
         let col_type = match tokens.next() {
-            Some(Token::Ident(_)) => Type::Int,
+            Some(Token::Ident(t)) => if t == "int" { Type::Int } else {
+                tokens.next(); //skip '('
+                let size = match tokens.next() {
+                    Some(Token::NumConst(s)) => match s.parse::<u8>() {
+                        Ok(s) => s,
+                        Err(e) => panic!(e),
+                    },
+                    _ => unimplemented!(),
+                };
+                tokens.next(); // skip ')'
+                Type::VarChar(size)
+            },
             _ => unimplemented!(),
         };
 
@@ -84,16 +95,25 @@ fn parse_from<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> String {
     }
 }
 
-fn parse_where<I: Iterator<Item = Token>>(tokens: &mut I) -> Option<Condition> {
+fn parse_where<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Option<Condition> {
     if let Some(Token::Ident(_)) = tokens.next() { //skip 'WHERE' keyword
-        let left_hand_arg = parse_predicate_arguments(tokens.by_ref());
+        let left = parse_predicate_arguments(tokens.by_ref());
 
-        if let Some(Token::EqualSign) = tokens.next() {
-            let right_hand_arg = parse_predicate_arguments(tokens.by_ref());
-            Some(Condition::Eq(left_hand_arg, right_hand_arg))
-        } else {
-            unimplemented!()
-        }
+        let cond_type = match tokens.next() {
+            Some(Token::EqualSign) => CondType::Eq,
+            Some(Token::LAngle) => {
+                match tokens.peek() {
+                    Some(&Token::RAngle) => {
+                        tokens.next();
+                        CondType::NotEq
+                    },
+                    _ => unimplemented!(),
+                }
+            }
+            _ => unimplemented!(),
+        };
+        let right = parse_predicate_arguments(tokens.by_ref());
+        Some(Condition::new(left, right, cond_type))
     } else {
         None
     }
@@ -109,7 +129,7 @@ fn parse_predicate_arguments<I: Iterator<Item = Token>>(tokens: &mut I) -> CondA
         else {
             CondArg::ColumnName(s)
         },
-        _ => unimplemented!(),
+        c => panic!("unexpected token - {:?}", c),
     }
 }
 

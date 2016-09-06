@@ -1,4 +1,4 @@
-use expectest::prelude::{be_true, be_false};
+use expectest::prelude::{be_true, be_false, be_some};
 
 use sql::parser::ast::Type;
 use sql::catalog_manager::{CatalogManager, LockBasedCatalogManager, Table, Column};
@@ -71,8 +71,25 @@ fn column_does_not_match_type() {
 
     catalog_manager.add_table(table);
 
-    catalog_manager.add_column_to("table", Column::new("col", Type::Varchar));
+    catalog_manager.add_column_to("table", Column::new("col", Type::VarChar(10)));
 
     expect!(catalog_manager.match_type("table", 0, Type::Int))
         .to(be_false());
+}
+
+#[test]
+fn gets_column_index_by_name() {
+    let catalog_manager = LockBasedCatalogManager::create();
+
+    let table = Table::new("table");
+
+    catalog_manager.add_table(table);
+
+    catalog_manager.add_column_to("table", Column::new("col_1", Type::Int));
+    catalog_manager.add_column_to("table", Column::new("col_2", Type::Int));
+    catalog_manager.add_column_to("table", Column::new("col_3", Type::Int));
+
+    expect!(catalog_manager.get_column_index("table", "col_1")).to(be_some().value(0));
+    expect!(catalog_manager.get_column_index("table", "col_2")).to(be_some().value(1));
+    expect!(catalog_manager.get_column_index("table", "col_3")).to(be_some().value(2));
 }

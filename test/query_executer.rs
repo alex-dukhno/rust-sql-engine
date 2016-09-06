@@ -81,3 +81,15 @@ fn select_limit_number_of_rows() {
     expect!(executer.execute(Tokenizer::from("select col from table_name_2 where limit = 3;").tokenize().parse()))
         .to(be_equal_to(ExecutionResult::Data(vec![vec!["1".to_owned()], vec!["2".to_owned()], vec!["3".to_owned()]])));
 }
+
+#[test]
+fn select_by_column_predicate() {
+    let executer = QueryExecuter::default();
+
+    drop(executer.execute(Tokenizer::from("create table table_1 (col varchar(1));").tokenize().parse()));
+    drop(executer.execute(Tokenizer::from("insert into table_1 values (\'a\');").tokenize().parse()));
+    drop(executer.execute(Tokenizer::from("insert into table_1 values (\'b\');").tokenize().parse()));
+
+    expect!(executer.execute(Tokenizer::from("select col from table_1 where col <> \'a\';").tokenize().parse()))
+        .to(be_equal_to(ExecutionResult::Data(vec![vec!["b".to_owned()]])));
+}

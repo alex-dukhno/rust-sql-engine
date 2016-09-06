@@ -73,7 +73,7 @@ impl SelectQuery {
 #[derive(Debug, PartialEq)]
 pub enum Type {
     Int,
-    Varchar
+    VarChar(u8),
 }
 
 #[derive(Debug, PartialEq)]
@@ -83,8 +83,35 @@ pub enum Flag {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum Condition {
-    Eq(CondArg, CondArg)
+pub struct Condition {
+    pub left: CondArg,
+    pub right: CondArg,
+    pub cond_type: CondType
+}
+
+impl Condition {
+
+    pub fn new(left: CondArg, right: CondArg, cond_type: CondType) -> Condition {
+        Condition {
+            left: left,
+            right: right,
+            cond_type: cond_type
+        }
+    }
+
+    pub fn equals(left: CondArg, right: CondArg) -> Condition {
+        Condition::new(left, right, CondType::Eq)
+    }
+
+    pub fn not_equals(left: CondArg, right: CondArg) -> Condition {
+        Condition::new(left, right, CondType::NotEq)
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum CondType {
+    Eq,
+    NotEq
 }
 
 #[derive(Debug, PartialEq)]

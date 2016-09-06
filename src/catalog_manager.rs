@@ -15,6 +15,8 @@ pub trait CatalogManager {
     fn contains_column_in(&self, table_name: &str, column_name: &str) -> bool;
 
     fn match_type(&self, table_name: &str, column_index: usize, column_type: Type) -> bool;
+
+    fn get_column_index(&self, table_name: &str, column_name: &str) -> Option<usize>;
 }
 
 pub struct LockBasedCatalogManager {
@@ -69,6 +71,13 @@ impl CatalogManager for LockBasedCatalogManager {
         } else {
             false
         }
+    }
+
+    fn get_column_index(&self, table_name: &str, column_name: &str) -> Option<usize> {
+        let guard = self.tables.lock().unwrap();
+        let r = (*guard).get(table_name).and_then(|t| t.columns.iter().position(|c| c.name == column_name));
+        drop(guard);
+        r
     }
 }
 

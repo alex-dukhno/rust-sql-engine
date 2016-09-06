@@ -111,4 +111,23 @@ mod sql_query {
                 ]
             ));
     }
+
+    #[test]
+    fn tokenize_select_with_not_equal_predicate() {
+        expect!(Tokenizer::from("select col from table_1 where col <> 5;").tokenize())
+            .to(be_equal_to(
+                vec![
+                    Token::ident("select"),
+                    Token::ident("col"),
+                    Token::ident("from"),
+                    Token::ident("table_1"),
+                    Token::ident("where"),
+                    Token::ident("col"),
+                    Token::from('<'),
+                    Token::from('>'),
+                    Token::number("5"),
+                    Token::from(';')
+                ]
+            ));
+    }
 }
