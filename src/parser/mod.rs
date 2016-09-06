@@ -3,21 +3,22 @@ pub mod ast;
 use std::iter::Peekable;
 
 use super::lexer::Token;
-use self::ast::{Node, Type, Condition};
+use self::ast::{Type, Condition, Statement, CreateTableQuery, DeleteQuery, InsertQuery, SelectQuery, PredicateArgument, ValueParameter};
+use self::ast::table::Column;
 
 pub trait Parser {
-    fn parse(self) -> Node;
+    fn parse(self) -> Statement;
 }
 
 impl<T: IntoIterator<Item = Token>> Parser for T {
-    fn parse(self) -> Node {
+    fn parse(self) -> Statement {
         let mut iter = self.into_iter().peekable();
         if let Some(Token::Ident(statement)) = iter.next() {
             match statement.as_str() {
-                "create" => Node::Create(Box::new(parse_create(&mut iter.by_ref()))),
-                "delete" => Node::Delete(Box::new(parse_from(&mut iter.by_ref())), Box::new(parse_where(&mut iter.by_ref()))),
-                "insert" => Node::Insert(Box::new(parse_table(&mut iter.by_ref())), Box::new(Node::Values(parse_values(&mut iter.by_ref())))),
-                "select" => parse_select(&mut iter.by_ref()),
+                "create" => Statement::Create(parse_create(iter.by_ref())),
+                "delete" => Statement::Delete(parse_delete(iter.by_ref())),
+                "insert" => Statement::Insert(parse_insert(iter.by_ref())),
+                "select" => Statement::Select(parse_select(iter.by_ref())),
                 _ => unimplemented!(),
             }
         } else {
@@ -26,16 +27,16 @@ impl<T: IntoIterator<Item = Token>> Parser for T {
     }
 }
 
-fn parse_create<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Node {
+fn parse_create<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> CreateTableQuery {
     tokens.next(); //skip 'TABLE' keyword
     if let Some(Token::Ident(name)) = tokens.next() {
-        Node::Table(name, parse_table_columns(&mut tokens.by_ref()))
+        CreateTableQuery::new(name, parse_table_columns(tokens.by_ref()))
     } else {
         unimplemented!()
     }
 }
 
-fn parse_table_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Vec<Node> {
+fn parse_table_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Vec<Column> {
     match tokens.next() {
         Some(Token::LeftParenthesis) => {} //skip '('
         _ => unimplemented!()
@@ -53,7 +54,7 @@ fn parse_table_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> V
             _ => unimplemented!(),
         };
 
-        columns.push(Node::TableColumn(col_name, col_type, None));
+        columns.push(Column::new(col_name, col_type));
 
         match tokens.next() {
             Some(Token::Comma) => {}, //skip ','
@@ -71,29 +72,52 @@ fn parse_table_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> V
     columns
 }
 
-fn parse_from<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Node {
+fn parse_delete<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> DeleteQuery {
+    DeleteQuery::new(parse_from(tokens.by_ref()), parse_where(tokens.by_ref()))
+}
+
+fn parse_from<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> String {
     tokens.next(); //skip 'FROM' keyword
     match tokens.next() {
-        Some(Token::Ident(table_name)) => Node::From(table_name),
+        Some(Token::Ident(table_name)) => table_name,
         _ => unimplemented!(),
     }
 }
 
-fn parse_where<I: Iterator<Item = Token>>(tokens: &mut I) -> Node {
-    tokens.next(); //skip 'WHERE' keyword
-    match tokens.next() {
-        Some(_) => Node::Where(Some(Condition::Eq(Box::new(Node::Id("col".to_owned())), Box::new(Node::Numeric("5".to_owned()))))),
-        _ => Node::Where(None),
+fn parse_where<I: Iterator<Item = Token>>(tokens: &mut I) -> Option<Condition> {
+    if let Some(Token::Ident(_)) = tokens.next() { //skip 'WHERE' keyword
+        let left_hand_arg = parse_predicate_arguments(tokens.by_ref());
+
+        if let Some(Token::EqualSign) = tokens.next() {
+            let right_hand_arg = parse_predicate_arguments(tokens.by_ref());
+            Some(Condition::Eq(left_hand_arg, right_hand_arg))
+        } else {
+            unimplemented!()
+        }
+    } else {
+        None
     }
 }
 
-fn parse_table<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Node {
-    tokens.next(); //skip 'INTO' keyword
-    tokens.next(); //skip table name
-    Node::Table("table_name".to_owned(), parse_columns(&mut tokens.by_ref()))
+fn parse_predicate_arguments<I: Iterator<Item = Token>>(tokens: &mut I) -> PredicateArgument {
+    match tokens.next() {
+        Some(Token::CharactersConstant(s)) => PredicateArgument::StringConstant(s),
+        Some(Token::NumericConstant(s)) => PredicateArgument::NumberConstant(s),
+        Some(Token::Ident(s)) => PredicateArgument::ColumnName(s),
+        _ => unimplemented!(),
+    }
 }
 
-fn parse_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Vec<Node> {
+fn parse_insert<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> InsertQuery {
+    tokens.next(); //skip 'INTO' keyword
+    if let Some(Token::Ident(table_name)) = tokens.next() {
+        InsertQuery::new(table_name, parse_columns(tokens.by_ref()), parse_values(tokens.by_ref()))
+    } else {
+        unimplemented!()
+    }
+}
+
+fn parse_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Vec<String> {
     match tokens.peek() {
         Some(&Token::LeftParenthesis) => { tokens.next(); }, //skip '('
         _ => return vec![],
@@ -102,36 +126,40 @@ fn parse_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Vec<Nod
     loop {
         match tokens.next() {
             Some(Token::Comma) => {},
-            Some(Token::Ident(col)) => { columns.push(Node::Column(col)); },
-            _ => break,
+            Some(Token::Ident(col)) => { columns.push(col); },
+            Some(Token::RightParenthesis) => break,
+            _ => unimplemented!(),
         }
     }
     columns
 }
 
-fn parse_values<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Vec<Node> {
+fn parse_values<I: Iterator<Item = Token>>(tokens: &mut I) -> Vec<ValueParameter> {
     tokens.next(); //skip 'VALUES' keyword
     tokens.next(); //skip '('
     let mut values = vec![];
     loop {
         match tokens.next() {
-            Some(Token::NumericConstant(val)) => values.push(Node::Numeric(val)),
-            Some(Token::CharactersConstant(val)) => values.push(Node::CharSequence(val)),
+            Some(Token::NumericConstant(s)) => values.push(ValueParameter::NumberConst(s)),
+            Some(Token::CharactersConstant(s)) => values.push(ValueParameter::StringConst(s)),
             Some(Token::Comma) => {},
-            _ => break,
+            Some(Token::RightParenthesis) => break,
+            c => panic!("panic find {:?}", c),
         }
     }
-
-    tokens.next(); // skip ';'
     values
 }
 
-fn parse_select<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Node {
-    if let Some(&Token::Ident(ref v)) = tokens.peek() {
-        if v == "from" {
-            unimplemented!()
-        }
-    }
+//fn parse_select<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> SelectQuery {
+//    SelectQuery::new("table_name_1", vec!["col_1"], None)
+//}
+
+fn parse_select<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> SelectQuery {
+    //    if let Some(&Token::Ident(ref v)) = tokens.peek() {
+    //        if v == "from" {
+    //            unimplemented!()
+    //        }
+    //    }
 
     let mut columns = vec![];
 
@@ -140,17 +168,17 @@ fn parse_select<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Node {
             Some(Token::Ident(v)) => if v == "from" {
                 break; // skip 'FROM' keyword
             } else {
-                columns.push(Node::Column(v))
+                columns.push(v)
             },
             Some(Token::Comma) => {},
             _ => unimplemented!()
         }
     }
 
-    let table = match tokens.next() {
-        Some(Token::Ident(table_name)) => Node::Table(table_name, vec![]),
+    let table_name = match tokens.next() {
+        Some(Token::Ident(table_name)) => table_name,
         _ => unimplemented!()
     };
 
-    Node::Select(Box::new(table), columns)
+    SelectQuery::new(table_name, columns, parse_where(tokens.by_ref()))
 }

@@ -21,14 +21,14 @@ pub enum Token {
 impl From<char> for Token {
     fn from(c: char) -> Token {
         match c {
-            '(' => Token::LeftParenthesis,
-            ')' => Token::RightParenthesis,
-            ',' => Token::Comma,
-            '\'' => Token::SingleQuote,
-            ';' => Token::Semicolon,
-            '=' => Token::EqualSign,
-            '*' => Token::Asterisk,
-            _ => unimplemented!(),
+            '('     => Token::LeftParenthesis,
+            ')'     => Token::RightParenthesis,
+            ','     => Token::Comma,
+            '\''    => Token::SingleQuote,
+            ';'     => Token::Semicolon,
+            '='     => Token::EqualSign,
+            '*'     => Token::Asterisk,
+            _       => unimplemented!(),
         }
     }
 }
@@ -37,11 +37,11 @@ impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Token::RightParenthesis => ")",
-            Token::LeftParenthesis => "(",
-            Token::Semicolon => ";",
-            Token::Comma => ",",
-            Token::Ident(ref id) => id.as_str(),
-            _ => unimplemented!(),
+            Token::LeftParenthesis  => "(",
+            Token::Semicolon        => ";",
+            Token::Comma            => ",",
+            Token::Ident(ref id)    => id.as_str(),
+            _                       => unimplemented!(),
         }.fmt(f)
     }
 }
@@ -105,18 +105,31 @@ impl Tokenizer {
         token.to_lowercase()
     }
 
-    fn numeric_token<I: Iterator<Item = char>>(&self, chars: &mut I) -> String {
-        chars.take_while(|d| d.is_digit(10)).collect::<String>()
+    fn numeric_token<I: Iterator<Item = char>>(&self, chars: &mut Peekable<I>) -> String {
+        let mut number = String::default();
+        loop {
+            match chars.peek().cloned() {
+                Some(d @ '0'...'9') => {
+                    chars.next();
+                    number.push(d);
+                },
+                _ => break,
+            }
+        }
+        number
     }
 
-    fn string_token<I: Iterator<Item = char>>(&self, chars: &mut I) -> String {
+    fn string_token<I: Iterator<Item = char>>(&self, chars: &mut Peekable<I>) -> String {
         let mut string = String::default();
         while let Some(c) = chars.next() {
             if c == '\'' { break; }
             string.push(c);
         }
-        match chars.next() {
-            Some('\'') => string + "\'" + self.string_token(chars.by_ref()).as_str(),
+        match chars.peek().cloned() {
+            Some('\'') => {
+                chars.next();
+                string + "\'" + self.string_token(chars.by_ref()).as_str()
+            },
             _ => string,
         }
     }

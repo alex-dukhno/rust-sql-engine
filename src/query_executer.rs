@@ -1,4 +1,5 @@
-use super::parser::ast::{Node, Type};
+use super::parser::ast::{Statement, Type, CreateTableQuery, InsertQuery, SelectQuery, ValueParameter};
+use super::parser::ast;
 use super::catalog_manager::{CatalogManager, LockBasedCatalogManager, Table, Column};
 use super::data_manager::{DataManager, LockBaseDataManager};
 
@@ -23,69 +24,57 @@ pub enum ExecutionResult {
 }
 
 impl QueryExecuter {
-    pub fn execute(&self, query: Node) -> Result<ExecutionResult, String> {
+    pub fn execute(&self, query: Statement) -> ExecutionResult {
         match query {
-            Node::Create(table) => self.create_table(*table),
-            Node::Insert(table, values) => self.insert_into(*table, *values),
-            Node::Select(table, columns) => self.select_data(*table, columns),
-            _ => Err("execute".to_owned()),
+            Statement::Create(query) => self.create_table(query),
+            Statement::Insert(query) => self.insert_into(query),
+            Statement::Select(query) => self.select_data(query),
+            _ => unimplemented!(),
         }
     }
 
-    fn create_table(&self, table: Node) -> Result<ExecutionResult, String> {
-        match table {
-            Node::Table(name, columns) => {
-                self.catalog_manager.add_table(Table::new(name.as_str()));
-                for column in columns.into_iter() {
-                    if let Node::TableColumn(column_name, column_type, _) = column {
-                        self.catalog_manager.add_column_to(name.as_str(), Column::new(column_name, column_type))
-                    }
+    fn create_table(&self, create_query: CreateTableQuery) -> ExecutionResult {
+        let CreateTableQuery { table_name, columns } = create_query;
+        self.catalog_manager.add_table(Table::new(table_name.as_str()));
+        for column in columns.into_iter() {
+            let ast::table::Column { column_name, column_type } = column;
+            self.catalog_manager.add_column_to(table_name.as_str(), Column::new(column_name, column_type))
+        }
+        ExecutionResult::Message(format!("'{}' was created", table_name.as_str()))
+    }
+
+    fn insert_into(&self, insert: InsertQuery) -> ExecutionResult {
+        let InsertQuery { table_name, columns, values } = insert;
+        if self.catalog_manager.contains_table(table_name.as_str()) {
+            let mut v = Vec::with_capacity(values.len());
+            for (index, datum) in values.into_iter().enumerate() {
+                match datum {
+                    ValueParameter::NumberConst(n) => if self.catalog_manager.match_type(table_name.as_str(), index, Type::Varchar) {
+                        return ExecutionResult::Message("column type is VARCHAR find INT".to_owned());
+                    } else {
+                        v.push(n);
+                    },
+                    ValueParameter::StringConst(_) => if self.catalog_manager.match_type(table_name.as_str(), index, Type::Int) {
+                        return ExecutionResult::Message("column type is INT find VARCHAR".to_owned());
+                    },
                 }
-                let s = name.clone();
-                Ok(ExecutionResult::Message(format!("'{}' was created", s)))
-            },
-            _ => Err("not a table".to_owned()),
+            }
+            self.data_manager.save_to(table_name.as_str(), v);
+            println!("data manager = {:?}", self.data_manager);
+            ExecutionResult::Message("row was inserted".to_owned())
+        } else {
+            ExecutionResult::Message(format!("[ERR 100] table '{}' does not exist", table_name.as_str()))
         }
     }
 
-    fn insert_into(&self, table: Node, values: Node) -> Result<ExecutionResult, String> {
-        match table {
-            Node::Table(name, _) => {
-                if self.catalog_manager.contains_table(name.as_str()) {
-                    match values {
-                        Node::Values(data) => {
-                            let mut v = Vec::with_capacity(data.len());
-                            for (index, datum) in data.into_iter().enumerate() {
-                                match datum {
-                                    Node::Numeric(n) => if self.catalog_manager.match_type(name.as_str(), index, Type::Varchar) {
-                                        return Err("column type is VARCHAR find INT".to_owned());
-                                    } else {
-                                        v.push(n);
-                                    },
-                                    Node::CharSequence(_) => if self.catalog_manager.match_type(name.as_str(), index, Type::Int) {
-                                        return Err("column type is INT find VARCHAR".to_owned());
-                                    },
-                                    _ => return Err("wrong node".to_owned()),
-                                }
-                            }
-                            self.data_manager.save_to(name, v);
-                        },
-                        _ => return Err("not a values".to_owned()),
-                    }
-                    Ok(ExecutionResult::Message("row was inserted".to_owned()))
-                } else {
-                    Err(format!("[ERR 100] table '{}' does not exist", name))
-                }
-            },
-            _ => Err("not a table".to_owned()),
-        }
-    }
-
-    fn select_data(&self, table: Node, columns: Vec<Node>) -> Result<ExecutionResult, String> {
-        let result = match table {
-            Node::Table(table_name, _) => self.data_manager.get_range_till_end(table_name.as_str(), 0),
-            _ => return Err("parsing error".to_owned()),
-        };
-        Ok(ExecutionResult::Data(result))
+    fn select_data(&self, query: SelectQuery) -> ExecutionResult {
+        let SelectQuery { table_name, columns, condition } = query;
+        println!("table name = {:?}", table_name);
+//        let result = match table {
+//            Node::Table(table_name, _) => self.data_manager.get_range_till_end(table_name.as_str(), 0),
+//            _ => return Err("parsing error".to_owned()),
+//        };
+//        ExecutionResult::Data(result)
+        ExecutionResult::Data(self.data_manager.get_range_till_end(table_name.as_str(), 0))
     }
 }

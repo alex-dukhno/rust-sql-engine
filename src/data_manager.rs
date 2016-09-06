@@ -6,7 +6,7 @@ pub trait DataManager {
 
     fn save_to<I, D>(&self, table_name: I, data: D)
         where I: Into<String>,
-              D: IntoIterator<Item = I>;
+              D: IntoIterator<Item = String>;
 
     fn get_row_from(&self, table_name: &str, row_id: usize) -> Vec<String>;
 
@@ -15,6 +15,7 @@ pub trait DataManager {
     fn get_range_till_end(&self, table_name: &str, start_from: usize) -> Vec<Vec<String>>;
 }
 
+#[derive(Debug)]
 pub struct LockBaseDataManager {
     data: Mutex<HashMap<String, Vec<Vec<String>>>>
 }
@@ -28,12 +29,12 @@ impl DataManager for LockBaseDataManager {
 
     fn save_to<I, D>(&self, table_name: I, data: D)
         where I: Into<String>,
-              D: IntoIterator<Item = I> {
+              D: IntoIterator<Item = String> {
         let mut guard = self.data.lock().unwrap();
         (*guard).entry(table_name.into())
             .or_insert_with(Vec::default)
             .push(
-                data.into_iter().map(Into::into).collect::<Vec<String>>()
+                data.into_iter().collect::<Vec<String>>()
             );
         drop(guard);
     }

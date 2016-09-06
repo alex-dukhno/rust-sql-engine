@@ -6,7 +6,7 @@ use sql::data_manager::{DataManager, LockBaseDataManager};
 fn saves_to_one_row_table() {
     let data_manger = LockBaseDataManager::create();
 
-    drop(data_manger.save_to("table_name", vec!["1"]));
+    drop(data_manger.save_to("table_name", vec!["1".to_owned()]));
 
     expect!(data_manger.get_range_till_end("table_name", 0))
         .to(be_equal_to(vec![vec!["1"]]));
@@ -16,8 +16,8 @@ fn saves_to_one_row_table() {
 fn retrievs_data_from_table() {
     let data_manager = LockBaseDataManager::create();
 
-    drop(data_manager.save_to("table_name", vec!["1", "2"]));
-    drop(data_manager.save_to("table_name", vec!["3", "4"]));
+    drop(data_manager.save_to("table_name", vec!["1".to_owned(), "2".to_owned()]));
+    drop(data_manager.save_to("table_name", vec!["3".to_owned(), "4".to_owned()]));
 
     expect!(data_manager.get_row_from("table_name", 0))
         .to(be_equal_to(vec!["1", "2"]));
@@ -29,11 +29,11 @@ fn retrievs_data_from_table() {
 fn retrievs_range_of_rows_from_table() {
     let data_manager = LockBaseDataManager::create();
 
-    drop(data_manager.save_to("table_name", vec!["1", "2", "3"]));
-    drop(data_manager.save_to("table_name", vec!["4", "5", "6"]));
-    drop(data_manager.save_to("table_name", vec!["7", "8", "9"]));
-    drop(data_manager.save_to("table_name", vec!["10", "11", "12"]));
-    drop(data_manager.save_to("table_name", vec!["13", "14", "15"]));
+    drop(data_manager.save_to("table_name", vec!["1".to_owned(), "2".to_owned(), "3".to_owned()]));
+    drop(data_manager.save_to("table_name", vec!["4".to_owned(), "5".to_owned(), "6".to_owned()]));
+    drop(data_manager.save_to("table_name", vec!["7".to_owned(), "8".to_owned(), "9".to_owned()]));
+    drop(data_manager.save_to("table_name", vec!["10".to_owned(), "11".to_owned(), "12".to_owned()]));
+    drop(data_manager.save_to("table_name", vec!["13".to_owned(), "14".to_owned(), "15".to_owned()]));
 
     expect!(data_manager.get_range("table_name", 1, 3))
         .to(be_equal_to(
@@ -57,11 +57,11 @@ fn retrievs_range_of_rows_from_table() {
 fn retrievs_range_from_index_till_end() {
     let data_manager = LockBaseDataManager::create();
 
-    drop(data_manager.save_to("table_name", vec!["1", "2", "3"]));
-    drop(data_manager.save_to("table_name", vec!["4", "5", "6"]));
-    drop(data_manager.save_to("table_name", vec!["7", "8", "9"]));
-    drop(data_manager.save_to("table_name", vec!["10", "11", "12"]));
-    drop(data_manager.save_to("table_name", vec!["13", "14", "15"]));
+    drop(data_manager.save_to("table_name", vec!["1".to_owned(), "2".to_owned(), "3".to_owned()]));
+    drop(data_manager.save_to("table_name", vec!["4".to_owned(), "5".to_owned(), "6".to_owned()]));
+    drop(data_manager.save_to("table_name", vec!["7".to_owned(), "8".to_owned(), "9".to_owned()]));
+    drop(data_manager.save_to("table_name", vec!["10".to_owned(), "11".to_owned(), "12".to_owned()]));
+    drop(data_manager.save_to("table_name", vec!["13".to_owned(), "14".to_owned(), "15".to_owned()]));
 
     expect!(data_manager.get_range_till_end("table_name", 2))
         .to(be_equal_to(
