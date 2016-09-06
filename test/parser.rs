@@ -257,7 +257,7 @@ mod parse_select_statements {
     use sql::parser::ast::Statement::Select;
     use sql::parser::ast::SelectQuery;
     use sql::parser::ast::Condition::Eq;
-    use sql::parser::ast::PredicateArgument::{ColumnName, NumberConstant};
+    use sql::parser::ast::PredicateArgument::{ColumnName, NumberConstant, Limit};
 
     #[test]
     fn without_predicates() {
@@ -300,6 +300,35 @@ mod parse_select_statements {
                             vec!["col_2"],
                             Some(
                                 Eq(ColumnName("col_2".to_owned()), NumberConstant("10".to_owned()))
+                            )
+                        )
+                    )
+                )
+            );
+    }
+
+    #[test]
+    fn with_limit_predicate() {
+        let tokens = vec![
+            Ident("select".to_owned()),
+            Ident("col_2".to_owned()),
+            Ident("from".to_owned()),
+            Ident("table_name_2".to_owned()),
+            Ident("where".to_owned()),
+            Ident("limit".to_owned()),
+            EqualSign,
+            NumericConstant("10".to_owned())
+        ];
+
+        expect!(tokens.parse())
+            .to(
+                be_equal_to(
+                    Select(
+                        SelectQuery::new(
+                            "table_name_2",
+                            vec!["col_2"],
+                            Some(
+                                Eq(Limit, NumberConstant("10".to_owned()))
                             )
                         )
                     )

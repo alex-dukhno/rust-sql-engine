@@ -67,3 +67,17 @@ fn selects_inserted_data_from_table() {
     expect!(executer.execute(Tokenizer::from("select col from table_name;").tokenize().parse()))
         .to(be_equal_to(ExecutionResult::Data(vec![vec!["1".to_owned()], vec!["2".to_owned()]])));
 }
+
+#[test]
+fn select_limit_number_of_rows() {
+    let executer = QueryExecuter::default();
+
+    drop(executer.execute(Tokenizer::from("create table table_name_2 (col int);").tokenize().parse()));
+    drop(executer.execute(Tokenizer::from("insert into table_name_2 values(1);").tokenize().parse()));
+    drop(executer.execute(Tokenizer::from("insert into table_name_2 values(2);").tokenize().parse()));
+    drop(executer.execute(Tokenizer::from("insert into table_name_2 values(3);").tokenize().parse()));
+    drop(executer.execute(Tokenizer::from("insert into table_name_2 values(4);").tokenize().parse()));
+
+    expect!(executer.execute(Tokenizer::from("select col from table_name_2 where limit = 3;").tokenize().parse()))
+        .to(be_equal_to(ExecutionResult::Data(vec![vec!["1".to_owned()], vec!["2".to_owned()], vec!["3".to_owned()]])));
+}

@@ -103,7 +103,12 @@ fn parse_predicate_arguments<I: Iterator<Item = Token>>(tokens: &mut I) -> Predi
     match tokens.next() {
         Some(Token::CharactersConstant(s)) => PredicateArgument::StringConstant(s),
         Some(Token::NumericConstant(s)) => PredicateArgument::NumberConstant(s),
-        Some(Token::Ident(s)) => PredicateArgument::ColumnName(s),
+        Some(Token::Ident(s)) => if s == "limit" {
+            PredicateArgument::Limit
+        }
+        else {
+            PredicateArgument::ColumnName(s)
+        },
         _ => unimplemented!(),
     }
 }
@@ -150,17 +155,7 @@ fn parse_values<I: Iterator<Item = Token>>(tokens: &mut I) -> Vec<ValueParameter
     values
 }
 
-//fn parse_select<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> SelectQuery {
-//    SelectQuery::new("table_name_1", vec!["col_1"], None)
-//}
-
 fn parse_select<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> SelectQuery {
-    //    if let Some(&Token::Ident(ref v)) = tokens.peek() {
-    //        if v == "from" {
-    //            unimplemented!()
-    //        }
-    //    }
-
     let mut columns = vec![];
 
     loop {

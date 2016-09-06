@@ -1,4 +1,4 @@
-use super::parser::ast::{Statement, Type, CreateTableQuery, InsertQuery, SelectQuery, ValueParameter};
+use super::parser::ast::{Statement, Type, CreateTableQuery, InsertQuery, SelectQuery, ValueParameter, Condition, PredicateArgument};
 use super::parser::ast;
 use super::catalog_manager::{CatalogManager, LockBasedCatalogManager, Table, Column};
 use super::data_manager::{DataManager, LockBaseDataManager};
@@ -60,7 +60,6 @@ impl QueryExecuter {
                 }
             }
             self.data_manager.save_to(table_name.as_str(), v);
-            println!("data manager = {:?}", self.data_manager);
             ExecutionResult::Message("row was inserted".to_owned())
         } else {
             ExecutionResult::Message(format!("[ERR 100] table '{}' does not exist", table_name.as_str()))
@@ -69,12 +68,16 @@ impl QueryExecuter {
 
     fn select_data(&self, query: SelectQuery) -> ExecutionResult {
         let SelectQuery { table_name, columns, condition } = query;
-        println!("table name = {:?}", table_name);
-//        let result = match table {
-//            Node::Table(table_name, _) => self.data_manager.get_range_till_end(table_name.as_str(), 0),
-//            _ => return Err("parsing error".to_owned()),
-//        };
-//        ExecutionResult::Data(result)
-        ExecutionResult::Data(self.data_manager.get_range_till_end(table_name.as_str(), 0))
+        match condition {
+            Some(Condition::Eq(PredicateArgument::Limit, PredicateArgument::NumberConstant(n))) => {
+                let limit = match n.parse::<usize>() {
+                    Ok(v) => v,
+                    Err(e) => panic!(e),
+                };
+                ExecutionResult::Data(self.data_manager.get_range(table_name.as_str(), 0, limit))
+            },
+            Some(_) => unimplemented!(),
+            None => ExecutionResult::Data(self.data_manager.get_range_till_end(table_name.as_str(), 0))
+        }
     }
 }

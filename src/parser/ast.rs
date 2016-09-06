@@ -61,7 +61,6 @@ pub struct SelectQuery {
 }
 
 impl SelectQuery {
-
     pub fn new<I: Into<String>>(table_name: I, columns: Vec<I>, condition: Option<Condition>) -> SelectQuery {
         SelectQuery {
             table_name: table_name.into(),
@@ -92,7 +91,8 @@ pub enum Condition {
 pub enum PredicateArgument {
     ColumnName(String),
     StringConstant(String),
-    NumberConstant(String)
+    NumberConstant(String),
+    Limit
 }
 
 #[derive(Debug, PartialEq)]
