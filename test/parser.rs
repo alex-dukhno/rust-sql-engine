@@ -45,7 +45,7 @@ mod parses_delete_statements {
     use sql::parser::ast::Statement::Delete;
     use sql::parser::ast::DeleteQuery;
     use sql::parser::ast::Condition::Eq;
-    use sql::parser::ast::PredicateArgument::{ColumnName, StringConstant, NumberConstant};
+    use sql::parser::ast::CondArg;
 
     #[test]
     fn without_any_predicates() {
@@ -63,8 +63,8 @@ mod parses_delete_statements {
                             "table_name_2",
                             Some(
                                 Eq(
-                                    ColumnName("col_1".to_owned()),
-                                    NumberConstant("5".to_owned())
+                                    CondArg::column("col_1"),
+                                    CondArg::num("5")
                                 )
                             )
                         )
@@ -83,8 +83,8 @@ mod parses_delete_statements {
                             "table_name_3",
                             Some(
                                 Eq(
-                                    StringConstant("str".to_owned()),
-                                    ColumnName("col_2".to_owned())
+                                    CondArg::str("str"),
+                                    CondArg::column("col_2")
                                 )
                             )
                         )
@@ -102,7 +102,7 @@ mod parses_insert_statements {
     use sql::parser::Parser;
     use sql::parser::ast::InsertQuery;
     use sql::parser::ast::Statement::Insert;
-    use sql::parser::ast::ValueParameter::{NumberConst, StringConst};
+    use sql::parser::ast::Value;
 
     #[test]
     fn with_one_column() {
@@ -110,7 +110,7 @@ mod parses_insert_statements {
             .to(
                 be_equal_to(
                     Insert(
-                        InsertQuery::new("table_name_1", vec![], vec![NumberConst("10".to_owned())])
+                        InsertQuery::new("table_name_1", vec![], vec![Value::num("10")])
                     )
                 )
             );
@@ -125,7 +125,7 @@ mod parses_insert_statements {
                         InsertQuery::new(
                             "table_name_2",
                             vec![],
-                            vec![NumberConst("10".to_owned()), StringConst("string".to_owned())]
+                            vec![Value::num("10"), Value::str("string")]
                         )
                     )
                 )
@@ -141,7 +141,7 @@ mod parses_insert_statements {
                         InsertQuery::new(
                             "table_name_3",
                             vec!["col_1", "col_2"],
-                            vec![NumberConst("10".to_owned()), StringConst("string".to_owned())]
+                            vec![Value::num("10"), Value::str("string")]
                         )
                     )
                 )
@@ -159,7 +159,7 @@ mod parse_select_statements {
     use sql::parser::ast::Statement::Select;
     use sql::parser::ast::SelectQuery;
     use sql::parser::ast::Condition::Eq;
-    use sql::parser::ast::PredicateArgument::{ColumnName, NumberConstant, Limit};
+    use sql::parser::ast::CondArg;
 
     #[test]
     fn without_predicates() {
@@ -182,9 +182,7 @@ mod parse_select_statements {
                         SelectQuery::new(
                             "table_name_2",
                             vec!["col_2"],
-                            Some(
-                                Eq(ColumnName("col_2".to_owned()), NumberConstant("10".to_owned()))
-                            )
+                            Some(Eq(CondArg::column("col_2"), CondArg::num("10")))
                         )
                     )
                 )
@@ -200,9 +198,7 @@ mod parse_select_statements {
                         SelectQuery::new(
                             "table_name_2",
                             vec!["col_2"],
-                            Some(
-                                Eq(Limit, NumberConstant("10".to_owned()))
-                            )
+                            Some(Eq(CondArg::Limit, CondArg::num("10")))
                         )
                     )
                 )

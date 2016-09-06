@@ -40,11 +40,11 @@ impl DeleteQuery {
 pub struct InsertQuery {
     pub table_name: String,
     pub columns: Vec<String>,
-    pub values: Vec<ValueParameter>
+    pub values: Vec<Value>
 }
 
 impl InsertQuery {
-    pub fn new<I: Into<String>>(table_name: I, columns: Vec<I>, values: Vec<ValueParameter> ) -> InsertQuery {
+    pub fn new<I: Into<String>>(table_name: I, columns: Vec<I>, values: Vec<Value> ) -> InsertQuery {
         InsertQuery {
             table_name: table_name.into(),
             columns: columns.into_iter().map(|c| c.into()).collect::<Vec<String>>(),
@@ -84,21 +84,47 @@ pub enum Flag {
 
 #[derive(Debug, PartialEq)]
 pub enum Condition {
-    Eq(PredicateArgument, PredicateArgument)
+    Eq(CondArg, CondArg)
 }
 
 #[derive(Debug, PartialEq)]
-pub enum PredicateArgument {
+pub enum CondArg {
     ColumnName(String),
     StringConstant(String),
-    NumberConstant(String),
+    NumConst(String),
     Limit
 }
 
+impl CondArg {
+
+    pub fn column<I: Into<String>>(column_name: I) -> CondArg {
+        CondArg::ColumnName(column_name.into())
+    }
+
+    pub fn str<I: Into<String>>(const_str: I) -> CondArg {
+        CondArg::StringConstant(const_str.into())
+    }
+
+    pub fn num<I: Into<String>>(const_num: I) -> CondArg {
+        CondArg::NumConst(const_num.into())
+    }
+}
+
 #[derive(Debug, PartialEq)]
-pub enum ValueParameter {
-    StringConst(String),
-    NumberConst(String)
+pub enum Value {
+    StrConst(String),
+    NumConst(String)
+}
+
+impl Value {
+
+    pub fn str<I: Into<String>>(v: I) -> Value {
+        Value::StrConst(v.into())
+    }
+
+    pub fn num<I: Into<String>>(v: I) -> Value {
+        Value::NumConst(v.into())
+    }
 }
 
 pub mod table {

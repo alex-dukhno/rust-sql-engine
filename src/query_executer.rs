@@ -1,4 +1,4 @@
-use super::parser::ast::{Statement, Type, CreateTableQuery, InsertQuery, SelectQuery, ValueParameter, Condition, PredicateArgument};
+use super::parser::ast::{Statement, Type, CreateTableQuery, InsertQuery, SelectQuery, Value, Condition, CondArg};
 use super::parser::ast;
 use super::catalog_manager::{CatalogManager, LockBasedCatalogManager, Table, Column};
 use super::data_manager::{DataManager, LockBaseDataManager};
@@ -46,20 +46,20 @@ impl QueryExecuter {
     fn insert_into(&self, insert: InsertQuery) -> ExecutionResult {
         let InsertQuery { table_name, columns, values } = insert;
         if self.catalog_manager.contains_table(table_name.as_str()) {
-            let mut v = Vec::with_capacity(values.len());
+            let mut data = Vec::with_capacity(values.len());
             for (index, datum) in values.into_iter().enumerate() {
                 match datum {
-                    ValueParameter::NumberConst(n) => if self.catalog_manager.match_type(table_name.as_str(), index, Type::Varchar) {
+                    Value::NumConst(n) => if self.catalog_manager.match_type(table_name.as_str(), index, Type::Varchar) {
                         return ExecutionResult::Message("column type is VARCHAR find INT".to_owned());
                     } else {
-                        v.push(n);
+                        data.push(n);
                     },
-                    ValueParameter::StringConst(_) => if self.catalog_manager.match_type(table_name.as_str(), index, Type::Int) {
+                    Value::StrConst(_) => if self.catalog_manager.match_type(table_name.as_str(), index, Type::Int) {
                         return ExecutionResult::Message("column type is INT find VARCHAR".to_owned());
                     },
                 }
             }
-            self.data_manager.save_to(table_name.as_str(), v);
+            self.data_manager.save_to(table_name.as_str(), data);
             ExecutionResult::Message("row was inserted".to_owned())
         } else {
             ExecutionResult::Message(format!("[ERR 100] table '{}' does not exist", table_name.as_str()))
@@ -69,7 +69,7 @@ impl QueryExecuter {
     fn select_data(&self, query: SelectQuery) -> ExecutionResult {
         let SelectQuery { table_name, columns, condition } = query;
         match condition {
-            Some(Condition::Eq(PredicateArgument::Limit, PredicateArgument::NumberConstant(n))) => {
+            Some(Condition::Eq(CondArg::Limit, CondArg::NumConst(n))) => {
                 let limit = match n.parse::<usize>() {
                     Ok(v) => v,
                     Err(e) => panic!(e),

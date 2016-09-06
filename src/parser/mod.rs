@@ -3,7 +3,7 @@ pub mod ast;
 use std::iter::Peekable;
 
 use super::lexer::Token;
-use self::ast::{Type, Condition, Statement, CreateTableQuery, DeleteQuery, InsertQuery, SelectQuery, PredicateArgument, ValueParameter};
+use self::ast::{Type, Condition, Statement, CreateTableQuery, DeleteQuery, InsertQuery, SelectQuery, CondArg, Value};
 use self::ast::table::Column;
 
 pub trait Parser {
@@ -38,7 +38,7 @@ fn parse_create<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> CreateTa
 
 fn parse_table_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Vec<Column> {
     match tokens.next() {
-        Some(Token::LeftParenthesis) => {} //skip '('
+        Some(Token::LParent) => {} //skip '('
         _ => unimplemented!()
     }
 
@@ -58,7 +58,7 @@ fn parse_table_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> V
 
         match tokens.next() {
             Some(Token::Comma) => {}, //skip ','
-            Some(Token::RightParenthesis) => break,
+            Some(Token::RParent) => break,
             _ => unimplemented!()
         }
     }
@@ -99,15 +99,15 @@ fn parse_where<I: Iterator<Item = Token>>(tokens: &mut I) -> Option<Condition> {
     }
 }
 
-fn parse_predicate_arguments<I: Iterator<Item = Token>>(tokens: &mut I) -> PredicateArgument {
+fn parse_predicate_arguments<I: Iterator<Item = Token>>(tokens: &mut I) -> CondArg {
     match tokens.next() {
-        Some(Token::CharactersConstant(s)) => PredicateArgument::StringConstant(s),
-        Some(Token::NumericConstant(s)) => PredicateArgument::NumberConstant(s),
+        Some(Token::CharsConst(s)) => CondArg::StringConstant(s),
+        Some(Token::NumConst(s)) => CondArg::NumConst(s),
         Some(Token::Ident(s)) => if s == "limit" {
-            PredicateArgument::Limit
+            CondArg::Limit
         }
         else {
-            PredicateArgument::ColumnName(s)
+            CondArg::ColumnName(s)
         },
         _ => unimplemented!(),
     }
@@ -124,7 +124,7 @@ fn parse_insert<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> InsertQu
 
 fn parse_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Vec<String> {
     match tokens.peek() {
-        Some(&Token::LeftParenthesis) => { tokens.next(); }, //skip '('
+        Some(&Token::LParent) => { tokens.next(); }, //skip '('
         _ => return vec![],
     }
     let mut columns = vec![];
@@ -132,23 +132,23 @@ fn parse_columns<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Vec<Str
         match tokens.next() {
             Some(Token::Comma) => {},
             Some(Token::Ident(col)) => { columns.push(col); },
-            Some(Token::RightParenthesis) => break,
+            Some(Token::RParent) => break,
             _ => unimplemented!(),
         }
     }
     columns
 }
 
-fn parse_values<I: Iterator<Item = Token>>(tokens: &mut I) -> Vec<ValueParameter> {
+fn parse_values<I: Iterator<Item = Token>>(tokens: &mut I) -> Vec<Value> {
     tokens.next(); //skip 'VALUES' keyword
     tokens.next(); //skip '('
     let mut values = vec![];
     loop {
         match tokens.next() {
-            Some(Token::NumericConstant(s)) => values.push(ValueParameter::NumberConst(s)),
-            Some(Token::CharactersConstant(s)) => values.push(ValueParameter::StringConst(s)),
+            Some(Token::NumConst(s)) => values.push(Value::NumConst(s)),
+            Some(Token::CharsConst(s)) => values.push(Value::StrConst(s)),
             Some(Token::Comma) => {},
-            Some(Token::RightParenthesis) => break,
+            Some(Token::RParent) => break,
             c => panic!("panic find {:?}", c),
         }
     }

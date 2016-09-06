@@ -6,11 +6,11 @@ use std::fmt;
 pub enum Token {
     Ident(String),
 
-    NumericConstant(String),
-    CharactersConstant(String),
+    NumConst(String),
+    CharsConst(String),
 
-    LeftParenthesis,
-    RightParenthesis,
+    LParent,
+    RParent,
     Comma,
     SingleQuote,
     EqualSign,
@@ -24,19 +24,19 @@ impl Token {
     }
 
     pub fn number<I: Into<String>>(num: I) -> Token {
-        Token::NumericConstant(num.into())
+        Token::NumConst(num.into())
     }
 
     pub fn string<I: Into<String>>(string: I) -> Token {
-        Token::CharactersConstant(string.into())
+        Token::CharsConst(string.into())
     }
 }
 
 impl From<char> for Token {
     fn from(c: char) -> Token {
         match c {
-            '(' => Token::LeftParenthesis,
-            ')' => Token::RightParenthesis,
+            '(' => Token::LParent,
+            ')' => Token::RParent,
             ',' => Token::Comma,
             '\'' => Token::SingleQuote,
             ';' => Token::Semicolon,
@@ -50,8 +50,8 @@ impl From<char> for Token {
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Token::RightParenthesis => ")",
-            Token::LeftParenthesis => "(",
+            Token::RParent => ")",
+            Token::LParent => "(",
             Token::Semicolon => ";",
             Token::Comma => ",",
             Token::Ident(ref id) => id.as_str(),
