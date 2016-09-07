@@ -54,6 +54,10 @@ fn case_insensitive() {
 
 #[cfg(test)]
 mod single_quotes {
+    use expectest::prelude::be_equal_to;
+
+    use sql::lexer::{Tokenizer, Token};
+
     #[test]
     fn inside_string_token() {
         expect!(Tokenizer::from("'str''str'").tokenize())
@@ -82,6 +86,55 @@ mod single_quotes {
     fn emits_string_when_only_open_signle_quote() {
         expect!(Tokenizer::from("'str").tokenize())
             .to(be_equal_to(vec![Token::string("str")]));
+    }
+}
+
+#[cfg(test)]
+mod cmp_tokens {
+    use expectest::prelude::be_equal_to;
+
+    use sql::lexer::{Tokenizer, Token};
+
+    #[test]
+    fn equal_sign() {
+        expect!(Tokenizer::from("=").tokenize())
+            .to(be_equal_to(vec![Token::EqualSign]));
+    }
+
+    #[test]
+    fn not_equal_sign_angle_brackets() {
+        expect!(Tokenizer::from("<>").tokenize())
+            .to(be_equal_to(vec![Token::NotEqualSign]));
+    }
+
+    #[test]
+    fn not_equal_sign_exclamation_mark_equal_sign() {
+        expect!(Tokenizer::from("!=").tokenize())
+            .to(be_equal_to(vec![Token::NotEqualSign]));
+    }
+
+    #[test]
+    fn less_then_sign() {
+        expect!(Tokenizer::from("<").tokenize())
+            .to(be_equal_to(vec![Token::Less]));
+    }
+
+    #[test]
+    fn less_or_equal_sign() {
+        expect!(Tokenizer::from("<=").tokenize())
+            .to(be_equal_to(vec![Token::LessEqual]));
+    }
+
+    #[test]
+    fn greater_then_sign() {
+        expect!(Tokenizer::from(">").tokenize())
+            .to(be_equal_to(vec![Token::Greater]));
+    }
+
+    #[test]
+    fn greate_or_equal_sign() {
+        expect!(Tokenizer::from(">=").tokenize())
+            .to(be_equal_to(vec![Token::GreaterEqual]));
     }
 }
 
@@ -137,8 +190,7 @@ mod sql_query {
                     Token::ident("table_1"),
                     Token::ident("where"),
                     Token::ident("col"),
-                    Token::from("<"),
-                    Token::from(">"),
+                    Token::from("<>"),
                     Token::number("5"),
                     Token::from(";")
                 ]

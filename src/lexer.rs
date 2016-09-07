@@ -1,6 +1,6 @@
 use std::iter::Peekable;
-use std::str::Chars;
 use std::fmt;
+use std::vec;
 
 #[derive(Debug, PartialEq)]
 pub enum Token {
@@ -12,12 +12,15 @@ pub enum Token {
     LParent,
     RParent,
 
-    LAngle,
-    RAngle,
+    Less,
+    LessEqual,
+    Greater,
+    GreaterEqual,
+    EqualSign,
+    NotEqualSign,
 
     Comma,
     SingleQuote,
-    EqualSign,
     Semicolon,
     Asterisk
 }
@@ -46,8 +49,27 @@ impl<'s> From<&'s str> for Token {
             ";" => Token::Semicolon,
             "=" => Token::EqualSign,
             "*" => Token::Asterisk,
-            "<" => Token::LAngle,
-            ">" => Token::RAngle,
+            "<>" => Token::NotEqualSign,
+            "<" => Token::Less,
+            ">" => Token::Greater,
+            _ => unimplemented!(),
+        }
+    }
+}
+
+impl From<char> for Token {
+
+    fn from(c: char) -> Token {
+        match c {
+            '(' => Token::LParent,
+            ')' => Token::RParent,
+            ',' => Token::Comma,
+            '\'' => Token::SingleQuote,
+            ';' => Token::Semicolon,
+            '=' => Token::EqualSign,
+            '*' => Token::Asterisk,
+            '<' => Token::Less,
+            '>' => Token::Greater,
             _ => unimplemented!(),
         }
     }
@@ -66,43 +88,67 @@ impl fmt::Display for Token {
     }
 }
 
-pub struct Tokenizer {
-    source: String
+pub struct Tokenizer<I: Iterator<Item = char>> {
+    sequence: Peekable<I>
 }
 
-impl<'s> From<&'s str> for Tokenizer {
-    fn from(source: &'s str) -> Tokenizer {
-        Tokenizer { source: source.to_owned() }
+impl<I: Into<String>> From<I> for Tokenizer<vec::IntoIter<char>> {
+    fn from(source: I) -> Tokenizer<vec::IntoIter<char>> {
+        Tokenizer {
+            sequence: source.into().chars().collect::<Vec<char>>().into_iter().peekable()
+        }
     }
 }
 
-impl<'t> IntoIterator for &'t Tokenizer {
-    type Item = char;
-    type IntoIter = Chars<'t>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.source.chars()
-    }
-}
-
-impl Tokenizer {
-    pub fn tokenize(self) -> Vec<Token> {
-        let mut chars = self.into_iter().peekable();
+impl<I: Iterator<Item = char>> Tokenizer<I> {
+    pub fn tokenize(mut self) -> Vec<Token> {
         let mut tokens = vec![];
         loop {
-            match chars.peek().cloned() {
-                Some(' ') | Some('\n') | Some('\t') => { chars.next(); },
+            match self.look_ahead() {
+                Some(' ') | Some('\n') | Some('\t') => { self.consume(); },
                 Some('\'') => {
-                    chars.next();
-                    tokens.push(self.string_token(&mut chars.by_ref()));
+                    self.consume();
+                    tokens.push(self.string_token());
                 },
-                Some('a'...'z') | Some('A'...'Z') => { tokens.push(self.ident_token(&mut chars.by_ref())); },
-                Some('0'...'9') => { tokens.push(self.numeric_token(&mut chars.by_ref())); },
+                Some('a'...'z') | Some('A'...'Z') => { tokens.push(self.ident_token()); },
+                Some('0'...'9') => { tokens.push(self.numeric_token()); },
+                Some('<') => {
+                    self.consume();
+                    match self.look_ahead() {
+                        Some('>') => {
+                            self.consume();
+                            tokens.push(Token::NotEqualSign);
+                        },
+                        Some('=') => {
+                            self.consume();
+                            tokens.push(Token::LessEqual);
+                        },
+                        _ => tokens.push(Token::Less),
+                    }
+                },
+                Some('>') => {
+                    self.consume();
+                    match self.look_ahead() {
+                        Some('=') => {
+                            self.consume();
+                            tokens.push(Token::GreaterEqual);
+                        },
+                        _ => tokens.push(Token::Greater),
+                    }
+                }
+                Some('!') => {
+                    self.consume();
+                    match self.look_ahead() {
+                        Some('=') => {
+                            self.consume();
+                            tokens.push(Token::NotEqualSign);
+                        },
+                        _ => unimplemented!(),
+                    }
+                },
                 Some(c) => {
-                    chars.next();
-                    let mut s = String::with_capacity(1);
-                    s.push(c);
-                    tokens.push(Token::from(s.as_str()));
+                    self.consume();
+                    tokens.push(Token::from(c));
                 },
                 None => break,
             }
@@ -110,15 +156,23 @@ impl Tokenizer {
         tokens
     }
 
-    fn ident_token<I: Iterator<Item = char>>(&self, chars: &mut Peekable<I>) -> Token {
+    fn look_ahead(&mut self) -> Option<char> {
+        self.sequence.peek().cloned()
+    }
+
+    fn consume(&mut self) {
+        self.sequence.next();
+    }
+
+    fn ident_token(&mut self) -> Token {
         let mut token = String::default();
         loop {
-            match chars.peek().cloned() {
+            match self.look_ahead() {
                 Some(c @ 'A'...'Z') |
                 Some(c @ 'a'...'z') |
                 Some(c @ '_') |
                 Some(c @ '0'...'9') => {
-                    chars.next();
+                    self.consume();
                     token.push(c);
                 },
                 _ => break,
@@ -127,31 +181,31 @@ impl Tokenizer {
         Token::ident(token.to_lowercase())
     }
 
-    fn numeric_token<I: Iterator<Item = char>>(&self, chars: &mut Peekable<I>) -> Token {
+    fn numeric_token(&mut self) -> Token {
         let mut number = String::default();
-        while let Some(d @ '0'...'9') = chars.peek().cloned() {
-            chars.next();
+        while let Some(d @ '0'...'9') = self.look_ahead() {
+            self.consume();
             number.push(d);
         }
         Token::number(number)
     }
 
-    fn string_token<I: Iterator<Item = char>>(&self, chars: &mut Peekable<I>) -> Token {
+    fn string_token(&mut self) -> Token {
         let mut string = String::default();
         loop {
-            match chars.peek().cloned() {
+            match self.look_ahead() {
                 Some('\'') => {
-                    chars.next();
-                    match chars.peek().cloned() {
+                    self.consume();
+                    match self.look_ahead() {
                         Some('\'') => {
-                            chars.next();
+                            self.consume();
                             string.push('\'');
                         },
                         _ => break,
                     }
                 },
                 Some(c) => {
-                    chars.next();
+                    self.consume();
                     string.push(c);
                 },
                 None => break,

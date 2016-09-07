@@ -101,15 +101,7 @@ fn parse_where<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Option<Co
 
         let cond_type = match tokens.next() {
             Some(Token::EqualSign) => CondType::Eq,
-            Some(Token::LAngle) => {
-                match tokens.peek() {
-                    Some(&Token::RAngle) => {
-                        tokens.next();
-                        CondType::NotEq
-                    },
-                    _ => unimplemented!(),
-                }
-            }
+            Some(Token::NotEqualSign) => CondType::NotEq,
             _ => unimplemented!(),
         };
         let right = parse_predicate_arguments(tokens.by_ref());
