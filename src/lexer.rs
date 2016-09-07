@@ -36,18 +36,18 @@ impl Token {
     }
 }
 
-impl From<char> for Token {
-    fn from(c: char) -> Token {
+impl<'s> From<&'s str> for Token {
+    fn from(c: &'s str) -> Token {
         match c {
-            '(' => Token::LParent,
-            ')' => Token::RParent,
-            ',' => Token::Comma,
-            '\'' => Token::SingleQuote,
-            ';' => Token::Semicolon,
-            '=' => Token::EqualSign,
-            '*' => Token::Asterisk,
-            '<' => Token::LAngle,
-            '>' => Token::RAngle,
+            "(" => Token::LParent,
+            ")" => Token::RParent,
+            "," => Token::Comma,
+            "'" => Token::SingleQuote,
+            ";" => Token::Semicolon,
+            "=" => Token::EqualSign,
+            "*" => Token::Asterisk,
+            "<" => Token::LAngle,
+            ">" => Token::RAngle,
             _ => unimplemented!(),
         }
     }
@@ -100,7 +100,9 @@ impl Tokenizer {
                 Some('0'...'9') => { tokens.push(self.numeric_token(&mut chars.by_ref())); },
                 Some(c) => {
                     chars.next();
-                    tokens.push(Token::from(c));
+                    let mut s = String::with_capacity(1);
+                    s.push(c);
+                    tokens.push(Token::from(s.as_str()));
                 },
                 None => break,
             }
@@ -135,20 +137,26 @@ impl Tokenizer {
     }
 
     fn string_token<I: Iterator<Item = char>>(&self, chars: &mut Peekable<I>) -> Token {
-        Token::string(self.take_while_quote(chars.by_ref()) + &self.match_break(chars.by_ref()))
-    }
-
-    fn take_while_quote<I: Iterator<Item = char>>(&self, chars: &mut Peekable<I>) -> String {
-        chars.take_while(|c| *c != '\'').collect::<String>()
-    }
-
-    fn match_break<I: Iterator<Item = char>>(&self, chars: &mut Peekable<I>) -> String {
-        let string = String::default();
-        if let Some('\'') = chars.peek().cloned() {
-            chars.next();
-            string + "\'" + self.take_while_quote(chars.by_ref()).as_str()
-        } else {
-            string
+        let mut string = String::default();
+        loop {
+            match chars.peek().cloned() {
+                Some('\'') => {
+                    chars.next();
+                    match chars.peek().cloned() {
+                        Some('\'') => {
+                            chars.next();
+                            string.push('\'');
+                        },
+                        _ => break,
+                    }
+                },
+                Some(c) => {
+                    chars.next();
+                    string.push(c);
+                },
+                None => break,
+            }
         }
+        Token::string(string)
     }
 }

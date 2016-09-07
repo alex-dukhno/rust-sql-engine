@@ -35,18 +35,6 @@ fn emits_number_token_when_given_number() {
 }
 
 #[test]
-fn escapes_single_quote_inside_string_token() {
-    expect!(Tokenizer::from("\'str\'\'str\'").tokenize())
-        .to(be_equal_to(vec![Token::string("str\'str")]));
-}
-
-#[test]
-fn escapes_single_quote_at_the_end() {
-    expect!(Tokenizer::from("\'str\'\'\'").tokenize())
-        .to(be_equal_to(vec![Token::string("str\'")]));
-}
-
-#[test]
 fn escapes_new_line_chars() {
     expect!(Tokenizer::from("\nword").tokenize())
         .to(be_equal_to(vec![Token::ident("word")]));
@@ -59,20 +47,46 @@ fn escapes_tabs() {
 }
 
 #[test]
-fn emits_string_when_only_open_signle_quote() {
-    expect!(Tokenizer::from("\'str").tokenize())
-        .to(be_equal_to(vec![Token::string("str")]));
-}
-
-#[test]
 fn case_insensitive() {
     expect!(Tokenizer::from("ABCDEFGHIJKLMNOPQRSTUVWXYZ").tokenize())
         .to(be_equal_to(vec![Token::ident("abcdefghijklmnopqrstuvwxyz")]));
 }
 
 #[cfg(test)]
-mod sql_query {
+mod single_quotes {
+    #[test]
+    fn inside_string_token() {
+        expect!(Tokenizer::from("'str''str'").tokenize())
+            .to(be_equal_to(vec![Token::string("str'str")]));
+    }
 
+    #[test]
+    fn at_the_end() {
+        expect!(Tokenizer::from("'str'''").tokenize())
+            .to(be_equal_to(vec![Token::string("str'")]));
+    }
+
+    #[test]
+    fn at_the_begining() {
+        expect!(Tokenizer::from("'''str'").tokenize())
+            .to(be_equal_to(vec![Token::string("'str")]));
+    }
+
+    #[test]
+    fn everywhere() {
+        expect!(Tokenizer::from("'''str''str'''").tokenize())
+            .to(be_equal_to(vec![Token::string("'str'str'")]));
+    }
+
+    #[test]
+    fn emits_string_when_only_open_signle_quote() {
+        expect!(Tokenizer::from("'str").tokenize())
+            .to(be_equal_to(vec![Token::string("str")]));
+    }
+}
+
+#[cfg(test)]
+mod sql_query {
     use expectest::prelude::be_equal_to;
 
     use sql::lexer::Tokenizer;
@@ -87,10 +101,10 @@ mod sql_query {
                     Token::ident("into"),
                     Token::ident("table_name"),
                     Token::ident("values"),
-                    Token::from('('),
+                    Token::from("("),
                     Token::number("1"),
-                    Token::from(')'),
-                    Token::from(';')
+                    Token::from(")"),
+                    Token::from(";")
                 ]
             ));
     }
@@ -104,10 +118,10 @@ mod sql_query {
                     Token::ident("into"),
                     Token::ident("table_name"),
                     Token::ident("values"),
-                    Token::from('('),
+                    Token::from("("),
                     Token::string("string"),
-                    Token::from(')'),
-                    Token::from(';')
+                    Token::from(")"),
+                    Token::from(";")
                 ]
             ));
     }
@@ -123,10 +137,10 @@ mod sql_query {
                     Token::ident("table_1"),
                     Token::ident("where"),
                     Token::ident("col"),
-                    Token::from('<'),
-                    Token::from('>'),
+                    Token::from("<"),
+                    Token::from(">"),
                     Token::number("5"),
-                    Token::from(';')
+                    Token::from(";")
                 ]
             ));
     }
