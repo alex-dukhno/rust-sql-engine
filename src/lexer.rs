@@ -58,7 +58,6 @@ impl<'s> From<&'s str> for Token {
 }
 
 impl From<char> for Token {
-
     fn from(c: char) -> Token {
         match c {
             '(' => Token::LParent,
@@ -88,20 +87,99 @@ impl fmt::Display for Token {
     }
 }
 
-pub struct Tokenizer<I: Iterator<Item = char>> {
-    sequence: Peekable<I>
+pub trait Tokenizer {
+    type Token;
+    type Item;
+
+    fn tokenize(mut self) -> Vec<Self::Token>;
+
+    fn look_ahead(&mut self) -> Option<Self::Item>;
+
+    fn consume(&mut self);
 }
 
-impl<I: Into<String>> From<I> for Tokenizer<vec::IntoIter<char>> {
-    fn from(source: I) -> Tokenizer<vec::IntoIter<char>> {
-        Tokenizer {
-            sequence: source.into().chars().collect::<Vec<char>>().into_iter().peekable()
+pub trait IntoTokenizer<I: Iterator<Item = Self::Item>> {
+    type Token;
+    type Item;
+    type IntoTokenizer: Tokenizer<Token = Self::Token, Item = Self::Item>;
+
+    fn into_tokenizer(self) -> Self::IntoTokenizer;
+}
+
+impl IntoTokenizer<vec::IntoIter<char>> for String {
+    type Token = Token;
+    type Item = char;
+    type IntoTokenizer = StringTokenizer<vec::IntoIter<char>>;
+
+    fn into_tokenizer(self) -> Self::IntoTokenizer {
+        StringTokenizer {
+            sequence: self.chars().collect::<Vec<char>>().into_iter().peekable()
         }
     }
 }
 
-impl<I: Iterator<Item = char>> Tokenizer<I> {
-    pub fn tokenize(mut self) -> Vec<Token> {
+pub struct StringTokenizer<I: Iterator<Item = char>> {
+    sequence: Peekable<I>
+}
+
+impl <I: Iterator<Item = char>> StringTokenizer<I> {
+
+    fn ident_token(&mut self) -> Token {
+        let mut token = String::default();
+        loop {
+            match self.look_ahead() {
+                Some(c @ 'A'...'Z') |
+                Some(c @ 'a'...'z') |
+                Some(c @ '_') |
+                Some(c @ '0'...'9') => {
+                    self.consume();
+                    token.push(c);
+                },
+                _ => break,
+            }
+        }
+        Token::ident(token.to_lowercase())
+    }
+
+    fn numeric_token(&mut self) -> Token {
+        let mut number = String::default();
+        while let Some(d @ '0'...'9') = self.look_ahead() {
+            self.consume();
+            number.push(d);
+        }
+        Token::number(number)
+    }
+
+    fn string_token(&mut self) -> Token {
+        let mut string = String::default();
+        loop {
+            match self.look_ahead() {
+                Some('\'') => {
+                    self.consume();
+                    match self.look_ahead() {
+                        Some('\'') => {
+                            self.consume();
+                            string.push('\'');
+                        },
+                        _ => break,
+                    }
+                },
+                Some(c) => {
+                    self.consume();
+                    string.push(c);
+                },
+                None => break,
+            }
+        }
+        Token::string(string)
+    }
+}
+
+impl<I: Iterator<Item = char>> Tokenizer for StringTokenizer<I> {
+    type Token = Token;
+    type Item = char;
+
+    fn tokenize(mut self) -> Vec<Token> {
         let mut tokens = vec![];
         loop {
             match self.look_ahead() {
@@ -162,55 +240,5 @@ impl<I: Iterator<Item = char>> Tokenizer<I> {
 
     fn consume(&mut self) {
         self.sequence.next();
-    }
-
-    fn ident_token(&mut self) -> Token {
-        let mut token = String::default();
-        loop {
-            match self.look_ahead() {
-                Some(c @ 'A'...'Z') |
-                Some(c @ 'a'...'z') |
-                Some(c @ '_') |
-                Some(c @ '0'...'9') => {
-                    self.consume();
-                    token.push(c);
-                },
-                _ => break,
-            }
-        }
-        Token::ident(token.to_lowercase())
-    }
-
-    fn numeric_token(&mut self) -> Token {
-        let mut number = String::default();
-        while let Some(d @ '0'...'9') = self.look_ahead() {
-            self.consume();
-            number.push(d);
-        }
-        Token::number(number)
-    }
-
-    fn string_token(&mut self) -> Token {
-        let mut string = String::default();
-        loop {
-            match self.look_ahead() {
-                Some('\'') => {
-                    self.consume();
-                    match self.look_ahead() {
-                        Some('\'') => {
-                            self.consume();
-                            string.push('\'');
-                        },
-                        _ => break,
-                    }
-                },
-                Some(c) => {
-                    self.consume();
-                    string.push(c);
-                },
-                None => break,
-            }
-        }
-        Token::string(string)
     }
 }

@@ -1,23 +1,22 @@
 use expectest::prelude::be_equal_to;
 
-use sql::lexer::Tokenizer;
-use sql::lexer::Token;
+use sql::lexer::{Tokenizer, Token, IntoTokenizer};
 
 #[test]
 fn emits_none_when_given_an_empty_string() {
-    expect!(Tokenizer::from("").tokenize())
+    expect!(String::from("").into_tokenizer().tokenize())
         .to(be_equal_to(vec![]));
 }
 
 #[test]
 fn emits_identifier_token_when_given_a_single_word_string() {
-    expect!(Tokenizer::from("word").tokenize())
+    expect!(String::from("word").into_tokenizer().tokenize())
         .to(be_equal_to(vec![Token::ident("word")]));
 }
 
 #[test]
 fn emits_identifiers_when_given_string_of_words() {
-    expect!(Tokenizer::from("this is a sentence").tokenize())
+    expect!(String::from("this is a sentence").into_tokenizer().tokenize())
         .to(be_equal_to(
             vec![
                 Token::ident("this"),
@@ -30,25 +29,25 @@ fn emits_identifiers_when_given_string_of_words() {
 
 #[test]
 fn emits_number_token_when_given_number() {
-    expect!(Tokenizer::from("5").tokenize())
+    expect!(String::from("5").into_tokenizer().tokenize())
         .to(be_equal_to(vec![Token::number("5")]));
 }
 
 #[test]
 fn escapes_new_line_chars() {
-    expect!(Tokenizer::from("\nword").tokenize())
+    expect!(String::from("\nword").into_tokenizer().tokenize())
         .to(be_equal_to(vec![Token::ident("word")]));
 }
 
 #[test]
 fn escapes_tabs() {
-    expect!(Tokenizer::from("\tword").tokenize())
+    expect!(String::from("\tword").into_tokenizer().tokenize())
         .to(be_equal_to(vec![Token::ident("word")]));
 }
 
 #[test]
 fn case_insensitive() {
-    expect!(Tokenizer::from("ABCDEFGHIJKLMNOPQRSTUVWXYZ").tokenize())
+    expect!(String::from("ABCDEFGHIJKLMNOPQRSTUVWXYZ").into_tokenizer().tokenize())
         .to(be_equal_to(vec![Token::ident("abcdefghijklmnopqrstuvwxyz")]));
 }
 
@@ -56,35 +55,35 @@ fn case_insensitive() {
 mod single_quotes {
     use expectest::prelude::be_equal_to;
 
-    use sql::lexer::{Tokenizer, Token};
+    use sql::lexer::{Tokenizer, Token, IntoTokenizer};
 
     #[test]
     fn inside_string_token() {
-        expect!(Tokenizer::from("'str''str'").tokenize())
+        expect!(String::from("'str''str'").into_tokenizer().tokenize())
             .to(be_equal_to(vec![Token::string("str'str")]));
     }
 
     #[test]
     fn at_the_end() {
-        expect!(Tokenizer::from("'str'''").tokenize())
+        expect!(String::from("'str'''").into_tokenizer().tokenize())
             .to(be_equal_to(vec![Token::string("str'")]));
     }
 
     #[test]
     fn at_the_begining() {
-        expect!(Tokenizer::from("'''str'").tokenize())
+        expect!(String::from("'''str'").into_tokenizer().tokenize())
             .to(be_equal_to(vec![Token::string("'str")]));
     }
 
     #[test]
     fn everywhere() {
-        expect!(Tokenizer::from("'''str''str'''").tokenize())
+        expect!(String::from("'''str''str'''").into_tokenizer().tokenize())
             .to(be_equal_to(vec![Token::string("'str'str'")]));
     }
 
     #[test]
     fn emits_string_when_only_open_signle_quote() {
-        expect!(Tokenizer::from("'str").tokenize())
+        expect!(String::from("'str").into_tokenizer().tokenize())
             .to(be_equal_to(vec![Token::string("str")]));
     }
 }
@@ -93,47 +92,47 @@ mod single_quotes {
 mod cmp_tokens {
     use expectest::prelude::be_equal_to;
 
-    use sql::lexer::{Tokenizer, Token};
+    use sql::lexer::{Tokenizer, Token, IntoTokenizer};
 
     #[test]
     fn equal_sign() {
-        expect!(Tokenizer::from("=").tokenize())
+        expect!(String::from("=").into_tokenizer().tokenize())
             .to(be_equal_to(vec![Token::EqualSign]));
     }
 
     #[test]
     fn not_equal_sign_angle_brackets() {
-        expect!(Tokenizer::from("<>").tokenize())
+        expect!(String::from("<>").into_tokenizer().tokenize())
             .to(be_equal_to(vec![Token::NotEqualSign]));
     }
 
     #[test]
     fn not_equal_sign_exclamation_mark_equal_sign() {
-        expect!(Tokenizer::from("!=").tokenize())
+        expect!(String::from("!=").into_tokenizer().tokenize())
             .to(be_equal_to(vec![Token::NotEqualSign]));
     }
 
     #[test]
     fn less_then_sign() {
-        expect!(Tokenizer::from("<").tokenize())
+        expect!(String::from("<").into_tokenizer().tokenize())
             .to(be_equal_to(vec![Token::Less]));
     }
 
     #[test]
     fn less_or_equal_sign() {
-        expect!(Tokenizer::from("<=").tokenize())
+        expect!(String::from("<=").into_tokenizer().tokenize())
             .to(be_equal_to(vec![Token::LessEqual]));
     }
 
     #[test]
     fn greater_then_sign() {
-        expect!(Tokenizer::from(">").tokenize())
+        expect!(String::from(">").into_tokenizer().tokenize())
             .to(be_equal_to(vec![Token::Greater]));
     }
 
     #[test]
     fn greate_or_equal_sign() {
-        expect!(Tokenizer::from(">=").tokenize())
+        expect!(String::from(">=").into_tokenizer().tokenize())
             .to(be_equal_to(vec![Token::GreaterEqual]));
     }
 }
@@ -142,12 +141,11 @@ mod cmp_tokens {
 mod sql_query {
     use expectest::prelude::be_equal_to;
 
-    use sql::lexer::Tokenizer;
-    use sql::lexer::Token;
+    use sql::lexer::{Tokenizer, Token, IntoTokenizer};
 
     #[test]
     fn tokenize_insert_query_numeric_value() {
-        expect!(Tokenizer::from("insert into table_name values(1);").tokenize())
+        expect!(String::from("insert into table_name values(1);").into_tokenizer().tokenize())
             .to(be_equal_to(
                 vec![
                     Token::ident("insert"),
@@ -164,7 +162,7 @@ mod sql_query {
 
     #[test]
     fn tokenize_insert_query_varchar_value() {
-        expect!(Tokenizer::from("insert into table_name values('string');").tokenize())
+        expect!(String::from("insert into table_name values('string');").into_tokenizer().tokenize())
             .to(be_equal_to(
                 vec![
                     Token::ident("insert"),
@@ -181,7 +179,7 @@ mod sql_query {
 
     #[test]
     fn tokenize_select_with_not_equal_predicate() {
-        expect!(Tokenizer::from("select col from table_1 where col <> 5;").tokenize())
+        expect!(String::from("select col from table_1 where col <> 5;").into_tokenizer().tokenize())
             .to(be_equal_to(
                 vec![
                     Token::ident("select"),

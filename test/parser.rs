@@ -2,7 +2,7 @@
 mod parses_create_table_statement {
     use expectest::prelude::be_equal_to;
 
-    use sql::lexer::Tokenizer;
+    use sql::lexer::{Tokenizer, IntoTokenizer};
     use sql::parser::Parser;
     use sql::parser::ast::Type::{Int, VarChar};
     use sql::parser::ast::Statement::Create;
@@ -11,13 +11,13 @@ mod parses_create_table_statement {
 
     #[test]
     fn with_one_column() {
-        expect!(Tokenizer::from("create table table_name_1 (col int);").tokenize().parse())
+        expect!(String::from("create table table_name_1 (col int);").into_tokenizer().tokenize().parse())
             .to(be_equal_to(Create(CreateTableQuery::new("table_name_1", vec![Column::new("col", Int)]))));
     }
 
     #[test]
     fn with_list_of_columns() {
-        expect!(Tokenizer::from("create table table_name_2 (col1 int, col2 int, col3 int);").tokenize().parse())
+        expect!(String::from("create table table_name_2 (col1 int, col2 int, col3 int);").into_tokenizer().tokenize().parse())
             .to(
                 be_equal_to(
                     Create(
@@ -36,7 +36,7 @@ mod parses_create_table_statement {
 
     #[test]
     fn with_varchar_column_type() {
-        expect!(Tokenizer::from("create table table_1 (col_2 varchar(10));").tokenize().parse())
+        expect!(String::from("create table table_1 (col_2 varchar(10));").into_tokenizer().tokenize().parse())
             .to(
                 be_equal_to(
                     Create(
@@ -51,7 +51,7 @@ mod parses_create_table_statement {
 mod parses_delete_statements {
     use expectest::prelude::be_equal_to;
 
-    use sql::lexer::Tokenizer;
+    use sql::lexer::{Tokenizer, IntoTokenizer};
     use sql::parser::Parser;
     use sql::parser::ast::Statement::Delete;
     use sql::parser::ast::DeleteQuery;
@@ -60,13 +60,13 @@ mod parses_delete_statements {
 
     #[test]
     fn without_any_predicates() {
-        expect!(Tokenizer::from("delete from table_name_1;").tokenize().parse())
+        expect!(String::from("delete from table_name_1;").into_tokenizer().tokenize().parse())
             .to(be_equal_to(Delete(DeleteQuery::new("table_name_1", None))));
     }
 
     #[test]
     fn with_column_const_predicate() {
-        expect!(Tokenizer::from("delete from table_name_2 where col_1 = 5;").tokenize().parse())
+        expect!(String::from("delete from table_name_2 where col_1 = 5;").into_tokenizer().tokenize().parse())
             .to(
                 be_equal_to(
                     Delete(
@@ -86,7 +86,7 @@ mod parses_delete_statements {
 
     #[test]
     fn with_const_column_predicate() {
-        expect!(Tokenizer::from("delete from table_name_3 where 'str' = col_2;").tokenize().parse())
+        expect!(String::from("delete from table_name_3 where 'str' = col_2;").into_tokenizer().tokenize().parse())
             .to(
                 be_equal_to(
                     Delete(
@@ -109,7 +109,7 @@ mod parses_delete_statements {
 mod parses_insert_statements {
     use expectest::prelude::be_equal_to;
 
-    use sql::lexer::Tokenizer;
+    use sql::lexer::{Tokenizer, IntoTokenizer};
     use sql::parser::Parser;
     use sql::parser::ast::InsertQuery;
     use sql::parser::ast::Statement::Insert;
@@ -117,7 +117,7 @@ mod parses_insert_statements {
 
     #[test]
     fn with_one_column() {
-        expect!(Tokenizer::from("insert into table_name_1 values(10);").tokenize().parse())
+        expect!(String::from("insert into table_name_1 values(10);").into_tokenizer().tokenize().parse())
             .to(
                 be_equal_to(
                     Insert(
@@ -129,7 +129,7 @@ mod parses_insert_statements {
 
     #[test]
     fn with_list_of_columns() {
-        expect!(Tokenizer::from("insert into table_name_2 values (10, 'string');").tokenize().parse())
+        expect!(String::from("insert into table_name_2 values (10, 'string');").into_tokenizer().tokenize().parse())
             .to(
                 be_equal_to(
                     Insert(
@@ -145,7 +145,7 @@ mod parses_insert_statements {
 
     #[test]
     fn with_columns() {
-        expect!(Tokenizer::from("insert into table_name_3 (col_1, col_2) values (10, 'string');").tokenize().parse())
+        expect!(String::from("insert into table_name_3 (col_1, col_2) values (10, 'string');").into_tokenizer().tokenize().parse())
             .to(
                 be_equal_to(
                     Insert(
@@ -165,7 +165,7 @@ mod parse_select_statements {
 
     use expectest::prelude::be_equal_to;
 
-    use sql::lexer::Tokenizer;
+    use sql::lexer::{Tokenizer, IntoTokenizer};
     use sql::parser::Parser;
     use sql::parser::ast::Statement::Select;
     use sql::parser::ast::SelectQuery;
@@ -174,7 +174,7 @@ mod parse_select_statements {
 
     #[test]
     fn without_predicates() {
-        expect!(Tokenizer::from("select col_1 from table_name_1").tokenize().parse())
+        expect!(String::from("select col_1 from table_name_1").into_tokenizer().tokenize().parse())
             .to(
                 be_equal_to(
                     Select(
@@ -186,7 +186,7 @@ mod parse_select_statements {
 
     #[test]
     fn with_predicates() {
-        expect!(Tokenizer::from("select col_2 from table_name_2 where col_2 = 10;").tokenize().parse())
+        expect!(String::from("select col_2 from table_name_2 where col_2 = 10;").into_tokenizer().tokenize().parse())
             .to(
                 be_equal_to(
                     Select(
@@ -202,7 +202,7 @@ mod parse_select_statements {
 
     #[test]
     fn with_limit_predicate() {
-        expect!(Tokenizer::from("select col_2 from table_name_2 where limit = 10;").tokenize().parse())
+        expect!(String::from("select col_2 from table_name_2 where limit = 10;").into_tokenizer().tokenize().parse())
             .to(
                 be_equal_to(
                     Select(
@@ -218,7 +218,7 @@ mod parse_select_statements {
 
     #[test]
     fn with_not_equal_predicate() {
-        expect!(Tokenizer::from("select col_2 from table_1 where col_1 <> \'a\';").tokenize().parse())
+        expect!(String::from("select col_2 from table_1 where col_1 <> \'a\';").into_tokenizer().tokenize().parse())
             .to(
                 be_equal_to(
                     Select(
