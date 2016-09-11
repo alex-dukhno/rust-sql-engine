@@ -34,6 +34,7 @@ pub enum Token {
     Create,
     Table,
     Columns,
+    Limit,
 
     Int,
     VarChar
@@ -63,7 +64,7 @@ impl<'s> From<&'s str> for Token {
             ";" => Token::Semicolon,
             "=" => Token::EqualSign,
             "*" => Token::Asterisk,
-            "<>" => Token::NotEqualSign,
+            "<>" | "!=" => Token::NotEqualSign,
             "<" => Token::Less,
             ">" => Token::Greater,
             "insert" => Token::Insert,
@@ -78,6 +79,7 @@ impl<'s> From<&'s str> for Token {
             "table" => Token::Table,
             "int" => Token::Int,
             "varchar" => Token::VarChar,
+            "limit" => Token::Limit,
             _ => Token::Ident(token.into()),
         }
     }

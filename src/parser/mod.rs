@@ -1,7 +1,5 @@
 pub mod ast;
 
-use std::iter::Peekable;
-
 use super::lexer::Token;
 use self::ast::{Type, CondType, Statement, CreateTableQuery, DeleteQuery, InsertQuery, SelectQuery, Condition, CondArg, Value, ColumnTable};
 
@@ -33,7 +31,7 @@ pub trait IntoQueryParser<I: Iterator<Item = Token>> {
 
 impl<I: Iterator<Item = Token>, II: IntoIterator<Item = Token, IntoIter = I>> IntoQueryParser<I> for II {
     fn into_parser(self) -> Parser<I> {
-        let mut iter = self.into_iter().peekable();
+        let mut iter = self.into_iter();
         match iter.next() {
             Some(Token::Create) => Parser::Create(CreateTableQueryParser::new(iter)),
             Some(Token::Delete) => Parser::Delete(DeleteQueryParser::new(iter)),
@@ -41,203 +39,121 @@ impl<I: Iterator<Item = Token>, II: IntoIterator<Item = Token, IntoIter = I>> In
             Some(Token::Select) => Parser::Select(SelectQueryParser::new(iter)),
             _ => unimplemented!(),
         }
-        //        if let Some(Token::Ident(statement)) = iter.next() {
-        //            match statement.as_str() {
-        //                "create" => Parser::Create(CreateTableQueryParser::new(iter)),
-        //                "delete" => Parser::Delete(DeleteQueryParser::new(iter)),
-        //                "insert" => Parser::Insert(InsertQueryParser::new(iter)),
-        //                "select" => Parser::Select(SelectQueryParser::new(iter)),
-        //                _ => unimplemented!(),
-        //            }
-        //        } else {
-        //            unimplemented!()
-        //        }
     }
 }
 
 #[derive(Debug)]
 pub struct CreateTableQueryParser<I: Iterator<Item = Token>> {
-    tokens: Peekable<I>
+    tokens: I
 }
 
 impl<I: Iterator<Item = Token>> QueryParser for CreateTableQueryParser<I> {
     fn parse(mut self) -> Statement {
-        Statement::Create(self.parse_create())
+        if self.tokens.next() != Some(Token::Table) {
+            unimplemented!();
+        }
+
+        let table_name = match self.tokens.next() {
+            Some(Token::Ident(name)) => name,
+            _ => unimplemented!(),
+        };
+
+        let mut columns = vec![];
+
+        while let Some(token) = self.tokens.next() {
+            match token {
+                Token::LParent | Token::Comma => columns.push(self.parse_column()),
+                Token::RParent => {},
+                Token::Semicolon => break,
+                _ => unimplemented!()
+            }
+        }
+
+        Statement::Create(CreateTableQuery::new(table_name, columns))
     }
 }
 
 impl<I: Iterator<Item = Token>> CreateTableQueryParser<I> {
-    fn new(tokens: Peekable<I>) -> CreateTableQueryParser<I> {
+    fn new(tokens: I) -> CreateTableQueryParser<I> {
         CreateTableQueryParser {
             tokens: tokens
         }
     }
 
-    fn parse_create(&mut self) -> CreateTableQuery {
-        self.tokens.next(); //skip 'TABLE' keyword
-        match self.tokens.next() {
-            Some(Token::Ident(name)) => CreateTableQuery::new(name, self.parse_table_columns()),
+    fn parse_column(&mut self) -> ColumnTable {
+        let column_name = match self.tokens.next() {
+            Some(Token::Ident(name)) => name,
             _ => unimplemented!(),
-        }
+        };
+        let column_type = match self.tokens.next() {
+            Some(Token::Int) => Type::Int,
+            Some(Token::VarChar) => self.parse_var_char_type(),
+            _ => unimplemented!(),
+        };
+        ColumnTable::new(column_name, column_type)
     }
 
-    fn parse_table_columns(&mut self) -> Vec<ColumnTable> {
+    fn parse_var_char_type(&mut self) -> Type {
         if self.tokens.next() != Some(Token::LParent) {
             unimplemented!();
         }
 
-        let mut columns = vec![];
+        let size = self.parse_size();
 
-        loop {
-            let col_name = match self.tokens.next() {
-                Some(Token::Ident(name)) => name,
-                _ => unimplemented!(),
-            };
-            let col_type = match self.tokens.next() {
-                Some(Token::Int) => Type::Int,
-                Some(Token::VarChar) => {
-                    self.tokens.next(); //skip '('
-                    let size = match self.tokens.next() {
-                        Some(Token::NumConst(s)) => match s.parse::<u8>() {
-                            Ok(s) => s,
-                            Err(e) => panic!(e),
-                        },
-                        _ => unimplemented!(),
-                    };
-                    self.tokens.next(); // skip ')'
-                    Type::VarChar(size)
-                },
-                _ => unimplemented!(),
-            };
-
-            columns.push(ColumnTable::new(col_name, col_type));
-
-            match self.tokens.next() {
-                Some(Token::Comma) => {}, //skip ','
-                Some(Token::RParent) => break,
-                _ => unimplemented!()
-            }
+        if self.tokens.next() != Some(Token::RParent) {
+            unimplemented!();
         }
 
-        //    tokens.next(); //skip ')'
-        match self.tokens.peek() {
-            Some(&Token::Semicolon) => { self.tokens.next(); } // skip ';'
-            _ => unimplemented!()
-        }
-
-        columns
-    }
-}
-
-pub struct DeleteQueryParser<I: Iterator<Item = Token>> {
-    tokens: Peekable<I>
-}
-
-impl<I: Iterator<Item = Token>> DeleteQueryParser<I> {
-    pub fn new(tokens: Peekable<I>) -> DeleteQueryParser<I> {
-        DeleteQueryParser {
-            tokens: tokens
-        }
+        Type::VarChar(size)
     }
 
-    fn parse_delete(&mut self) -> DeleteQuery {
-        DeleteQuery::new(self.parse_from(), self.parse_where())
-    }
-
-    fn parse_from(&mut self) -> String {
-        self.tokens.next(); //skip 'FROM' keyword
+    fn parse_size(&mut self) -> u8 {
         match self.tokens.next() {
-            Some(Token::Ident(table_name)) => table_name,
+            Some(Token::NumConst(num)) => match num.parse::<u8>() {
+                Ok(size) => size,
+                _ => unimplemented!(),
+            },
             _ => unimplemented!(),
         }
-    }
-
-    fn parse_where(&mut self) -> Option<Condition> {
-        match self.tokens.next() {
-            Some(Token::Where) => {
-                let left = self.parse_predicate_arguments();
-
-                let cond_type = match self.tokens.next() {
-                    Some(Token::EqualSign) => CondType::Eq,
-                    Some(Token::NotEqualSign) => CondType::NotEq,
-                    _ => unimplemented!(),
-                };
-                let right = self.parse_predicate_arguments();
-                Some(Condition::new(left, right, cond_type))
-            },
-            Some(Token::Semicolon) => None,
-            _ => unimplemented!(),
-        }
-    }
-
-    fn parse_predicate_arguments(&mut self) -> CondArg {
-        match self.tokens.next() {
-            Some(Token::CharsConst(s)) => CondArg::StringConstant(s),
-            Some(Token::NumConst(s)) => CondArg::NumConst(s),
-            Some(Token::Ident(s)) => if s == "limit" {
-                CondArg::Limit
-            } else {
-                CondArg::ColumnName(s)
-            },
-            c => panic!("unexpected token - {:?}", c),
-        }
-    }
-}
-
-impl<I: Iterator<Item = Token>> QueryParser for DeleteQueryParser<I> {
-    fn parse(mut self) -> Statement {
-        Statement::Delete(self.parse_delete())
     }
 }
 
 pub struct InsertQueryParser<I: Iterator<Item = Token>> {
-    tokens: Peekable<I>
+    tokens: I
 }
 
 impl<I: Iterator<Item = Token>> InsertQueryParser<I> {
-    pub fn new(tokens: Peekable<I>) -> InsertQueryParser<I> {
+    pub fn new(tokens: I) -> InsertQueryParser<I> {
         InsertQueryParser {
             tokens: tokens
         }
     }
 
-    fn parse_insert(&mut self) -> InsertQuery {
-        self.tokens.next(); //skip 'INTO' keyword
-        if let Some(Token::Ident(table_name)) = self.tokens.next() {
-            InsertQuery::new(table_name, self.parse_columns(), self.parse_values())
-        } else {
-            unimplemented!()
-        }
-    }
-
     fn parse_columns(&mut self) -> Vec<String> {
-        match self.tokens.peek() {
-            Some(&Token::LParent) => { self.tokens.next(); }, //skip '('
-            _ => return vec![],
-        }
         let mut columns = vec![];
-        loop {
-            match self.tokens.next() {
-                Some(Token::Comma) => {},
-                Some(Token::Ident(col)) => { columns.push(col); },
-                Some(Token::RParent) => break,
-                _ => unimplemented!(),
+        while let Some(token) = self.tokens.next() {
+            match token {
+                Token::Comma => {},
+                Token::Ident(col) => { columns.push(col); },
+                Token::RParent => break,
+                unexpected => panic!("panic find unexpected token {:?}", unexpected),
             }
         }
         columns
     }
 
     fn parse_values(&mut self) -> Vec<Value> {
-        self.tokens.next(); //skip 'VALUES' keyword
-        self.tokens.next(); //skip '('
+        if self.tokens.next() != Some(Token::LParent) {
+            unimplemented!();
+        }
         let mut values = vec![];
-        loop {
-            match self.tokens.next() {
-                Some(Token::NumConst(s)) => values.push(Value::NumConst(s)),
-                Some(Token::CharsConst(s)) => values.push(Value::StrConst(s)),
-                Some(Token::Comma) => {},
-                Some(Token::RParent) => break,
-                c => panic!("panic find {:?}", c),
+        while let Some(token) = self.tokens.next() {
+            match token {
+                Token::NumConst(s) => values.push(Value::NumConst(s)),
+                Token::CharsConst(s) => values.push(Value::StrConst(s)),
+                Token::Comma => {},
+                Token::RParent => break,
+                unexpected => panic!("panic find unexpected token {:?}", unexpected),
             }
         }
         values
@@ -246,26 +162,102 @@ impl<I: Iterator<Item = Token>> InsertQueryParser<I> {
 
 impl<I: Iterator<Item = Token>> QueryParser for InsertQueryParser<I> {
     fn parse(mut self) -> Statement {
-        Statement::Insert(self.parse_insert())
+        if self.tokens.next() != Some(Token::Into) {
+            unimplemented!();
+        }
+        let table_name = match self.tokens.next() {
+            Some(Token::Ident(table_name)) => table_name,
+            _ => unimplemented!(),
+        };
+        let mut columns = vec![];
+        let mut values = vec![];
+
+        while let Some(token) = self.tokens.next() {
+            match token {
+                Token::LParent => columns = self.parse_columns(),
+                Token::Values => values = self.parse_values(),
+                Token::Semicolon => break,
+                _ => unimplemented!(),
+            }
+        }
+        Statement::Insert(InsertQuery::new(table_name, columns, values))
+    }
+}
+
+pub struct DeleteQueryParser<I: Iterator<Item = Token>> {
+    tokens: I
+}
+
+impl<I: Iterator<Item = Token>> DeleteQueryParser<I> {
+    pub fn new(tokens: I) -> DeleteQueryParser<I> {
+        DeleteQueryParser {
+            tokens: tokens
+        }
+    }
+}
+
+impl<I: Iterator<Item = Token>> QueryParser for DeleteQueryParser<I> {
+    fn parse(mut self) -> Statement {
+        if self.tokens.next() != Some(Token::From) {
+            unimplemented!();
+        }
+
+        let table_name = match self.tokens.next() {
+            Some(Token::Ident(name)) => name,
+            _ => unimplemented!(),
+        };
+
+        Statement::Delete(DeleteQuery::new(table_name, PredicateParser::new(self.tokens).parse_where()))
     }
 }
 
 pub struct SelectQueryParser<I: Iterator<Item = Token>> {
-    tokens: Peekable<I>
+    tokens: I
 }
 
 impl<I: Iterator<Item = Token>> SelectQueryParser<I> {
-    pub fn new(tokens: Peekable<I>) -> SelectQueryParser<I> {
+    pub fn new(tokens: I) -> SelectQueryParser<I> {
         SelectQueryParser {
             tokens: tokens
         }
     }
 
-    fn parse_from(&mut self) -> String {
-        self.tokens.next(); //skip 'FROM' keyword
-        match self.tokens.next() {
+    fn parse_columns_list(&mut self) -> Vec<String> {
+        let mut columns = vec![];
+        loop {
+            match self.tokens.next() {
+                Some(Token::From) => break, // skip 'FROM' keyword
+                Some(Token::Ident(column_name)) => columns.push(column_name),
+                Some(Token::Comma) => {},
+                _ => unimplemented!(),
+            }
+        }
+        columns
+    }
+}
+
+impl<I: Iterator<Item = Token>> QueryParser for SelectQueryParser<I> {
+    fn parse(mut self) -> Statement {
+        let columns = self.parse_columns_list();
+
+        let table_name = match self.tokens.next() {
             Some(Token::Ident(table_name)) => table_name,
-            _ => unimplemented!(),
+            _ => unimplemented!()
+        };
+
+        Statement::Select(SelectQuery::new(table_name, columns, PredicateParser::new(self.tokens).parse_where()))
+    }
+}
+
+struct PredicateParser<I: Iterator<Item = Token>> {
+    tokens: I
+}
+
+impl<I: Iterator<Item = Token>> PredicateParser<I> {
+
+    fn new(tokens: I) -> PredicateParser<I> {
+        PredicateParser {
+            tokens: tokens
         }
     }
 
@@ -291,38 +283,10 @@ impl<I: Iterator<Item = Token>> SelectQueryParser<I> {
         match self.tokens.next() {
             Some(Token::CharsConst(s)) => CondArg::StringConstant(s),
             Some(Token::NumConst(s)) => CondArg::NumConst(s),
-            Some(Token::Ident(s)) => if s == "limit" {
-                CondArg::Limit
-            } else {
-                CondArg::ColumnName(s)
-            },
+            Some(Token::Limit) => CondArg::Limit,
+            Some(Token::Ident(s)) => CondArg::ColumnName(s),
             c => panic!("unexpected token - {:?}", c),
         }
     }
 
-    fn parse_select(&mut self) -> SelectQuery {
-        let mut columns = vec![];
-
-        loop {
-            match self.tokens.next() {
-                Some(Token::From) => break, // skip 'FROM' keyword
-                Some(Token::Ident(column_name)) => columns.push(column_name),
-                Some(Token::Comma) => {},
-                _ => unimplemented!()
-            }
-        }
-
-        let table_name = match self.tokens.next() {
-            Some(Token::Ident(table_name)) => table_name,
-            _ => unimplemented!()
-        };
-
-        SelectQuery::new(table_name, columns, self.parse_where())
-    }
-}
-
-impl<I: Iterator<Item = Token>> QueryParser for SelectQueryParser<I> {
-    fn parse(mut self) -> Statement {
-        Statement::Select(self.parse_select())
-    }
 }
