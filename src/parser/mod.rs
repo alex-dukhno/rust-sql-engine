@@ -35,17 +35,24 @@ pub trait IntoQueryParser<I: Iterator<Item = Token>> {
 impl<I: Iterator<Item = Token>, II: IntoIterator<Item = Token, IntoIter = I>> IntoQueryParser<I> for II {
     fn into_parser(self) -> Parser<I> {
         let mut iter = self.into_iter().peekable();
-        if let Some(Token::Ident(statement)) = iter.next() {
-            match statement.as_str() {
-                "create" => Parser::Create(CreateTableQueryParser::new(iter)),
-                "delete" => Parser::Delete(DeleteQueryParser::new(iter)),
-                "insert" => Parser::Insert(InsertQueryParser::new(iter)),
-                "select" => Parser::Select(SelectQueryParser::new(iter)),
-                _ => unimplemented!(),
-            }
-        } else {
-            unimplemented!()
+        match iter.next() {
+            Some(Token::Create) => Parser::Create(CreateTableQueryParser::new(iter)),
+            Some(Token::Delete) => Parser::Delete(DeleteQueryParser::new(iter)),
+            Some(Token::Insert) => Parser::Insert(InsertQueryParser::new(iter)),
+            Some(Token::Select) => Parser::Select(SelectQueryParser::new(iter)),
+            _ => unimplemented!(),
         }
+        //        if let Some(Token::Ident(statement)) = iter.next() {
+        //            match statement.as_str() {
+        //                "create" => Parser::Create(CreateTableQueryParser::new(iter)),
+        //                "delete" => Parser::Delete(DeleteQueryParser::new(iter)),
+        //                "insert" => Parser::Insert(InsertQueryParser::new(iter)),
+        //                "select" => Parser::Select(SelectQueryParser::new(iter)),
+        //                _ => unimplemented!(),
+        //            }
+        //        } else {
+        //            unimplemented!()
+        //        }
     }
 }
 
@@ -88,23 +95,19 @@ impl<I: Iterator<Item = Token>> CreateTableQueryParser<I> {
                 _ => unimplemented!(),
             };
             let col_type = match self.tokens.next() {
-                Some(Token::Ident(column_type)) =>
-                    match column_type.as_str() {
-                        "int" => Type::Int,
-                        "varchar" => {
-                            self.tokens.next(); //skip '('
-                            let size = match self.tokens.next() {
-                                Some(Token::NumConst(s)) => match s.parse::<u8>() {
-                                    Ok(s) => s,
-                                    Err(e) => panic!(e),
-                                },
-                                _ => unimplemented!(),
-                            };
-                            self.tokens.next(); // skip ')'
-                            Type::VarChar(size)
+                Some(Token::Int) => Type::Int,
+                Some(Token::VarChar) => {
+                    self.tokens.next(); //skip '('
+                    let size = match self.tokens.next() {
+                        Some(Token::NumConst(s)) => match s.parse::<u8>() {
+                            Ok(s) => s,
+                            Err(e) => panic!(e),
                         },
                         _ => unimplemented!(),
-                    },
+                    };
+                    self.tokens.next(); // skip ')'
+                    Type::VarChar(size)
+                },
                 _ => unimplemented!(),
             };
 
@@ -151,19 +154,20 @@ impl<I: Iterator<Item = Token>> DeleteQueryParser<I> {
     }
 
     fn parse_where(&mut self) -> Option<Condition> {
-        if let Some(Token::Ident(_)) = self.tokens.next() {
-            //skip 'WHERE' keyword
-            let left = self.parse_predicate_arguments();
+        match self.tokens.next() {
+            Some(Token::Where) => {
+                let left = self.parse_predicate_arguments();
 
-            let cond_type = match self.tokens.next() {
-                Some(Token::EqualSign) => CondType::Eq,
-                Some(Token::NotEqualSign) => CondType::NotEq,
-                _ => unimplemented!(),
-            };
-            let right = self.parse_predicate_arguments();
-            Some(Condition::new(left, right, cond_type))
-        } else {
-            None
+                let cond_type = match self.tokens.next() {
+                    Some(Token::EqualSign) => CondType::Eq,
+                    Some(Token::NotEqualSign) => CondType::NotEq,
+                    _ => unimplemented!(),
+                };
+                let right = self.parse_predicate_arguments();
+                Some(Condition::new(left, right, cond_type))
+            },
+            Some(Token::Semicolon) => None,
+            _ => unimplemented!(),
         }
     }
 
@@ -267,19 +271,20 @@ impl<I: Iterator<Item = Token>> SelectQueryParser<I> {
     }
 
     fn parse_where(&mut self) -> Option<Condition> {
-        if let Some(Token::Ident(_)) = self.tokens.next() {
-            //skip 'WHERE' keyword
-            let left = self.parse_predicate_arguments();
+        match self.tokens.next() {
+            Some(Token::Where) => {
+                let left = self.parse_predicate_arguments();
 
-            let cond_type = match self.tokens.next() {
-                Some(Token::EqualSign) => CondType::Eq,
-                Some(Token::NotEqualSign) => CondType::NotEq,
-                _ => unimplemented!(),
-            };
-            let right = self.parse_predicate_arguments();
-            Some(Condition::new(left, right, cond_type))
-        } else {
-            None
+                let cond_type = match self.tokens.next() {
+                    Some(Token::EqualSign) => CondType::Eq,
+                    Some(Token::NotEqualSign) => CondType::NotEq,
+                    _ => unimplemented!(),
+                };
+                let right = self.parse_predicate_arguments();
+                Some(Condition::new(left, right, cond_type))
+            },
+            Some(Token::Semicolon) => None,
+            _ => unimplemented!(),
         }
     }
 
@@ -301,11 +306,8 @@ impl<I: Iterator<Item = Token>> SelectQueryParser<I> {
 
         loop {
             match self.tokens.next() {
-                Some(Token::Ident(v)) => if v == "from" {
-                    break; // skip 'FROM' keyword
-                } else {
-                    columns.push(v)
-                },
+                Some(Token::From) => break, // skip 'FROM' keyword
+                Some(Token::Ident(column_name)) => columns.push(column_name),
                 Some(Token::Comma) => {},
                 _ => unimplemented!()
             }

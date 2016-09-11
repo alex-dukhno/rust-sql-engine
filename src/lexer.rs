@@ -22,7 +22,21 @@ pub enum Token {
     Comma,
     SingleQuote,
     Semicolon,
-    Asterisk
+    Asterisk,
+
+    Insert,
+    Into,
+    Values,
+    Select,
+    From,
+    Where,
+    Delete,
+    Create,
+    Table,
+    Columns,
+
+    Int,
+    VarChar
 }
 
 impl Token {
@@ -40,8 +54,8 @@ impl Token {
 }
 
 impl<'s> From<&'s str> for Token {
-    fn from(c: &'s str) -> Token {
-        match c {
+    fn from(token: &'s str) -> Token {
+        match token {
             "(" => Token::LParent,
             ")" => Token::RParent,
             "," => Token::Comma,
@@ -52,7 +66,19 @@ impl<'s> From<&'s str> for Token {
             "<>" => Token::NotEqualSign,
             "<" => Token::Less,
             ">" => Token::Greater,
-            _ => unimplemented!(),
+            "insert" => Token::Insert,
+            "into" => Token::Into,
+            "columns" => Token::Columns,
+            "values" => Token::Values,
+            "select" => Token::Select,
+            "from" => Token::From,
+            "where" => Token::Where,
+            "delete" => Token::Delete,
+            "create" => Token::Create,
+            "table" => Token::Table,
+            "int" => Token::Int,
+            "varchar" => Token::VarChar,
+            _ => Token::Ident(token.into()),
         }
     }
 }
@@ -138,7 +164,7 @@ impl <I: Iterator<Item = char>> StringTokenizer<I> {
                 _ => break,
             }
         }
-        Token::ident(token.to_lowercase())
+        Token::from(token.to_lowercase().as_str())
     }
 
     fn numeric_token(&mut self) -> Token {

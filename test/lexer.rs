@@ -148,10 +148,10 @@ mod sql_query {
         expect!(String::from("insert into table_name values(1);").into_tokenizer().tokenize())
             .to(be_equal_to(
                 vec![
-                    Token::ident("insert"),
-                    Token::ident("into"),
+                    Token::Insert,
+                    Token::Into,
                     Token::ident("table_name"),
-                    Token::ident("values"),
+                    Token::Values,
                     Token::from("("),
                     Token::number("1"),
                     Token::from(")"),
@@ -165,10 +165,10 @@ mod sql_query {
         expect!(String::from("insert into table_name values('string');").into_tokenizer().tokenize())
             .to(be_equal_to(
                 vec![
-                    Token::ident("insert"),
-                    Token::ident("into"),
+                    Token::Insert,
+                    Token::Into,
                     Token::ident("table_name"),
-                    Token::ident("values"),
+                    Token::Values,
                     Token::from("("),
                     Token::string("string"),
                     Token::from(")"),
@@ -182,11 +182,11 @@ mod sql_query {
         expect!(String::from("select col from table_1 where col <> 5;").into_tokenizer().tokenize())
             .to(be_equal_to(
                 vec![
-                    Token::ident("select"),
+                    Token::Select,
                     Token::ident("col"),
-                    Token::ident("from"),
+                    Token::From,
                     Token::ident("table_1"),
-                    Token::ident("where"),
+                    Token::Where,
                     Token::ident("col"),
                     Token::from("<>"),
                     Token::number("5"),

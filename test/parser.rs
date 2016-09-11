@@ -174,7 +174,7 @@ mod parse_select_statements {
 
     #[test]
     fn without_predicates() {
-        expect!(String::from("select col_1 from table_name_1").into_tokenizer().tokenize().into_parser().parse())
+        expect!(String::from("select col_1 from table_name_1;").into_tokenizer().tokenize().into_parser().parse())
             .to(
                 be_equal_to(
                     Select(
