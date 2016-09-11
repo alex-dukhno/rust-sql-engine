@@ -1,7 +1,6 @@
-use super::parser::ast::{Statement, Type, CreateTableQuery, InsertQuery, SelectQuery, Value, Condition, CondType, CondArg};
-use super::parser::ast;
+use super::parser::ast::{Statement, Type, CreateTableQuery, InsertQuery, SelectQuery, Value, Condition, CondType, CondArg, ColumnTable};
 use super::catalog_manager::{CatalogManager, LockBasedCatalogManager, Table, Column};
-use super::data_manager::{DataManager, LockBaseDataManager};
+use super::data_manager::LockBaseDataManager;
 
 pub struct QueryExecuter {
     catalog_manager: LockBasedCatalogManager,
@@ -12,7 +11,7 @@ impl Default for QueryExecuter {
     fn default() -> Self {
         QueryExecuter {
             catalog_manager: CatalogManager::create(),
-            data_manager: DataManager::create()
+            data_manager: LockBaseDataManager::default()
         }
     }
 }
@@ -37,7 +36,7 @@ impl QueryExecuter {
         let CreateTableQuery { table_name, columns } = create_query;
         self.catalog_manager.add_table(Table::new(table_name.as_str()));
         for column in columns.into_iter() {
-            let ast::table::Column { column_name, column_type } = column;
+            let ColumnTable { column_name, column_type } = column;
             self.catalog_manager.add_column_to(table_name.as_str(), Column::new(column_name, column_type))
         }
         ExecutionResult::Message(format!("'{}' was created", table_name.as_str()))
@@ -90,7 +89,13 @@ impl QueryExecuter {
                     _ => unimplemented!(),
                 }
             }
-            None => ExecutionResult::Data(self.data_manager.get_range_till_end(table_name.as_str(), 0))
+            None => {
+                if let Some(index) = self.catalog_manager.get_column_index(table_name.as_str(), &columns[0]) {
+                    ExecutionResult::Data(self.data_manager.get_range_till_end_for_column(table_name.as_str(), index))
+                } else {
+                    ExecutionResult::Data(self.data_manager.get_range_till_end(table_name.as_str(), 0))
+                }
+            }
         }
     }
 }

@@ -6,13 +6,12 @@ mod parses_create_table_statement {
     use sql::parser::{QueryParser, IntoQueryParser};
     use sql::parser::ast::Type::{Int, VarChar};
     use sql::parser::ast::Statement::Create;
-    use sql::parser::ast::CreateTableQuery;
-    use sql::parser::ast::table::Column;
+    use sql::parser::ast::{CreateTableQuery, ColumnTable};
 
     #[test]
     fn with_one_column() {
         expect!(String::from("create table table_name_1 (col int);").into_tokenizer().tokenize().into_parser().parse())
-            .to(be_equal_to(Create(CreateTableQuery::new("table_name_1", vec![Column::new("col", Int)]))));
+            .to(be_equal_to(Create(CreateTableQuery::new("table_name_1", vec![ColumnTable::new("col", Int)]))));
     }
 
     #[test]
@@ -24,9 +23,9 @@ mod parses_create_table_statement {
                         CreateTableQuery::new(
                             "table_name_2",
                             vec![
-                                Column::new("col1", Int),
-                                Column::new("col2", Int),
-                                Column::new("col3", Int)
+                                ColumnTable::new("col1", Int),
+                                ColumnTable::new("col2", Int),
+                                ColumnTable::new("col3", Int)
                             ]
                         )
                     )
@@ -40,7 +39,7 @@ mod parses_create_table_statement {
             .to(
                 be_equal_to(
                     Create(
-                        CreateTableQuery::new("table_1", vec![Column::new("col_2", VarChar(10))])
+                        CreateTableQuery::new("table_1", vec![ColumnTable::new("col_2", VarChar(10))])
                     )
                 )
             );

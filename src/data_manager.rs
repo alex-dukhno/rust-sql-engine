@@ -1,35 +1,21 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
 
-pub trait DataManager {
-    fn create() -> Self;
-
-    fn save_to<I, D>(&self, table_name: I, data: D)
-        where I: Into<String>,
-              D: IntoIterator<Item = String>;
-
-    fn get_row_from(&self, table_name: &str, row_id: usize) -> Vec<String>;
-
-    fn get_range(&self, table_name: &str, start_from: usize, number_of_rows: usize) -> Vec<Vec<String>>;
-
-    fn get_range_till_end(&self, table_name: &str, start_from: usize) -> Vec<Vec<String>>;
-
-    fn get_not_equal(&self, table_name: &str, column_index: usize, value: &String) -> Vec<Vec<String>>;
-}
-
 #[derive(Debug)]
 pub struct LockBaseDataManager {
     data: Mutex<HashMap<String, Vec<Vec<String>>>>
 }
 
-impl DataManager for LockBaseDataManager {
-    fn create() -> LockBaseDataManager {
+impl Default for LockBaseDataManager {
+    fn default() -> LockBaseDataManager {
         LockBaseDataManager {
             data: Mutex::new(HashMap::default())
         }
     }
+}
 
-    fn save_to<I, D>(&self, table_name: I, data: D)
+impl LockBaseDataManager {
+    pub fn save_to<I, D>(&self, table_name: I, data: D)
         where I: Into<String>,
               D: IntoIterator<Item = String> {
         let mut guard = self.data.lock().unwrap();
@@ -41,7 +27,7 @@ impl DataManager for LockBaseDataManager {
         drop(guard);
     }
 
-    fn get_row_from(&self, table_name: &str, row_id: usize) -> Vec<String> {
+    pub fn get_row_from(&self, table_name: &str, row_id: usize) -> Vec<String> {
         let guard = self.data.lock().unwrap();
         let result = match (*guard).get(table_name) {
             None => vec![],
@@ -56,7 +42,7 @@ impl DataManager for LockBaseDataManager {
         result
     }
 
-    fn get_range(&self, table_name: &str, start_from: usize, number_of_rows: usize) -> Vec<Vec<String>> {
+    pub fn get_range(&self, table_name: &str, start_from: usize, number_of_rows: usize) -> Vec<Vec<String>> {
         let guard = self.data.lock().unwrap();
         let result = match (*guard).get(table_name) {
             None => vec![],
@@ -71,7 +57,7 @@ impl DataManager for LockBaseDataManager {
         result
     }
 
-    fn get_range_till_end(&self, table_name: &str, start_from: usize) -> Vec<Vec<String>> {
+    pub fn get_range_till_end(&self, table_name: &str, start_from: usize) -> Vec<Vec<String>> {
         let guard = self.data.lock().unwrap();
         let result = match (*guard).get(table_name) {
             None => unimplemented!(),
@@ -85,7 +71,19 @@ impl DataManager for LockBaseDataManager {
         result
     }
 
-    fn get_not_equal(&self, table_name: &str, column_index: usize, value: &String) -> Vec<Vec<String>> {
+    pub fn get_range_till_end_for_column(&self, table_name: &str, column_index: usize) -> Vec<Vec<String>> {
+        let guard = self.data.lock().unwrap();
+        let result = match (*guard).get(table_name) {
+            None => unimplemented!(),
+            Some(table_data) => {
+                table_data.into_iter().map(|row| row.into_iter().skip(column_index).take(1).cloned().collect::<Vec<String>>()).collect::<Vec<Vec<String>>>()
+            },
+        };
+        drop(guard);
+        result
+    }
+
+    pub fn get_not_equal(&self, table_name: &str, column_index: usize, value: &String) -> Vec<Vec<String>> {
         let guard = self.data.lock().unwrap();
         let result = match (*guard).get(table_name) {
             None => unimplemented!(),

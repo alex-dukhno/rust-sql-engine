@@ -3,8 +3,7 @@ pub mod ast;
 use std::iter::Peekable;
 
 use super::lexer::Token;
-use self::ast::{Type, CondType, Statement, CreateTableQuery, DeleteQuery, InsertQuery, SelectQuery, Condition, CondArg, Value};
-use self::ast::table::Column;
+use self::ast::{Type, CondType, Statement, CreateTableQuery, DeleteQuery, InsertQuery, SelectQuery, Condition, CondArg, Value, ColumnTable};
 
 pub enum Parser<I: Iterator<Item = Token>> {
     Create(CreateTableQueryParser<I>),
@@ -82,7 +81,7 @@ impl<I: Iterator<Item = Token>> CreateTableQueryParser<I> {
         }
     }
 
-    fn parse_table_columns(&mut self) -> Vec<Column> {
+    fn parse_table_columns(&mut self) -> Vec<ColumnTable> {
         if self.tokens.next() != Some(Token::LParent) {
             unimplemented!();
         }
@@ -111,7 +110,7 @@ impl<I: Iterator<Item = Token>> CreateTableQueryParser<I> {
                 _ => unimplemented!(),
             };
 
-            columns.push(Column::new(col_name, col_type));
+            columns.push(ColumnTable::new(col_name, col_type));
 
             match self.tokens.next() {
                 Some(Token::Comma) => {}, //skip ','

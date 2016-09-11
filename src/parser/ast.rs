@@ -9,11 +9,11 @@ pub enum Statement {
 #[derive(Debug, PartialEq)]
 pub struct CreateTableQuery {
     pub table_name: String,
-    pub columns: Vec<table::Column>
+    pub columns: Vec<ColumnTable>
 }
 
 impl CreateTableQuery {
-    pub fn new<I: Into<String>>(table_name: I, columns: Vec<table::Column>) -> CreateTableQuery {
+    pub fn new<I: Into<String>>(table_name: I, columns: Vec<ColumnTable>) -> CreateTableQuery {
         CreateTableQuery {
             table_name: table_name.into(),
             columns: columns
@@ -44,7 +44,7 @@ pub struct InsertQuery {
 }
 
 impl InsertQuery {
-    pub fn new<I: Into<String>>(table_name: I, columns: Vec<I>, values: Vec<Value> ) -> InsertQuery {
+    pub fn new<I: Into<String>>(table_name: I, columns: Vec<I>, values: Vec<Value>) -> InsertQuery {
         InsertQuery {
             table_name: table_name.into(),
             columns: columns.into_iter().map(|c| c.into()).collect::<Vec<String>>(),
@@ -90,7 +90,6 @@ pub struct Condition {
 }
 
 impl Condition {
-
     pub fn new(left: CondArg, right: CondArg, cond_type: CondType) -> Condition {
         Condition {
             left: left,
@@ -123,7 +122,6 @@ pub enum CondArg {
 }
 
 impl CondArg {
-
     pub fn column<I: Into<String>>(column_name: I) -> CondArg {
         CondArg::ColumnName(column_name.into())
     }
@@ -144,7 +142,6 @@ pub enum Value {
 }
 
 impl Value {
-
     pub fn str<I: Into<String>>(v: I) -> Value {
         Value::StrConst(v.into())
     }
@@ -154,19 +151,17 @@ impl Value {
     }
 }
 
-pub mod table {
-    #[derive(Debug, PartialEq)]
-    pub struct Column {
-        pub column_name: String,
-        pub column_type: super::Type
-    }
+#[derive(Debug, PartialEq)]
+pub struct ColumnTable {
+    pub column_name: String,
+    pub column_type: Type
+}
 
-    impl Column {
-        pub fn new<I: Into<String>>(name: I, column_type: super::Type) -> Column {
-            Column {
-                column_name: name.into(),
-                column_type: column_type
-            }
+impl ColumnTable {
+    pub fn new<I: Into<String>>(name: I, column_type: Type) -> ColumnTable {
+        ColumnTable {
+            column_name: name.into(),
+            column_type: column_type
         }
     }
 }
