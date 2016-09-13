@@ -1,7 +1,7 @@
 pub mod ast;
 
 use super::lexer::Token;
-use self::ast::{Type, CondType, Statement, CreateTableQuery, DeleteQuery, InsertQuery, SelectQuery, Condition, CondArg, Value, ColumnTable};
+use self::ast::{Type, CondType, Statement, CreateTableQuery, DeleteQuery, InsertQuery, SelectQuery, Condition, CondArg, Value, ColumnTable, ValueSource};
 
 pub enum Parser<I: Iterator<Item = Token>> {
     Create(CreateTableQueryParser<I>),
@@ -170,17 +170,34 @@ impl<I: Iterator<Item = Token>> QueryParser for InsertQueryParser<I> {
             _ => unimplemented!(),
         };
         let mut columns = vec![];
-        let mut values = vec![];
 
+        let mut sub_query = false;
         while let Some(token) = self.tokens.next() {
             match token {
                 Token::LParent => columns = self.parse_columns(),
-                Token::Values => values = self.parse_values(),
+                Token::Values => {
+                    sub_query = false;
+                    break;
+                },
+                Token::Select => {
+                    sub_query = true;
+                    break;
+                },
                 Token::Semicolon => break,
                 _ => unimplemented!(),
             }
         }
-        Statement::Insert(InsertQuery::new(table_name, columns, values))
+
+        let query = if sub_query {
+            InsertQuery::new(table_name, columns, ValueSource::SubQuery(SelectQueryParser::new(self.tokens).parse_select()))
+        } else {
+            let query = InsertQuery::new(table_name, columns, ValueSource::Row(self.parse_values()));
+            if self.tokens.next() != Some(Token::Semicolon) {
+                unimplemented!();
+            }
+            query
+        };
+        Statement::Insert(query)
     }
 }
 
@@ -222,6 +239,17 @@ impl<I: Iterator<Item = Token>> SelectQueryParser<I> {
         }
     }
 
+    fn parse_select(mut self) -> SelectQuery {
+        let columns = self.parse_columns_list();
+
+        let table_name = match self.tokens.next() {
+            Some(Token::Ident(table_name)) => table_name,
+            _ => unimplemented!()
+        };
+
+        SelectQuery::new(table_name, columns, PredicateParser::new(self.tokens).parse_where())
+    }
+
     fn parse_columns_list(&mut self) -> Vec<String> {
         let mut columns = vec![];
         loop {
@@ -229,7 +257,7 @@ impl<I: Iterator<Item = Token>> SelectQueryParser<I> {
                 Some(Token::From) => break, // skip 'FROM' keyword
                 Some(Token::Ident(column_name)) => columns.push(column_name),
                 Some(Token::Comma) => {},
-                _ => unimplemented!(),
+                t => panic!("unexpected token {:?} - ", t),
             }
         }
         columns
@@ -238,14 +266,7 @@ impl<I: Iterator<Item = Token>> SelectQueryParser<I> {
 
 impl<I: Iterator<Item = Token>> QueryParser for SelectQueryParser<I> {
     fn parse(mut self) -> Statement {
-        let columns = self.parse_columns_list();
-
-        let table_name = match self.tokens.next() {
-            Some(Token::Ident(table_name)) => table_name,
-            _ => unimplemented!()
-        };
-
-        Statement::Select(SelectQuery::new(table_name, columns, PredicateParser::new(self.tokens).parse_where()))
+        Statement::Select(self.parse_select())
     }
 }
 
@@ -254,7 +275,6 @@ struct PredicateParser<I: Iterator<Item = Token>> {
 }
 
 impl<I: Iterator<Item = Token>> PredicateParser<I> {
-
     fn new(tokens: I) -> PredicateParser<I> {
         PredicateParser {
             tokens: tokens
@@ -288,5 +308,4 @@ impl<I: Iterator<Item = Token>> PredicateParser<I> {
             c => panic!("unexpected token - {:?}", c),
         }
     }
-
 }

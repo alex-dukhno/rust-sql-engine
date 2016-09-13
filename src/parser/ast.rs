@@ -40,11 +40,17 @@ impl DeleteQuery {
 pub struct InsertQuery {
     pub table_name: String,
     pub columns: Vec<String>,
-    pub values: Vec<Value>
+    pub values: ValueSource
+}
+
+#[derive(Debug, PartialEq)]
+pub enum ValueSource {
+    Row(Vec<Value>),
+    SubQuery(SelectQuery)
 }
 
 impl InsertQuery {
-    pub fn new<I: Into<String>>(table_name: I, columns: Vec<I>, values: Vec<Value>) -> InsertQuery {
+    pub fn new<I: Into<String>>(table_name: I, columns: Vec<I>, values: ValueSource) -> InsertQuery {
         InsertQuery {
             table_name: table_name.into(),
             columns: columns.into_iter().map(|c| c.into()).collect::<Vec<String>>(),

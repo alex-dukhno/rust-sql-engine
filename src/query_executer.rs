@@ -1,5 +1,5 @@
-use super::parser::ast::{Statement, Type, CreateTableQuery, InsertQuery, SelectQuery, Value, Condition, CondType, CondArg, ColumnTable};
-use super::catalog_manager::{CatalogManager, LockBasedCatalogManager, Table, Column};
+use super::parser::ast::{Statement, Type, CreateTableQuery, InsertQuery, SelectQuery, Value, Condition, CondType, CondArg, ColumnTable, ValueSource};
+use super::catalog_manager::{LockBasedCatalogManager, Table, Column};
 use super::data_manager::LockBaseDataManager;
 
 pub struct QueryExecuter {
@@ -10,7 +10,7 @@ pub struct QueryExecuter {
 impl Default for QueryExecuter {
     fn default() -> Self {
         QueryExecuter {
-            catalog_manager: CatalogManager::create(),
+            catalog_manager: LockBasedCatalogManager::default(),
             data_manager: LockBaseDataManager::default()
         }
     }
@@ -45,23 +45,38 @@ impl QueryExecuter {
     fn insert_into(&self, insert: InsertQuery) -> ExecutionResult {
         let InsertQuery { table_name, columns, values } = insert;
         if self.catalog_manager.contains_table(table_name.as_str()) {
-            let mut data = Vec::with_capacity(values.len());
-            for (index, datum) in values.into_iter().enumerate() {
-                match datum {
-                    Value::NumConst(n) => if self.catalog_manager.match_type(table_name.as_str(), index, Type::VarChar(0)) {
-                        return ExecutionResult::Message("column type is VARCHAR find INT".to_owned());
+            match values {
+                ValueSource::Row(row) => {
+                    let mut data = Vec::with_capacity(row.len());
+                    for (index, datum) in row.into_iter().enumerate() {
+                        match datum {
+                            Value::NumConst(n) => if self.catalog_manager.match_type(table_name.as_str(), index, Type::VarChar(0)) {
+                                return ExecutionResult::Message("column type is VARCHAR find INT".to_owned());
+                            } else {
+                                data.push(n);
+                            },
+                            Value::StrConst(s) => if self.catalog_manager.match_type(table_name.as_str(), index, Type::Int) {
+                                return ExecutionResult::Message("column type is INT find VARCHAR".to_owned());
+                            } else {
+                                data.push(s);
+                            },
+                        }
+                    }
+                    self.data_manager.save_to(table_name.as_str(), data);
+                    ExecutionResult::Message("row was inserted".to_owned())
+                },
+                ValueSource::SubQuery(query) => {
+                    if let ExecutionResult::Data(query_result) = self.select_data(query) {
+                        let row_num = query_result.len();
+                        for row in query_result {
+                            self.data_manager.save_to(table_name.as_str(), row);
+                        }
+                        ExecutionResult::Message(format!("{} rows were inserted", row_num))
                     } else {
-                        data.push(n);
-                    },
-                    Value::StrConst(s) => if self.catalog_manager.match_type(table_name.as_str(), index, Type::Int) {
-                        return ExecutionResult::Message("column type is INT find VARCHAR".to_owned());
-                    } else {
-                        data.push(s);
-                    },
-                }
+                        panic!("unexpected subquery result")
+                    }
+                },
             }
-            self.data_manager.save_to(table_name.as_str(), data);
-            ExecutionResult::Message("row was inserted".to_owned())
         } else {
             ExecutionResult::Message(format!("[ERR 100] table '{}' does not exist", table_name.as_str()))
         }

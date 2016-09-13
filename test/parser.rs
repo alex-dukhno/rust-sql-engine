@@ -110,9 +110,10 @@ mod parses_insert_statements {
 
     use sql::lexer::{Tokenizer, IntoTokenizer};
     use sql::parser::{QueryParser, IntoQueryParser};
-    use sql::parser::ast::InsertQuery;
+    use sql::parser::ast::{InsertQuery, SelectQuery};
     use sql::parser::ast::Statement::Insert;
     use sql::parser::ast::Value;
+    use sql::parser::ast::ValueSource;
 
     #[test]
     fn with_one_column() {
@@ -120,7 +121,7 @@ mod parses_insert_statements {
             .to(
                 be_equal_to(
                     Insert(
-                        InsertQuery::new("table_name_1", vec![], vec![Value::num("10")])
+                        InsertQuery::new("table_name_1", vec![], ValueSource::Row(vec![Value::num("10")]))
                     )
                 )
             );
@@ -135,7 +136,7 @@ mod parses_insert_statements {
                         InsertQuery::new(
                             "table_name_2",
                             vec![],
-                            vec![Value::num("10"), Value::str("string")]
+                            ValueSource::Row(vec![Value::num("10"), Value::str("string")])
                         )
                     )
                 )
@@ -151,7 +152,23 @@ mod parses_insert_statements {
                         InsertQuery::new(
                             "table_name_3",
                             vec!["col_1", "col_2"],
-                            vec![Value::num("10"), Value::str("string")]
+                            ValueSource::Row(vec![Value::num("10"), Value::str("string")])
+                        )
+                    )
+                )
+            );
+    }
+
+    #[test]
+    fn with_sub_select() {
+        expect!(String::from("insert into table_1 (col_1, col_2) select col_1, col_2 from table_1;").into_tokenizer().tokenize().into_parser().parse())
+            .to(
+                be_equal_to(
+                    Insert(
+                        InsertQuery::new(
+                            "table_1",
+                            vec!["col_1", "col_2"],
+                            ValueSource::SubQuery(SelectQuery::new("table_1", vec!["col_1", "col_2"], None))
                         )
                     )
                 )

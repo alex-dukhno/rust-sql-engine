@@ -3,54 +3,41 @@ use std::collections::HashMap;
 
 use super::parser::ast::Type;
 
-pub trait CatalogManager {
-    fn create() -> Self;
-
-    fn add_table(&self, table: Table);
-
-    fn contains_table(&self, table_name: &str) -> bool;
-
-    fn add_column_to(&self, table_name: &str, column: Column);
-
-    fn contains_column_in(&self, table_name: &str, column_name: &str) -> bool;
-
-    fn match_type(&self, table_name: &str, column_index: usize, column_type: Type) -> bool;
-
-    fn get_column_index(&self, table_name: &str, column_name: &str) -> Option<usize>;
-}
-
 pub struct LockBasedCatalogManager {
     tables: Mutex<HashMap<String, Table>>
 }
 
-impl CatalogManager for LockBasedCatalogManager {
-    fn create() -> LockBasedCatalogManager {
+impl Default for LockBasedCatalogManager {
+    fn default() -> Self {
         LockBasedCatalogManager {
             tables: Mutex::new(HashMap::default())
         }
     }
+}
 
-    fn add_table(&self, table: Table) {
+impl LockBasedCatalogManager {
+
+    pub fn add_table(&self, table: Table) {
         let mut guard = self.tables.lock().unwrap();
         (*guard).insert(table.name.clone(), table);
         drop(guard);
     }
 
-    fn contains_table(&self, table_name: &str) -> bool {
+    pub fn contains_table(&self, table_name: &str) -> bool {
         let guard = self.tables.lock().unwrap();
         let r = (*guard).keys().any(|name| name == table_name);
         drop(guard);
         r
     }
 
-    fn add_column_to(&self, table_name: &str, column: Column) {
+    pub fn add_column_to(&self, table_name: &str, column: Column) {
         let mut guard = self.tables.lock().unwrap();
         if let Some(table) = (*guard).get_mut(table_name) {
             (*table).columns.push(column);
         }
     }
 
-    fn contains_column_in(&self, table_name: &str, column_name: &str) -> bool {
+    pub fn contains_column_in(&self, table_name: &str, column_name: &str) -> bool {
         let mut guard = self.tables.lock().unwrap();
         if let Some(table) = (*guard).get_mut(table_name) {
             (*table).columns.iter().any(|col| col.name == column_name)
@@ -59,7 +46,7 @@ impl CatalogManager for LockBasedCatalogManager {
         }
     }
 
-    fn match_type(&self, table_name: &str, column_index: usize, column_type: Type) -> bool {
+    pub fn match_type(&self, table_name: &str, column_index: usize, column_type: Type) -> bool {
         let mut guard = self.tables.lock().unwrap();
         if let Some(table) = (*guard).get_mut(table_name) {
             match (*table).columns.get(column_index) {
@@ -73,7 +60,7 @@ impl CatalogManager for LockBasedCatalogManager {
         }
     }
 
-    fn get_column_index(&self, table_name: &str, column_name: &str) -> Option<usize> {
+    pub fn get_column_index(&self, table_name: &str, column_name: &str) -> Option<usize> {
         let guard = self.tables.lock().unwrap();
         let r = (*guard).get(table_name).and_then(|t| t.columns.iter().position(|c| c.name == column_name));
         drop(guard);
