@@ -66,10 +66,10 @@ impl LockBasedCatalogManager {
         r
     }
 
-    pub fn get_table_columns(&self, table_name: &str) -> Vec<String> {
+    pub fn get_table_columns(&self, table_name: &str) -> Vec<(String, (Option<String>, Type))> {
         let guard = self.tables.lock().unwrap();
         let r = match (*guard).get(table_name) {
-            Some(table) => table.columns.iter().map(|c| c.name.clone()).collect::<Vec<String>>(),
+            Some(table) => table.columns.iter().map(|c| (c.name.clone(), (c.default_value.clone(), c.column_type))).collect::<Vec<(String, (Option<String>, Type))>>(),
             None => vec![],
         };
         drop(guard);
@@ -91,11 +91,16 @@ impl Table {
 #[derive(Debug)]
 pub struct Column {
     name: String,
-    column_type: Type
+    column_type: Type,
+    default_value: Option<String>
 }
 
 impl Column {
     pub fn new<I: Into<String>>(name: I, columnt_type: Type) -> Column {
-        Column { name: name.into(), column_type: columnt_type }
+        Column { name: name.into(), column_type: columnt_type, default_value: None }
+    }
+
+    pub fn with_default<I: Into<String>>(name: I, column_type: Type, default_value: I) -> Column {
+        Column { name: name.into(), column_type: column_type, default_value: Some(default_value.into()) }
     }
 }

@@ -91,7 +91,7 @@ fn get_table_columns() {
     catalog_manager.add_column_to("table", Column::new("col_3", Type::Int));
 
     expect!(catalog_manager.get_table_columns("table"))
-        .to(be_equal_to(vec!["col_1".to_owned(), "col_2".to_owned(), "col_3".to_owned()]));
+        .to(be_equal_to(vec![("col_1".to_owned(), (None, Type::Int)), ("col_2".to_owned(), (None, Type::Int)), ("col_3".to_owned(), (None, Type::Int))]));
 }
 
 #[test]

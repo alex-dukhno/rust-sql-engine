@@ -265,7 +265,7 @@ impl<I: Iterator<Item = Token>> SelectQueryParser<I> {
 }
 
 impl<I: Iterator<Item = Token>> QueryParser for SelectQueryParser<I> {
-    fn parse(mut self) -> Statement {
+    fn parse(self) -> Statement {
         Statement::Select(self.parse_select())
     }
 }
