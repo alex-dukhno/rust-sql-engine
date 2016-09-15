@@ -1,18 +1,20 @@
 use std::sync::Mutex;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use super::parser::ast::Type;
 
 type Column = (String, Type, Option<String>);
 
+#[derive(Clone)]
 pub struct LockBasedCatalogManager {
-    tables: Mutex<HashMap<String, Vec<Column>>>
+    tables: Arc<Mutex<HashMap<String, Vec<Column>>>>
 }
 
 impl Default for LockBasedCatalogManager {
     fn default() -> Self {
         LockBasedCatalogManager {
-            tables: Mutex::new(HashMap::default())
+            tables: Arc::new(Mutex::new(HashMap::default()))
         }
     }
 }

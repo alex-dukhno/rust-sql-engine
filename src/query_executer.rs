@@ -16,6 +16,15 @@ impl Default for QueryExecuter {
     }
 }
 
+impl QueryExecuter {
+    pub fn new(catalog_manager: LockBasedCatalogManager) -> QueryExecuter {
+        QueryExecuter {
+            catalog_manager: catalog_manager,
+            data_manager: LockBaseDataManager::default()
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub enum ExecutionResult {
     Message(String),
