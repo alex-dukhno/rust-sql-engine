@@ -16,7 +16,6 @@ impl Default for LockBasedCatalogManager {
 }
 
 impl LockBasedCatalogManager {
-
     pub fn add_table(&self, table: Table) {
         let mut guard = self.tables.lock().unwrap();
         (*guard).insert(table.name.clone(), table);
@@ -63,6 +62,16 @@ impl LockBasedCatalogManager {
     pub fn get_column_index(&self, table_name: &str, column_name: &str) -> Option<usize> {
         let guard = self.tables.lock().unwrap();
         let r = (*guard).get(table_name).and_then(|t| t.columns.iter().position(|c| c.name == column_name));
+        drop(guard);
+        r
+    }
+
+    pub fn get_table_columns(&self, table_name: &str) -> Vec<String> {
+        let guard = self.tables.lock().unwrap();
+        let r = match (*guard).get(table_name) {
+            Some(table) => table.columns.iter().map(|c| c.name.clone()).collect::<Vec<String>>(),
+            None => vec![],
+        };
         drop(guard);
         r
     }

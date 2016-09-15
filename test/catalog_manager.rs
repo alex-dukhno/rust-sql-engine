@@ -1,4 +1,4 @@
-use expectest::prelude::{be_true, be_false, be_some};
+use expectest::prelude::{be_true, be_false, be_some, be_equal_to};
 
 use sql::parser::ast::Type;
 use sql::catalog_manager::{LockBasedCatalogManager, Table, Column};
@@ -75,6 +75,23 @@ fn column_does_not_match_type() {
 
     expect!(catalog_manager.match_type("table", 0, Type::Int))
         .to(be_false());
+}
+
+
+#[test]
+fn get_table_columns() {
+    let catalog_manager = LockBasedCatalogManager::default();
+
+    let table = Table::new("table");
+
+    catalog_manager.add_table(table);
+
+    catalog_manager.add_column_to("table", Column::new("col_1", Type::Int));
+    catalog_manager.add_column_to("table", Column::new("col_2", Type::Int));
+    catalog_manager.add_column_to("table", Column::new("col_3", Type::Int));
+
+    expect!(catalog_manager.get_table_columns("table"))
+        .to(be_equal_to(vec!["col_1".to_owned(), "col_2".to_owned(), "col_3".to_owned()]));
 }
 
 #[test]

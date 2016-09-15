@@ -1,9 +1,25 @@
+use super::super::catalog_manager::{LockBasedCatalogManager, Column, Table};
+
 #[derive(Debug, PartialEq)]
 pub enum Statement {
     Create(CreateTableQuery),
     Delete(DeleteQuery),
     Insert(InsertQuery),
     Select(SelectQuery)
+}
+
+impl Statement {
+
+    pub fn populate(mut self, catalog_manager: &LockBasedCatalogManager) -> Statement {
+        match self {
+            Statement::Insert(query) => {
+                let columns = catalog_manager.get_table_columns(query.table_name.as_str());
+                let new = InsertQuery::new(query.table_name, columns, query.values);
+                Statement::Insert(new)
+            },
+            _ => unimplemented!(),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]

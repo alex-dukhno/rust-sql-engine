@@ -1,3 +1,4 @@
+/*
 #[cfg(test)]
 mod parses_create_table_statement {
     use expectest::prelude::be_equal_to;
@@ -103,7 +104,7 @@ mod parses_delete_statements {
             );
     }
 }
-
+*/
 #[cfg(test)]
 mod parses_insert_statements {
     use expectest::prelude::be_equal_to;
@@ -175,7 +176,7 @@ mod parses_insert_statements {
             );
     }
 }
-
+/*
 #[cfg(test)]
 mod parse_select_statements {
 
@@ -248,3 +249,4 @@ mod parse_select_statements {
             );
     }
 }
+*/
