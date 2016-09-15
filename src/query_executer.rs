@@ -1,5 +1,5 @@
 use super::parser::ast::{Statement, Type, CreateTableQuery, InsertQuery, SelectQuery, Value, Condition, CondType, CondArg, ColumnTable, ValueSource};
-use super::catalog_manager::{LockBasedCatalogManager, Table, Column};
+use super::catalog_manager::LockBasedCatalogManager;
 use super::data_manager::LockBaseDataManager;
 
 pub struct QueryExecuter {
@@ -34,10 +34,10 @@ impl QueryExecuter {
 
     fn create_table(&self, create_query: CreateTableQuery) -> ExecutionResult {
         let CreateTableQuery { table_name, columns } = create_query;
-        self.catalog_manager.add_table(Table::new(table_name.as_str()));
+        self.catalog_manager.add_table(table_name.as_str());
         for column in columns.into_iter() {
             let ColumnTable { column_name, column_type } = column;
-            self.catalog_manager.add_column_to(table_name.as_str(), Column::new(column_name, column_type))
+            self.catalog_manager.add_column_to(table_name.as_str(), (column_name, column_type, None))
         }
         ExecutionResult::Message(format!("'{}' was created", table_name.as_str()))
     }

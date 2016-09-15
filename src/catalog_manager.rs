@@ -3,8 +3,10 @@ use std::collections::HashMap;
 
 use super::parser::ast::Type;
 
+type Column = (String, Type, Option<String>);
+
 pub struct LockBasedCatalogManager {
-    tables: Mutex<HashMap<String, Table>>
+    tables: Mutex<HashMap<String, Vec<Column>>>
 }
 
 impl Default for LockBasedCatalogManager {
@@ -16,9 +18,9 @@ impl Default for LockBasedCatalogManager {
 }
 
 impl LockBasedCatalogManager {
-    pub fn add_table(&self, table: Table) {
+    pub fn add_table<I: Into<String>>(&self, table_name: I) {
         let mut guard = self.tables.lock().unwrap();
-        (*guard).insert(table.name.clone(), table);
+        (*guard).entry(table_name.into()).or_insert(vec![]);
         drop(guard);
     }
 
@@ -29,17 +31,18 @@ impl LockBasedCatalogManager {
         r
     }
 
-    pub fn add_column_to(&self, table_name: &str, column: Column) {
+    pub fn add_column_to<I: Into<String>>(&self, table_name: &str, column: (I, Type, Option<I>)) {
         let mut guard = self.tables.lock().unwrap();
         if let Some(table) = (*guard).get_mut(table_name) {
-            (*table).columns.push(column);
+            (*table).push((column.0.into(), column.1, column.2.and_then(|i| Some(i.into()))));
         }
+        drop(guard);
     }
 
     pub fn contains_column_in(&self, table_name: &str, column_name: &str) -> bool {
         let mut guard = self.tables.lock().unwrap();
         if let Some(table) = (*guard).get_mut(table_name) {
-            (*table).columns.iter().any(|col| col.name == column_name)
+            (*table).iter().any(|&(ref col_name, _, _)| col_name == column_name)
         } else {
             false
         }
@@ -48,10 +51,8 @@ impl LockBasedCatalogManager {
     pub fn match_type(&self, table_name: &str, column_index: usize, column_type: Type) -> bool {
         let mut guard = self.tables.lock().unwrap();
         if let Some(table) = (*guard).get_mut(table_name) {
-            match (*table).columns.get(column_index) {
-                Some(col) => {
-                    col.column_type == column_type
-                },
+            match (*table).get(column_index) {
+                Some(&(_, col_type, _)) => col_type == column_type,
                 None => false
             }
         } else {
@@ -61,7 +62,7 @@ impl LockBasedCatalogManager {
 
     pub fn get_column_index(&self, table_name: &str, column_name: &str) -> Option<usize> {
         let guard = self.tables.lock().unwrap();
-        let r = (*guard).get(table_name).and_then(|t| t.columns.iter().position(|c| c.name == column_name));
+        let r = (*guard).get(table_name).and_then(|v| v.iter().position(|&(ref col_name, _, _)| col_name == column_name));
         drop(guard);
         r
     }
@@ -69,38 +70,10 @@ impl LockBasedCatalogManager {
     pub fn get_table_columns(&self, table_name: &str) -> Vec<(String, (Option<String>, Type))> {
         let guard = self.tables.lock().unwrap();
         let r = match (*guard).get(table_name) {
-            Some(table) => table.columns.iter().map(|c| (c.name.clone(), (c.default_value.clone(), c.column_type))).collect::<Vec<(String, (Option<String>, Type))>>(),
+            Some(table) => table.iter().map(|&(ref col_name, col_type, ref default)| (col_name.clone(), (default.clone(), col_type))).collect::<Vec<(String, (Option<String>, Type))>>(),
             None => vec![],
         };
         drop(guard);
         r
-    }
-}
-
-pub struct Table {
-    name: String,
-    columns: Vec<Column>
-}
-
-impl Table {
-    pub fn new<I: Into<String>>(name: I) -> Table {
-        Table { name: name.into(), columns: Vec::default() }
-    }
-}
-
-#[derive(Debug)]
-pub struct Column {
-    name: String,
-    column_type: Type,
-    default_value: Option<String>
-}
-
-impl Column {
-    pub fn new<I: Into<String>>(name: I, columnt_type: Type) -> Column {
-        Column { name: name.into(), column_type: columnt_type, default_value: None }
-    }
-
-    pub fn with_default<I: Into<String>>(name: I, column_type: Type, default_value: I) -> Column {
-        Column { name: name.into(), column_type: column_type, default_value: Some(default_value.into()) }
     }
 }
