@@ -4,28 +4,35 @@ mod parses_create_table_statement {
 
     use sql::lexer::{Tokenizer, IntoTokenizer};
     use sql::parser::{QueryParser, IntoQueryParser};
-    use sql::parser::ast::Type::{Int, VarChar};
-    use sql::parser::ast::Statement::Create;
-    use sql::parser::ast::{CreateTableQuery, ColumnTable};
+    use sql::ast::{Type, Statement, Constraint, CreateTableQuery, ColumnTable};
 
     #[test]
     fn with_one_column() {
-        expect!(String::from("create table table_name_1 (col int);").into_tokenizer().tokenize().into_parser().parse())
-            .to(be_equal_to(Create(CreateTableQuery::new("table_name_1", vec![ColumnTable::new("col", Int)]))));
+        expect!(String::from("create table table_name_1 (col integer);").into_tokenizer().tokenize().into_parser().parse())
+            .to(
+                be_equal_to(
+                    Statement::Create(
+                        CreateTableQuery::new(
+                            "table_name_1",
+                            vec![ColumnTable::new("col", Type::Integer, None, Constraint::Nullable(true))]
+                        )
+                    )
+                )
+            );
     }
 
     #[test]
     fn with_list_of_columns() {
-        expect!(String::from("create table table_name_2 (col1 int, col2 int, col3 int);").into_tokenizer().tokenize().into_parser().parse())
+        expect!(String::from("create table table_name_2 (col1 integer, col2 integer, col3 integer);").into_tokenizer().tokenize().into_parser().parse())
             .to(
                 be_equal_to(
-                    Create(
+                    Statement::Create(
                         CreateTableQuery::new(
                             "table_name_2",
                             vec![
-                                ColumnTable::new("col1", Int),
-                                ColumnTable::new("col2", Int),
-                                ColumnTable::new("col3", Int)
+                                ColumnTable::new("col1", Type::Integer, None, Constraint::Nullable(true)),
+                                ColumnTable::new("col2", Type::Integer, None, Constraint::Nullable(true)),
+                                ColumnTable::new("col3", Type::Integer, None, Constraint::Nullable(true))
                             ]
                         )
                     )
@@ -38,8 +45,11 @@ mod parses_create_table_statement {
         expect!(String::from("create table table_1 (col_2 varchar(10));").into_tokenizer().tokenize().into_parser().parse())
             .to(
                 be_equal_to(
-                    Create(
-                        CreateTableQuery::new("table_1", vec![ColumnTable::new("col_2", VarChar(10))])
+                    Statement::Create(
+                        CreateTableQuery::new(
+                            "table_1",
+                            vec![ColumnTable::new("col_2", Type::VarChar(10), None, Constraint::Nullable(true))]
+                        )
                     )
                 )
             );
@@ -52,15 +62,12 @@ mod parses_delete_statements {
 
     use sql::lexer::{Tokenizer, IntoTokenizer};
     use sql::parser::{QueryParser, IntoQueryParser};
-    use sql::parser::ast::Statement::Delete;
-    use sql::parser::ast::DeleteQuery;
-    use sql::parser::ast::Condition;
-    use sql::parser::ast::CondArg;
+    use sql::ast::{Statement, DeleteQuery, Condition, CondArg};
 
     #[test]
     fn without_any_predicates() {
         expect!(String::from("delete from table_name_1;").into_tokenizer().tokenize().into_parser().parse())
-            .to(be_equal_to(Delete(DeleteQuery::new("table_name_1", None))));
+            .to(be_equal_to(Statement::Delete(DeleteQuery::new("table_name_1", None))));
     }
 
     #[test]
@@ -68,7 +75,7 @@ mod parses_delete_statements {
         expect!(String::from("delete from table_name_2 where col_1 = 5;").into_tokenizer().tokenize().into_parser().parse())
             .to(
                 be_equal_to(
-                    Delete(
+                    Statement::Delete(
                         DeleteQuery::new(
                             "table_name_2",
                             Some(
@@ -88,7 +95,7 @@ mod parses_delete_statements {
         expect!(String::from("delete from table_name_3 where 'str' = col_2;").into_tokenizer().tokenize().into_parser().parse())
             .to(
                 be_equal_to(
-                    Delete(
+                    Statement::Delete(
                         DeleteQuery::new(
                             "table_name_3",
                             Some(
@@ -110,10 +117,10 @@ mod parses_insert_statements {
 
     use sql::lexer::{Tokenizer, IntoTokenizer};
     use sql::parser::{QueryParser, IntoQueryParser};
-    use sql::parser::ast::{InsertQuery, SelectQuery};
-    use sql::parser::ast::Statement::Insert;
-    use sql::parser::ast::Value;
-    use sql::parser::ast::ValueSource;
+    use sql::ast::{InsertQuery, SelectQuery};
+    use sql::ast::Statement::Insert;
+    use sql::ast::Value;
+    use sql::ast::ValueSource;
 
     #[test]
     fn with_one_column() {
@@ -183,10 +190,10 @@ mod parse_select_statements {
 
     use sql::lexer::{Tokenizer, IntoTokenizer};
     use sql::parser::{QueryParser, IntoQueryParser};
-    use sql::parser::ast::Statement::Select;
-    use sql::parser::ast::SelectQuery;
-    use sql::parser::ast::Condition;
-    use sql::parser::ast::CondArg;
+    use sql::ast::Statement::Select;
+    use sql::ast::SelectQuery;
+    use sql::ast::Condition;
+    use sql::ast::CondArg;
 
     #[test]
     fn without_predicates() {

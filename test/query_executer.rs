@@ -8,7 +8,7 @@ mod data_definition_language {
         use sql::parser::{QueryParser, IntoQueryParser};
         use sql::query_executer::{QueryExecuter, ExecutionResult};
         use sql::catalog_manager::LockBasedCatalogManager;
-        use sql::query_checker::QueryChecker;
+        use sql::type_checker::QueryChecker;
 
         #[test]
         fn single_column() {
@@ -17,7 +17,7 @@ mod data_definition_language {
             let executer = QueryExecuter::new(catalog_manager.clone());
             let checker = QueryChecker::new(catalog_manager.clone());
 
-            let statement = String::from("create table table_name (col int);").into_tokenizer().tokenize().into_parser().parse();
+            let statement = String::from("create table table_name (col integer);").into_tokenizer().tokenize().into_parser().parse();
             expect!(executer.execute(checker.check(statement)))
                 .to(be_equal_to(ExecutionResult::Message("'table_name' was created".to_owned())));
         }
@@ -29,7 +29,7 @@ mod data_definition_language {
             let executer = QueryExecuter::new(catalog_manager.clone());
             let checker = QueryChecker::new(catalog_manager.clone());
 
-            let statement = String::from("create table table_name (col1 int, col2 int, col3 int);").into_tokenizer().tokenize().into_parser().parse();
+            let statement = String::from("create table table_name (col1 integer, col2 integer, col3 integer);").into_tokenizer().tokenize().into_parser().parse();
             expect!(executer.execute(checker.check(statement)))
                 .to(be_equal_to(ExecutionResult::Message("'table_name' was created".to_owned())));
         }
@@ -46,7 +46,7 @@ mod data_manipulation_language {
         use sql::parser::{QueryParser, IntoQueryParser};
         use sql::catalog_manager::LockBasedCatalogManager;
         use sql::query_executer::{QueryExecuter, ExecutionResult};
-        use sql::query_checker::QueryChecker;
+        use sql::type_checker::QueryChecker;
 
         #[test]
         fn row_in_created_table() {
@@ -55,7 +55,7 @@ mod data_manipulation_language {
             let executer = QueryExecuter::new(catalog_manager.clone());
             let checker = QueryChecker::new(catalog_manager.clone());
 
-            let create_statement = String::from("create table table_name (col int);").into_tokenizer().tokenize().into_parser().parse();
+            let create_statement = String::from("create table table_name (col integer);").into_tokenizer().tokenize().into_parser().parse();
 
             drop(executer.execute(checker.check(create_statement)));
 
@@ -72,7 +72,7 @@ mod data_manipulation_language {
             let executer = QueryExecuter::new(catalog_manager.clone());
             let checker = QueryChecker::new(catalog_manager.clone());
 
-            let create_statement = String::from("create table table_name (col1 int, col2 int);").into_tokenizer().tokenize().into_parser().parse();
+            let create_statement = String::from("create table table_name (col1 integer, col2 integer);").into_tokenizer().tokenize().into_parser().parse();
 
             drop(executer.execute(checker.check(create_statement)));
 
@@ -104,7 +104,7 @@ mod data_manipulation_language {
             let executer = QueryExecuter::new(catalog_manager.clone());
             let checker = QueryChecker::new(catalog_manager.clone());
 
-            let create_statement = String::from("create table table_name (col int);").into_tokenizer().tokenize().into_parser().parse();
+            let create_statement = String::from("create table table_name (col integer);").into_tokenizer().tokenize().into_parser().parse();
 
             drop(executer.execute(checker.check(create_statement)));
 
@@ -122,7 +122,7 @@ mod data_manipulation_language {
             let executer = QueryExecuter::new(catalog_manager.clone());
             let checker = QueryChecker::new(catalog_manager.clone());
 
-            let create_statement = String::from("create table table_name (col1 int, col2 int);").into_tokenizer().tokenize().into_parser().parse();
+            let create_statement = String::from("create table table_name (col1 integer, col2 integer);").into_tokenizer().tokenize().into_parser().parse();
 
             drop(executer.execute(checker.check(create_statement)));
 
@@ -147,7 +147,7 @@ mod data_manipulation_language {
         use sql::lexer::{Tokenizer, IntoTokenizer};
         use sql::parser::{QueryParser, IntoQueryParser};
         use sql::query_executer::{QueryExecuter, ExecutionResult};
-        use sql::query_checker::QueryChecker;
+        use sql::type_checker::QueryChecker;
         use sql::catalog_manager::LockBasedCatalogManager;
 
         #[test]
@@ -157,7 +157,7 @@ mod data_manipulation_language {
             let executer = QueryExecuter::new(catalog_manager.clone());
             let checker = QueryChecker::new(catalog_manager.clone());
 
-            let create_statement = String::from("create table table_name (col int);").into_tokenizer().tokenize().into_parser().parse();
+            let create_statement = String::from("create table table_name (col integer);").into_tokenizer().tokenize().into_parser().parse();
 
             drop(executer.execute(checker.check(create_statement)));
 
@@ -187,7 +187,7 @@ mod data_manipulation_language {
             let executer = QueryExecuter::new(catalog_manager.clone());
             let checker = QueryChecker::new(catalog_manager.clone());
 
-            let create_statement = String::from("create table table_name_2 (col int);").into_tokenizer().tokenize().into_parser().parse();
+            let create_statement = String::from("create table table_name_2 (col integer);").into_tokenizer().tokenize().into_parser().parse();
             drop(executer.execute(checker.check(create_statement)));
             let insert_1 = String::from("insert into table_name_2 values(1);").into_tokenizer().tokenize().into_parser().parse();
             drop(executer.execute(checker.check(insert_1)));
@@ -233,7 +233,7 @@ mod data_manipulation_language {
             let executer = QueryExecuter::new(catalog_manager.clone());
             let checker = QueryChecker::new(catalog_manager.clone());
 
-            let create_statement = String::from("create table tab1 (col_1 int, co_2 int);").into_tokenizer().tokenize().into_parser().parse();
+            let create_statement = String::from("create table tab1 (col_1 integer, co_2 integer);").into_tokenizer().tokenize().into_parser().parse();
             drop(executer.execute(checker.check(create_statement)));
 
             let insert_1 = String::from("insert into tab1 values(1, 2);").into_tokenizer().tokenize().into_parser().parse();

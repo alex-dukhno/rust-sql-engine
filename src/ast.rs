@@ -78,14 +78,15 @@ impl SelectQuery {
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Type {
-    Int,
+    Integer,
     VarChar(u8),
 }
 
 #[derive(Debug, PartialEq)]
-pub enum Flag {
+pub enum Constraint {
     PrimeryKey,
     ForeignKey(String),
+    Nullable(bool)
 }
 
 #[derive(Debug, PartialEq)]
@@ -160,14 +161,18 @@ impl Value {
 #[derive(Debug, PartialEq)]
 pub struct ColumnTable {
     pub column_name: String,
-    pub column_type: Type
+    pub column_type: Type,
+    pub default_value: Option<String>,
+    pub constraint: Constraint
 }
 
 impl ColumnTable {
-    pub fn new<I: Into<String>>(name: I, column_type: Type) -> ColumnTable {
+    pub fn new<I: Into<String>>(name: I, column_type: Type, default_value: Option<I>, constraint: Constraint) -> ColumnTable {
         ColumnTable {
             column_name: name.into(),
-            column_type: column_type
+            column_type: column_type,
+            default_value: default_value.and_then(|v| Some(v.into())),
+            constraint: constraint
         }
     }
 }

@@ -77,7 +77,7 @@ impl<'s> From<&'s str> for Token {
             "delete" => Token::Delete,
             "create" => Token::Create,
             "table" => Token::Table,
-            "int" => Token::Int,
+            "integer" => Token::Int,
             "varchar" => Token::VarChar,
             "limit" => Token::Limit,
             _ => Token::Ident(token.into()),

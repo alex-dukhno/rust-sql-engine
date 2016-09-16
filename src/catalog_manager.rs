@@ -2,7 +2,7 @@ use std::sync::Mutex;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use super::parser::ast::Type;
+use super::ast::Type;
 
 type Column = (String, Type, Option<String>);
 

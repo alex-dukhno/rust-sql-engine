@@ -1,7 +1,5 @@
-pub mod ast;
-
 use super::lexer::Token;
-use self::ast::{Type, CondType, Statement, CreateTableQuery, DeleteQuery, InsertQuery, SelectQuery, Condition, CondArg, Value, ColumnTable, ValueSource};
+use super::ast::{Type, CondType, Statement, CreateTableQuery, DeleteQuery, InsertQuery, SelectQuery, Condition, CondArg, Value, ColumnTable, ValueSource, Constraint};
 
 pub enum Parser<I: Iterator<Item = Token>> {
     Create(CreateTableQueryParser<I>),
@@ -86,11 +84,11 @@ impl<I: Iterator<Item = Token>> CreateTableQueryParser<I> {
             _ => unimplemented!(),
         };
         let column_type = match self.tokens.next() {
-            Some(Token::Int) => Type::Int,
+            Some(Token::Int) => Type::Integer,
             Some(Token::VarChar) => self.parse_var_char_type(),
             _ => unimplemented!(),
         };
-        ColumnTable::new(column_name, column_type)
+        ColumnTable::new(column_name, column_type, None, Constraint::Nullable(true))
     }
 
     fn parse_var_char_type(&mut self) -> Type {

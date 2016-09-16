@@ -1,5 +1,5 @@
 use super::catalog_manager::LockBasedCatalogManager;
-use super::parser::ast::{Statement, Type, Value, ValueSource, InsertQuery};
+use super::ast::{Statement, Type, Value, ValueSource, InsertQuery};
 
 pub struct QueryChecker {
     catalog_manager: LockBasedCatalogManager
@@ -23,7 +23,7 @@ impl QueryChecker {
                         let mut default_values = value_types.into_iter()
                             .filter(|&(ref d, _)| d.is_some())
                             .map(|(s, t)| match t {
-                                Type::Int => Value::NumConst(s.unwrap()),
+                                Type::Integer => Value::NumConst(s.unwrap()),
                                 Type::VarChar(_) => Value::StrConst(s.unwrap()),
                             }).collect::<Vec<Value>>();
                         query_values.append(&mut default_values);

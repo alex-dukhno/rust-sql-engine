@@ -1,4 +1,4 @@
-use super::parser::ast::{Statement, Type, CreateTableQuery, InsertQuery, SelectQuery, Value, Condition, CondType, CondArg, ColumnTable, ValueSource};
+use super::ast::{Statement, Type, CreateTableQuery, InsertQuery, SelectQuery, Value, Condition, CondType, CondArg, ColumnTable, ValueSource};
 use super::catalog_manager::LockBasedCatalogManager;
 use super::data_manager::LockBaseDataManager;
 
@@ -45,7 +45,7 @@ impl QueryExecuter {
         let CreateTableQuery { table_name, columns } = create_query;
         self.catalog_manager.add_table(table_name.as_str());
         for column in columns.into_iter() {
-            let ColumnTable { column_name, column_type } = column;
+            let ColumnTable { column_name, column_type, default_value, constraint } = column;
             self.catalog_manager.add_column_to(table_name.as_str(), (column_name, column_type, None))
         }
         ExecutionResult::Message(format!("'{}' was created", table_name.as_str()))
@@ -64,7 +64,7 @@ impl QueryExecuter {
                             } else {
                                 data.push(n);
                             },
-                            Value::StrConst(s) => if self.catalog_manager.match_type(table_name.as_str(), index, Type::Int) {
+                            Value::StrConst(s) => if self.catalog_manager.match_type(table_name.as_str(), index, Type::Integer) {
                                 return ExecutionResult::Message("column type is INT find VARCHAR".to_owned());
                             } else {
                                 data.push(s);

@@ -1,6 +1,6 @@
 use expectest::prelude::{be_true, be_false, be_some, be_equal_to};
 
-use sql::parser::ast::Type;
+use sql::ast::Type;
 use sql::catalog_manager::LockBasedCatalogManager;
 
 #[test]
@@ -27,7 +27,7 @@ fn adds_column_to_table() {
 
     catalog_manager.add_table("table");
 
-    catalog_manager.add_column_to("table", ("col", Type::Int, None));
+    catalog_manager.add_column_to("table", ("col", Type::Integer, None));
 
     expect!(catalog_manager.contains_column_in("table", "col"))
         .to(be_true());
@@ -49,9 +49,9 @@ fn column_matches_type() {
 
     catalog_manager.add_table("table");
 
-    catalog_manager.add_column_to("table", ("col", Type::Int, None));
+    catalog_manager.add_column_to("table", ("col", Type::Integer, None));
 
-    expect!(catalog_manager.match_type("table", 0, Type::Int))
+    expect!(catalog_manager.match_type("table", 0, Type::Integer))
         .to(be_true());
 }
 
@@ -63,7 +63,7 @@ fn column_does_not_match_type() {
 
     catalog_manager.add_column_to("table", ("col", Type::VarChar(10), None));
 
-    expect!(catalog_manager.match_type("table", 0, Type::Int))
+    expect!(catalog_manager.match_type("table", 0, Type::Integer))
         .to(be_false());
 }
 
@@ -74,12 +74,12 @@ fn get_table_columns() {
 
     catalog_manager.add_table("table");
 
-    catalog_manager.add_column_to("table", ("col_1", Type::Int, None));
-    catalog_manager.add_column_to("table", ("col_2", Type::Int, None));
-    catalog_manager.add_column_to("table", ("col_3", Type::Int, None));
+    catalog_manager.add_column_to("table", ("col_1", Type::Integer, None));
+    catalog_manager.add_column_to("table", ("col_2", Type::Integer, None));
+    catalog_manager.add_column_to("table", ("col_3", Type::Integer, None));
 
     expect!(catalog_manager.get_table_columns("table"))
-        .to(be_equal_to(vec![("col_1".to_owned(), (None, Type::Int)), ("col_2".to_owned(), (None, Type::Int)), ("col_3".to_owned(), (None, Type::Int))]));
+        .to(be_equal_to(vec![("col_1".to_owned(), (None, Type::Integer)), ("col_2".to_owned(), (None, Type::Integer)), ("col_3".to_owned(), (None, Type::Integer))]));
 }
 
 #[test]
@@ -88,9 +88,9 @@ fn gets_column_index_by_name() {
 
     catalog_manager.add_table("table");
 
-    catalog_manager.add_column_to("table", ("col_1", Type::Int, None));
-    catalog_manager.add_column_to("table", ("col_2", Type::Int, None));
-    catalog_manager.add_column_to("table", ("col_3", Type::Int, None));
+    catalog_manager.add_column_to("table", ("col_1", Type::Integer, None));
+    catalog_manager.add_column_to("table", ("col_2", Type::Integer, None));
+    catalog_manager.add_column_to("table", ("col_3", Type::Integer, None));
 
     expect!(catalog_manager.get_column_index("table", "col_1")).to(be_some().value(0));
     expect!(catalog_manager.get_column_index("table", "col_2")).to(be_some().value(1));
