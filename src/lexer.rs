@@ -39,7 +39,7 @@ pub enum Token {
     Default,
 
     Int,
-    VarChar
+    Character
 }
 
 impl Token {
@@ -82,7 +82,7 @@ impl<'s> From<&'s str> for Token {
             "primary key" => Token::PrimaryKey,
             "default" => Token::Default,
             "integer" => Token::Int,
-            "varchar" => Token::VarChar,
+            "char" | "character" => Token::Character,
             "limit" => Token::Limit,
             _ => Token::Ident(token.into()),
         }

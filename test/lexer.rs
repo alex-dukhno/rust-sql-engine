@@ -194,4 +194,27 @@ mod sql_query {
                 ]
             ));
     }
+
+    #[test]
+    fn tokenize_create_table_with_primary_key() {
+        expect!(String::from("create table tab1 (col1 char(3) primary key);").into_tokenizer().tokenize())
+            .to(
+                be_equal_to(
+                    vec![
+                        Token::Create,
+                        Token::Table,
+                        Token::ident("tab1"),
+                        Token::LParent,
+                        Token::ident("col1"),
+                        Token::Character,
+                        Token::LParent,
+                        Token::number("3"),
+                        Token::RParent,
+                        Token::PrimaryKey,
+                        Token::RParent,
+                        Token::Semicolon
+                    ]
+                )
+            );
+    }
 }

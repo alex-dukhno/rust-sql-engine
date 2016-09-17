@@ -81,7 +81,7 @@ impl<I: Iterator<Item = Token>> CreateTableQueryParser<I> {
     fn parse_column(&mut self, column_name: String) -> ColumnTable {
         let column_type = match self.tokens.next() {
             Some(Token::Int) => Type::Integer,
-            Some(Token::VarChar) => self.parse_var_char_type(),
+            Some(Token::Character) => self.parse_var_char_type(),
             _ => unimplemented!(),
         };
         let mut column_constraints = vec![];
@@ -112,7 +112,6 @@ impl<I: Iterator<Item = Token>> CreateTableQueryParser<I> {
                     if !has_default {
                         column_constraints.push(Constraint::DefaultValue(None));
                     }
-                    has_default = false;
                     break;
                 },
                 t => panic!("unexpected token {:?}", t)

@@ -42,7 +42,7 @@ mod parses_create_table_statement {
 
     #[test]
     fn with_varchar_column_type() {
-        expect!(String::from("create table table_1 (col_2 varchar(10));").into_tokenizer().tokenize().into_parser().parse())
+        expect!(String::from("create table table_1 (col_2 character(10));").into_tokenizer().tokenize().into_parser().parse())
             .to(
                 be_equal_to(
                     Statement::Create(
@@ -94,6 +94,22 @@ mod parses_create_table_statement {
                         CreateTableQuery::new(
                             "table_1",
                             vec![ColumnTable::new("col", Type::Integer, vec![Constraint::PrimeryKey, Constraint::DefaultValue(None)])]
+                        )
+                    )
+                )
+            );
+    }
+
+    #[test]
+    #[ignore]
+    fn not_null_constraint() {
+        expect!(String::from("create table table_2 (col integer not null);").into_tokenizer().tokenize().into_parser().parse())
+            .to(
+                be_equal_to(
+                    Statement::Create(
+                        CreateTableQuery::new(
+                            "table_2",
+                            vec![ColumnTable::new("col", Type::Integer, vec![Constraint::Nullable(false), Constraint::DefaultValue(Some("0".to_owned()))])]
                         )
                     )
                 )

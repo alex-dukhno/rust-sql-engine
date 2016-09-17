@@ -211,7 +211,7 @@ mod data_manipulation_language {
             let executer = QueryExecuter::new(catalog_manager.clone());
             let checker = QueryTyper::new(catalog_manager.clone());
 
-            let create_statement = String::from("create table table_1 (col varchar(1));").into_tokenizer().tokenize().into_parser().parse();
+            let create_statement = String::from("create table table_1 (col character(1));").into_tokenizer().tokenize().into_parser().parse();
             drop(executer.execute(checker.type_inferring(create_statement)));
 
             let insert_1 = String::from("insert into table_1 values (\'a\');").into_tokenizer().tokenize().into_parser().parse();
