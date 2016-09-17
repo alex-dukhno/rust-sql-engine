@@ -114,6 +114,24 @@ mod parses_create_table_statement {
                 )
             );
     }
+
+    #[test]
+    fn not_null_with_default() {
+        expect!(String::from("create table tab3 (col1 integer not null default 4, col2 integer);").into_tokenizer().tokenize().into_parser().parse())
+            .to(
+                be_equal_to(
+                    Statement::Create(
+                        CreateTableQuery::new(
+                            "tab3",
+                            vec![
+                                ColumnTable::new("col1", Type::Integer, vec![Constraint::Nullable(false), Constraint::DefaultValue(Some("4".to_owned()))].into_iter().collect()),
+                                ColumnTable::new("col2", Type::Integer, vec![Constraint::Nullable(true), Constraint::DefaultValue(None)].into_iter().collect())
+                            ]
+                        )
+                    )
+                )
+            );
+    }
 }
 
 #[cfg(test)]
