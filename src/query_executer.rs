@@ -45,7 +45,7 @@ impl QueryExecuter {
         let CreateTableQuery { table_name, columns } = create_query;
         self.catalog_manager.add_table(table_name.as_str());
         for column in columns.into_iter() {
-            let ColumnTable { column_name, column_type, default_value, constraint } = column;
+            let ColumnTable { column_name, column_type, constraints } = column;
             self.catalog_manager.add_column_to(table_name.as_str(), (column_name, column_type, None))
         }
         ExecutionResult::Message(format!("'{}' was created", table_name.as_str()))

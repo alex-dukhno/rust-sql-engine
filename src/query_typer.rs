@@ -1,19 +1,19 @@
 use super::catalog_manager::LockBasedCatalogManager;
-use super::ast::{Statement, Type, Value, ValueSource, InsertQuery};
+use super::ast::{Statement, Type, Value, ValueSource, InsertQuery, Constraint};
 
-pub struct QueryChecker {
+pub struct QueryTyper {
     catalog_manager: LockBasedCatalogManager
 }
 
-impl QueryChecker {
+impl QueryTyper {
 
-    pub fn new(catalog_manager: LockBasedCatalogManager) -> QueryChecker {
-        QueryChecker {
+    pub fn new(catalog_manager: LockBasedCatalogManager) -> QueryTyper {
+        QueryTyper {
             catalog_manager: catalog_manager
         }
     }
 
-    pub fn check(&self, statement: Statement) -> Statement {
+    pub fn type_inferring(&self, statement: Statement) -> Statement {
         match statement {
             Statement::Insert(mut query) => {
                 let (mut columns, value_types): (Vec<String>, Vec<(Option<String>, Type)>) = self.catalog_manager.get_table_columns(query.table_name.as_str()).into_iter().filter(|c| !query.columns.contains(&(c.0))).unzip();

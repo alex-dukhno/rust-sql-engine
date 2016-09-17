@@ -1,13 +1,12 @@
 #[cfg(test)]
-mod insert_query_checker {
+mod insert_query_typer {
     use expectest::prelude::be_equal_to;
 
     use sql::catalog_manager::LockBasedCatalogManager;
     use sql::lexer::{Tokenizer, IntoTokenizer};
     use sql::parser::{QueryParser, IntoQueryParser};
-    use sql::ast::Statement::Insert;
-    use sql::ast::{InsertQuery, Value, ValueSource, Type};
-    use sql::type_checker::QueryChecker;
+    use sql::ast::{Statement, InsertQuery, Value, ValueSource, Type};
+    use sql::query_typer::QueryTyper;
 
     #[test]
     fn populates_columns_for_insert_query() {
@@ -20,12 +19,12 @@ mod insert_query_checker {
 
         let statement = String::from("insert into table2 values (1, 2, 3);").into_tokenizer().tokenize().into_parser().parse();
 
-        let query_checker = QueryChecker::new(catalog_manager.clone());
+        let query_typer = QueryTyper::new(catalog_manager.clone());
 
-        expect!(query_checker.check(statement))
+        expect!(query_typer.type_inferring(statement))
             .to(
                 be_equal_to(
-                    Insert(
+                    Statement::Insert(
                         InsertQuery::new(
                             "table2",
                             vec!["col1", "col2", "col3"],
@@ -46,12 +45,12 @@ mod insert_query_checker {
 
         let statement = String::from("insert into table_1 (col2) values (2);").into_tokenizer().tokenize().into_parser().parse();
 
-        let query_checker = QueryChecker::new(catalog_manager.clone());
+        let query_typer = QueryTyper::new(catalog_manager.clone());
 
-        expect!(query_checker.check(statement))
+        expect!(query_typer.type_inferring(statement))
             .to(
                 be_equal_to(
-                    Insert(
+                    Statement::Insert(
                         InsertQuery::new(
                             "table_1",
                             vec!["col2", "col1"],
@@ -73,12 +72,12 @@ mod insert_query_checker {
 
         let statement = String::from("insert into table_2 (col2) values (2);").into_tokenizer().tokenize().into_parser().parse();
 
-        let query_checker = QueryChecker::new(catalog_manager.clone());
+        let query_typer = QueryTyper::new(catalog_manager.clone());
 
-        expect!(query_checker.check(statement))
+        expect!(query_typer.type_inferring(statement))
             .to(
                 be_equal_to(
-                    Insert(
+                    Statement::Insert(
                         InsertQuery::new(
                             "table_2",
                             vec!["col2", "col1", "col3"],

@@ -35,6 +35,8 @@ pub enum Token {
     Table,
     Columns,
     Limit,
+    PrimaryKey,
+    Default,
 
     Int,
     VarChar
@@ -77,6 +79,8 @@ impl<'s> From<&'s str> for Token {
             "delete" => Token::Delete,
             "create" => Token::Create,
             "table" => Token::Table,
+            "primary key" => Token::PrimaryKey,
+            "default" => Token::Default,
             "integer" => Token::Int,
             "varchar" => Token::VarChar,
             "limit" => Token::Limit,
@@ -162,6 +166,15 @@ impl <I: Iterator<Item = char>> StringTokenizer<I> {
                 Some(c @ '0'...'9') => {
                     self.consume();
                     token.push(c);
+                },
+                Some(' ') => {
+                    if token == "primary" {
+                        self.consume();
+                        token.push(' ');
+                    }
+                    else {
+                        break;
+                    }
                 },
                 _ => break,
             }

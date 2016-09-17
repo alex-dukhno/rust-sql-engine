@@ -86,7 +86,8 @@ pub enum Type {
 pub enum Constraint {
     PrimeryKey,
     ForeignKey(String),
-    Nullable(bool)
+    Nullable(bool),
+    DefaultValue(Option<String>)
 }
 
 #[derive(Debug, PartialEq)]
@@ -162,17 +163,15 @@ impl Value {
 pub struct ColumnTable {
     pub column_name: String,
     pub column_type: Type,
-    pub default_value: Option<String>,
-    pub constraint: Constraint
+    pub constraints: Vec<Constraint>
 }
 
 impl ColumnTable {
-    pub fn new<I: Into<String>>(name: I, column_type: Type, default_value: Option<I>, constraint: Constraint) -> ColumnTable {
+    pub fn new<I: Into<String>>(name: I, column_type: Type, constraints: Vec<Constraint>) -> ColumnTable {
         ColumnTable {
             column_name: name.into(),
             column_type: column_type,
-            default_value: default_value.and_then(|v| Some(v.into())),
-            constraint: constraint
+            constraints: constraints
         }
     }
 }

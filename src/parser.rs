@@ -60,10 +60,10 @@ impl<I: Iterator<Item = Token>> QueryParser for CreateTableQueryParser<I> {
 
         while let Some(token) = self.tokens.next() {
             match token {
-                Token::LParent | Token::Comma => columns.push(self.parse_column()),
-                Token::RParent => {},
+                Token::LParent => {},
                 Token::Semicolon => break,
-                _ => unimplemented!()
+                Token::Ident(name) => columns.push(self.parse_column(name)),
+                t => panic!("unexpected token {:?}", t)
             }
         }
 
@@ -78,17 +78,47 @@ impl<I: Iterator<Item = Token>> CreateTableQueryParser<I> {
         }
     }
 
-    fn parse_column(&mut self) -> ColumnTable {
-        let column_name = match self.tokens.next() {
-            Some(Token::Ident(name)) => name,
-            _ => unimplemented!(),
-        };
+    fn parse_column(&mut self, column_name: String) -> ColumnTable {
         let column_type = match self.tokens.next() {
             Some(Token::Int) => Type::Integer,
             Some(Token::VarChar) => self.parse_var_char_type(),
             _ => unimplemented!(),
         };
-        ColumnTable::new(column_name, column_type, None, Constraint::Nullable(true))
+        let mut column_constraints = vec![];
+        let mut has_default = false;
+        let mut is_primary_key = false;
+        while let Some(token) = self.tokens.next() {
+            match token {
+                Token::PrimaryKey => {
+                    is_primary_key = true;
+                    column_constraints.push(Constraint::PrimeryKey)
+                },
+                Token::Default => {
+                    match self.tokens.next() {
+                        Some(Token::NumConst(const_val))
+                            | Some(Token::CharsConst(const_val)) => {
+                            if !is_primary_key {
+                                has_default = true;
+                                column_constraints.push(Constraint::DefaultValue(Some(const_val)));
+                            }
+                        },
+                        t => panic!("unexpected token {:?}", t),
+                    }
+                },
+                Token::RParent | Token::Comma => {
+                    if !column_constraints.contains(&Constraint::PrimeryKey) {
+                        column_constraints.push(Constraint::Nullable(true));
+                    }
+                    if !has_default {
+                        column_constraints.push(Constraint::DefaultValue(None));
+                    }
+                    has_default = false;
+                    break;
+                },
+                t => panic!("unexpected token {:?}", t)
+            }
+        };
+        ColumnTable::new(column_name, column_type, column_constraints)
     }
 
     fn parse_var_char_type(&mut self) -> Type {

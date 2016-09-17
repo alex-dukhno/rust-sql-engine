@@ -14,7 +14,7 @@ mod parses_create_table_statement {
                     Statement::Create(
                         CreateTableQuery::new(
                             "table_name_1",
-                            vec![ColumnTable::new("col", Type::Integer, None, Constraint::Nullable(true))]
+                            vec![ColumnTable::new("col", Type::Integer, vec![Constraint::Nullable(true), Constraint::DefaultValue(None)])]
                         )
                     )
                 )
@@ -30,9 +30,9 @@ mod parses_create_table_statement {
                         CreateTableQuery::new(
                             "table_name_2",
                             vec![
-                                ColumnTable::new("col1", Type::Integer, None, Constraint::Nullable(true)),
-                                ColumnTable::new("col2", Type::Integer, None, Constraint::Nullable(true)),
-                                ColumnTable::new("col3", Type::Integer, None, Constraint::Nullable(true))
+                                ColumnTable::new("col1", Type::Integer, vec![Constraint::Nullable(true), Constraint::DefaultValue(None)]),
+                                ColumnTable::new("col2", Type::Integer, vec![Constraint::Nullable(true), Constraint::DefaultValue(None)]),
+                                ColumnTable::new("col3", Type::Integer, vec![Constraint::Nullable(true), Constraint::DefaultValue(None)])
                             ]
                         )
                     )
@@ -48,7 +48,52 @@ mod parses_create_table_statement {
                     Statement::Create(
                         CreateTableQuery::new(
                             "table_1",
-                            vec![ColumnTable::new("col_2", Type::VarChar(10), None, Constraint::Nullable(true))]
+                            vec![ColumnTable::new("col_2", Type::VarChar(10), vec![Constraint::Nullable(true), Constraint::DefaultValue(None)])]
+                        )
+                    )
+                )
+            );
+    }
+
+    #[test]
+    fn with_default_value_constraint() {
+        expect!(String::from("create table table1 (col integer default 1);").into_tokenizer().tokenize().into_parser().parse())
+            .to(
+                be_equal_to(
+                    Statement::Create(
+                        CreateTableQuery::new(
+                            "table1",
+                            vec![ColumnTable::new("col", Type::Integer, vec![Constraint::DefaultValue(Some("1".to_owned())), Constraint::Nullable(true)])]
+                        )
+                    )
+                )
+            );
+    }
+
+    #[test]
+    fn infer_type_for_primary_key_column() {
+        expect!(String::from("create table table_1 (col integer primary key);").into_tokenizer().tokenize().into_parser().parse())
+            .to(
+                be_equal_to(
+                    Statement::Create(
+                        CreateTableQuery::new(
+                            "table_1",
+                            vec![ColumnTable::new("col", Type::Integer, vec![Constraint::PrimeryKey, Constraint::DefaultValue(None)])]
+                        )
+                    )
+                )
+            );
+    }
+
+    #[test]
+    fn with_primary_key_discard_default_value() {
+        expect!(String::from("create table table_1 (col integer primary key default 1);").into_tokenizer().tokenize().into_parser().parse())
+            .to(
+                be_equal_to(
+                    Statement::Create(
+                        CreateTableQuery::new(
+                            "table_1",
+                            vec![ColumnTable::new("col", Type::Integer, vec![Constraint::PrimeryKey, Constraint::DefaultValue(None)])]
                         )
                     )
                 )
