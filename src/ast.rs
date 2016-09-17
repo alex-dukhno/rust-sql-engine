@@ -1,3 +1,7 @@
+use std::cmp::PartialEq;
+use std::hash::{Hash, Hasher};
+use std::collections::HashSet;
+
 #[derive(Debug, PartialEq)]
 pub enum Statement {
     Create(CreateTableQuery),
@@ -82,12 +86,32 @@ pub enum Type {
     VarChar(u8),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq)]
 pub enum Constraint {
     PrimeryKey,
-    ForeignKey(String),
     Nullable(bool),
     DefaultValue(Option<String>)
+}
+
+impl PartialEq for Constraint {
+    fn eq(&self, other: &Constraint) -> bool {
+        match (self, other) {
+            (&Constraint::PrimeryKey, &Constraint::PrimeryKey) => true,
+            (&Constraint::Nullable(_), &Constraint::Nullable(_)) => true,
+            (&Constraint::DefaultValue(_), &Constraint::DefaultValue(_)) => true,
+            _ => false
+        }
+    }
+}
+
+impl Hash for Constraint {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            &Constraint::PrimeryKey => 1.hash(state),
+            &Constraint::Nullable(_) => 2.hash(state),
+            &Constraint::DefaultValue(_) => 4.hash(state)
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -163,11 +187,11 @@ impl Value {
 pub struct ColumnTable {
     pub column_name: String,
     pub column_type: Type,
-    pub constraints: Vec<Constraint>
+    pub constraints: HashSet<Constraint>
 }
 
 impl ColumnTable {
-    pub fn new<I: Into<String>>(name: I, column_type: Type, constraints: Vec<Constraint>) -> ColumnTable {
+    pub fn new<I: Into<String>>(name: I, column_type: Type, constraints: HashSet<Constraint>) -> ColumnTable {
         ColumnTable {
             column_name: name.into(),
             column_type: column_type,

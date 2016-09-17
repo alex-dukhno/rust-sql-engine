@@ -14,7 +14,7 @@ mod parses_create_table_statement {
                     Statement::Create(
                         CreateTableQuery::new(
                             "table_name_1",
-                            vec![ColumnTable::new("col", Type::Integer, vec![Constraint::Nullable(true), Constraint::DefaultValue(None)])]
+                            vec![ColumnTable::new("col", Type::Integer, vec![Constraint::Nullable(true), Constraint::DefaultValue(None)].into_iter().collect())]
                         )
                     )
                 )
@@ -30,9 +30,9 @@ mod parses_create_table_statement {
                         CreateTableQuery::new(
                             "table_name_2",
                             vec![
-                                ColumnTable::new("col1", Type::Integer, vec![Constraint::Nullable(true), Constraint::DefaultValue(None)]),
-                                ColumnTable::new("col2", Type::Integer, vec![Constraint::Nullable(true), Constraint::DefaultValue(None)]),
-                                ColumnTable::new("col3", Type::Integer, vec![Constraint::Nullable(true), Constraint::DefaultValue(None)])
+                                ColumnTable::new("col1", Type::Integer, vec![Constraint::Nullable(true), Constraint::DefaultValue(None)].into_iter().collect()),
+                                ColumnTable::new("col2", Type::Integer, vec![Constraint::Nullable(true), Constraint::DefaultValue(None)].into_iter().collect()),
+                                ColumnTable::new("col3", Type::Integer, vec![Constraint::Nullable(true), Constraint::DefaultValue(None)].into_iter().collect())
                             ]
                         )
                     )
@@ -48,7 +48,7 @@ mod parses_create_table_statement {
                     Statement::Create(
                         CreateTableQuery::new(
                             "table_1",
-                            vec![ColumnTable::new("col_2", Type::VarChar(10), vec![Constraint::Nullable(true), Constraint::DefaultValue(None)])]
+                            vec![ColumnTable::new("col_2", Type::VarChar(10), vec![Constraint::Nullable(true), Constraint::DefaultValue(None)].into_iter().collect())]
                         )
                     )
                 )
@@ -63,7 +63,7 @@ mod parses_create_table_statement {
                     Statement::Create(
                         CreateTableQuery::new(
                             "table1",
-                            vec![ColumnTable::new("col", Type::Integer, vec![Constraint::DefaultValue(Some("1".to_owned())), Constraint::Nullable(true)])]
+                            vec![ColumnTable::new("col", Type::Integer, vec![Constraint::DefaultValue(Some("1".to_owned())), Constraint::Nullable(true)].into_iter().collect())]
                         )
                     )
                 )
@@ -78,7 +78,7 @@ mod parses_create_table_statement {
                     Statement::Create(
                         CreateTableQuery::new(
                             "table_1",
-                            vec![ColumnTable::new("col", Type::Integer, vec![Constraint::PrimeryKey, Constraint::DefaultValue(None)])]
+                            vec![ColumnTable::new("col", Type::Integer, vec![Constraint::PrimeryKey, Constraint::DefaultValue(None)].into_iter().collect())]
                         )
                     )
                 )
@@ -93,7 +93,7 @@ mod parses_create_table_statement {
                     Statement::Create(
                         CreateTableQuery::new(
                             "table_1",
-                            vec![ColumnTable::new("col", Type::Integer, vec![Constraint::PrimeryKey, Constraint::DefaultValue(None)])]
+                            vec![ColumnTable::new("col", Type::Integer, vec![Constraint::PrimeryKey, Constraint::DefaultValue(None)].into_iter().collect())]
                         )
                     )
                 )
@@ -101,7 +101,6 @@ mod parses_create_table_statement {
     }
 
     #[test]
-    #[ignore]
     fn not_null_constraint() {
         expect!(String::from("create table table_2 (col integer not null);").into_tokenizer().tokenize().into_parser().parse())
             .to(
@@ -109,7 +108,7 @@ mod parses_create_table_statement {
                     Statement::Create(
                         CreateTableQuery::new(
                             "table_2",
-                            vec![ColumnTable::new("col", Type::Integer, vec![Constraint::Nullable(false), Constraint::DefaultValue(Some("0".to_owned()))])]
+                            vec![ColumnTable::new("col", Type::Integer, vec![Constraint::Nullable(false), Constraint::DefaultValue(Some("0".to_owned()))].into_iter().collect())]
                         )
                     )
                 )

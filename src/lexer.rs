@@ -37,6 +37,8 @@ pub enum Token {
     Limit,
     PrimaryKey,
     Default,
+    Not,
+    Null,
 
     Int,
     Character
@@ -81,6 +83,8 @@ impl<'s> From<&'s str> for Token {
             "table" => Token::Table,
             "primary key" => Token::PrimaryKey,
             "default" => Token::Default,
+            "not" => Token::Not,
+            "null" => Token::Null,
             "integer" => Token::Int,
             "char" | "character" => Token::Character,
             "limit" => Token::Limit,

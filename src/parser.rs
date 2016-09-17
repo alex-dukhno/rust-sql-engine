@@ -1,3 +1,6 @@
+use std::iter;
+use std::collections;
+
 use super::lexer::Token;
 use super::ast::{Type, CondType, Statement, CreateTableQuery, DeleteQuery, InsertQuery, SelectQuery, Condition, CondArg, Value, ColumnTable, ValueSource, Constraint};
 
@@ -84,33 +87,49 @@ impl<I: Iterator<Item = Token>> CreateTableQueryParser<I> {
             Some(Token::Character) => self.parse_var_char_type(),
             _ => unimplemented!(),
         };
-        let mut column_constraints = vec![];
+        let mut column_constraints = collections::HashSet::new();
         let mut has_default = false;
         let mut is_primary_key = false;
         while let Some(token) = self.tokens.next() {
             match token {
                 Token::PrimaryKey => {
                     is_primary_key = true;
-                    column_constraints.push(Constraint::PrimeryKey)
+                    column_constraints.insert(Constraint::PrimeryKey);
                 },
                 Token::Default => {
                     match self.tokens.next() {
                         Some(Token::NumConst(const_val))
-                            | Some(Token::CharsConst(const_val)) => {
+                        | Some(Token::CharsConst(const_val)) => {
                             if !is_primary_key {
                                 has_default = true;
-                                column_constraints.push(Constraint::DefaultValue(Some(const_val)));
+                                column_constraints.insert(Constraint::DefaultValue(Some(const_val)));
                             }
                         },
-                        t => panic!("unexpected token {:?}", t),
+                        t => panic!("unexpected token {:?}", t)
                     }
                 },
+                Token::Not => {
+                    match self.tokens.next() {
+                        Some(Token::Null) => {
+                            column_constraints.insert(Constraint::Nullable(false));
+                            match column_type {
+                                Type::Integer => {
+                                    column_constraints.insert(Constraint::DefaultValue(Some("0".to_owned())));
+                                },
+                                Type::VarChar(len) => {
+                                    column_constraints.insert(Constraint::DefaultValue(Some(iter::repeat(" ").take(len as usize).collect::<String>())));
+                                }
+                            }
+                        },
+                        t => panic!("unexpected token {:?}", t)
+                    }
+                }
                 Token::RParent | Token::Comma => {
-                    if !column_constraints.contains(&Constraint::PrimeryKey) {
-                        column_constraints.push(Constraint::Nullable(true));
+                    if !column_constraints.contains(&Constraint::PrimeryKey) && !column_constraints.contains(&Constraint::Nullable(false)) {
+                        column_constraints.insert(Constraint::Nullable(true));
                     }
                     if !has_default {
-                        column_constraints.push(Constraint::DefaultValue(None));
+                        column_constraints.insert(Constraint::DefaultValue(None));
                     }
                     break;
                 },

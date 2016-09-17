@@ -217,4 +217,25 @@ mod sql_query {
                 )
             );
     }
+
+    #[test]
+    fn tokenize_create_table_with_not_null() {
+        expect!(String::from("create table tab2 (col integer not null);").into_tokenizer().tokenize())
+            .to(
+                be_equal_to(
+                    vec![
+                        Token::Create,
+                        Token::Table,
+                        Token::ident("tab2"),
+                        Token::LParent,
+                        Token::ident("col"),
+                        Token::Int,
+                        Token::Not,
+                        Token::Null,
+                        Token::RParent,
+                        Token::Semicolon
+                    ]
+                )
+            );
+    }
 }
