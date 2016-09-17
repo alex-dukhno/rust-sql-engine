@@ -39,6 +39,8 @@ pub enum Token {
     Default,
     Not,
     Null,
+    ForeignKey,
+    References,
 
     Int,
     Character
@@ -82,6 +84,8 @@ impl<'s> From<&'s str> for Token {
             "create" => Token::Create,
             "table" => Token::Table,
             "primary key" => Token::PrimaryKey,
+            "foreign key" => Token::ForeignKey,
+            "references" => Token::References,
             "default" => Token::Default,
             "not" => Token::Not,
             "null" => Token::Null,
@@ -172,7 +176,7 @@ impl <I: Iterator<Item = char>> StringTokenizer<I> {
                     token.push(c);
                 },
                 Some(' ') => {
-                    if token == "primary" {
+                    if token == "primary" || token == "foreign" {
                         self.consume();
                         token.push(' ');
                     }

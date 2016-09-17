@@ -238,4 +238,33 @@ mod sql_query {
                 )
             );
     }
+
+    #[test]
+    fn tokenize_create_table_with_foreign_key() {
+        expect!(String::from("create table tab_4 (col1 integer primary key, col2 integer foreign key references table1(col));").into_tokenizer().tokenize())
+            .to(
+                be_equal_to(
+                    vec![
+                        Token::Create,
+                        Token::Table,
+                        Token::ident("tab_4"),
+                        Token::LParent,
+                        Token::ident("col1"),
+                        Token::Int,
+                        Token::PrimaryKey,
+                        Token::Comma,
+                        Token::ident("col2"),
+                        Token::Int,
+                        Token::ForeignKey,
+                        Token::References,
+                        Token::ident("table1"),
+                        Token::LParent,
+                        Token::ident("col"),
+                        Token::RParent,
+                        Token::RParent,
+                        Token::Semicolon
+                    ]
+                )
+            );
+    }
 }

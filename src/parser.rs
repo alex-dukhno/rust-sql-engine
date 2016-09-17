@@ -90,12 +90,36 @@ impl<I: Iterator<Item = Token>> CreateTableQueryParser<I> {
         let mut column_constraints = collections::HashSet::new();
         let mut has_default = false;
         let mut is_primary_key = false;
+        let mut is_foreign_key = false;
         while let Some(token) = self.tokens.next() {
             match token {
                 Token::PrimaryKey => {
                     is_primary_key = true;
-                    column_constraints.insert(Constraint::PrimeryKey);
+                    column_constraints.insert(Constraint::PrimaryKey);
                 },
+                Token::ForeignKey => {
+                    if Some(Token::References) != self.tokens.next() {
+                        unimplemented!();
+                    }
+                    match self.tokens.next() {
+                        Some(Token::Ident(table_name)) => {
+                            if Some(Token::LParent) != self.tokens.next() {
+                                unimplemented!();
+                            }
+                            match self.tokens.next() {
+                                Some(Token::Ident(col_name)) => {
+                                    is_foreign_key = true;
+                                    column_constraints.insert(Constraint::ForeignKey(table_name, col_name));
+                                }
+                                t => panic!("unexpected token {:?}", t)
+                            }
+                            if Some(Token::RParent) != self.tokens.next() {
+                                unimplemented!();
+                            }
+                        }
+                        t => panic!("unexpected token {:?}", t)
+                    }
+                }
                 Token::Default => {
                     match self.tokens.next() {
                         Some(Token::NumConst(const_val))
@@ -125,8 +149,10 @@ impl<I: Iterator<Item = Token>> CreateTableQueryParser<I> {
                     }
                 }
                 Token::RParent | Token::Comma => {
-                    if !column_constraints.contains(&Constraint::PrimeryKey) && !column_constraints.contains(&Constraint::Nullable(false)) {
+                    if !is_primary_key && !column_constraints.contains(&Constraint::Nullable(false)) {
                         column_constraints.insert(Constraint::Nullable(true));
+                    } else {
+                        column_constraints.insert(Constraint::Nullable(false));
                     }
                     if !has_default {
                         column_constraints.insert(Constraint::DefaultValue(None));

@@ -78,7 +78,7 @@ mod parses_create_table_statement {
                     Statement::Create(
                         CreateTableQuery::new(
                             "table_1",
-                            vec![ColumnTable::new("col", Type::Integer, vec![Constraint::PrimeryKey, Constraint::DefaultValue(None)].into_iter().collect())]
+                            vec![ColumnTable::new("col", Type::Integer, vec![Constraint::PrimaryKey, Constraint::DefaultValue(None), Constraint::Nullable(false)].into_iter().collect())]
                         )
                     )
                 )
@@ -93,7 +93,7 @@ mod parses_create_table_statement {
                     Statement::Create(
                         CreateTableQuery::new(
                             "table_1",
-                            vec![ColumnTable::new("col", Type::Integer, vec![Constraint::PrimeryKey, Constraint::DefaultValue(None)].into_iter().collect())]
+                            vec![ColumnTable::new("col", Type::Integer, vec![Constraint::PrimaryKey, Constraint::DefaultValue(None), Constraint::Nullable(false)].into_iter().collect())]
                         )
                     )
                 )
@@ -126,6 +126,24 @@ mod parses_create_table_statement {
                             vec![
                                 ColumnTable::new("col1", Type::Integer, vec![Constraint::Nullable(false), Constraint::DefaultValue(Some("4".to_owned()))].into_iter().collect()),
                                 ColumnTable::new("col2", Type::Integer, vec![Constraint::Nullable(true), Constraint::DefaultValue(None)].into_iter().collect())
+                            ]
+                        )
+                    )
+                )
+            );
+    }
+
+    #[test]
+    fn foreign_key_constraint() {
+        expect!(String::from("create table tab_4 (col1 integer primary key, col2 integer foreign key references table1(col));").into_tokenizer().tokenize().into_parser().parse())
+            .to(
+                be_equal_to(
+                    Statement::Create(
+                        CreateTableQuery::new(
+                            "tab_4",
+                            vec![
+                                ColumnTable::new("col1", Type::Integer, vec![Constraint::Nullable(false), Constraint::DefaultValue(None), Constraint::PrimaryKey].into_iter().collect()),
+                                ColumnTable::new("col2", Type::Integer, vec![Constraint::Nullable(false), Constraint::DefaultValue(None), Constraint::ForeignKey("table1".to_owned(), "col".to_owned())].into_iter().collect())
                             ]
                         )
                     )

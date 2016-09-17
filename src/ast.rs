@@ -88,7 +88,8 @@ pub enum Type {
 
 #[derive(Debug, Eq)]
 pub enum Constraint {
-    PrimeryKey,
+    PrimaryKey,
+    ForeignKey(String, String),
     Nullable(bool),
     DefaultValue(Option<String>)
 }
@@ -96,7 +97,8 @@ pub enum Constraint {
 impl PartialEq for Constraint {
     fn eq(&self, other: &Constraint) -> bool {
         match (self, other) {
-            (&Constraint::PrimeryKey, &Constraint::PrimeryKey) => true,
+            (&Constraint::PrimaryKey, &Constraint::PrimaryKey) => true,
+            (&Constraint::ForeignKey(_, _), &Constraint::ForeignKey(_, _)) => true,
             (&Constraint::Nullable(_), &Constraint::Nullable(_)) => true,
             (&Constraint::DefaultValue(_), &Constraint::DefaultValue(_)) => true,
             _ => false
@@ -107,9 +109,10 @@ impl PartialEq for Constraint {
 impl Hash for Constraint {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
-            &Constraint::PrimeryKey => 1.hash(state),
-            &Constraint::Nullable(_) => 2.hash(state),
-            &Constraint::DefaultValue(_) => 4.hash(state)
+            &Constraint::PrimaryKey => 1.hash(state),
+            &Constraint::ForeignKey(_, _) => 2.hash(state),
+            &Constraint::Nullable(_) => 4.hash(state),
+            &Constraint::DefaultValue(_) => 8.hash(state)
         }
     }
 }
