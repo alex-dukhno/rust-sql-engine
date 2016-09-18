@@ -28,7 +28,19 @@ fn validate_create_already_existed_table() {
     let statement = String::from("create table table1 (col1 integer);").into_tokenizer().tokenize().into_parser().parse();
 
     expect!(query_validator.validate(statement))
-        .to(be_err().value(format!("Table <table1> already exists")));
+        .to(be_err().value(String::from("Table <table1> already exists")));
+}
+
+#[test]
+fn validate_create_table_with_two_similar_columns() {
+    let catalog_manager = LockBasedCatalogManager::default();
+
+    let query_validator = QueryValidator::new(catalog_manager);
+
+    let statement = String::from("create table table1(col1 integer, col1 integer);").into_tokenizer().tokenize().into_parser().parse();
+
+    expect!(query_validator.validate(statement))
+        .to(be_err().value(String::from("Column <col1> is already defined in <table1>")));
 }
 
 #[test]
