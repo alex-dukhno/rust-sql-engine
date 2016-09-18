@@ -8,17 +8,17 @@ mod data_definition_language {
         use sql::parser::{QueryParser, IntoQueryParser};
         use sql::query_executer::{QueryExecuter, ExecutionResult};
         use sql::catalog_manager::LockBasedCatalogManager;
-        use sql::query_typer::QueryTyper;
+        use sql::query_validator::QueryValidator;
 
         #[test]
         fn single_column() {
             let catalog_manager = LockBasedCatalogManager::default();
 
             let executer = QueryExecuter::new(catalog_manager.clone());
-            let checker = QueryTyper::new(catalog_manager.clone());
+            let validator = QueryValidator::new(catalog_manager.clone());
 
             let statement = String::from("create table table_name (col integer);").into_tokenizer().tokenize().into_parser().parse();
-            expect!(executer.execute(checker.type_inferring(statement)))
+            expect!(executer.execute(validator.validate(statement).unwrap()))
                 .to(be_equal_to(ExecutionResult::Message("'table_name' was created".to_owned())));
         }
 
@@ -27,10 +27,11 @@ mod data_definition_language {
             let catalog_manager = LockBasedCatalogManager::default();
 
             let executer = QueryExecuter::new(catalog_manager.clone());
-            let checker = QueryTyper::new(catalog_manager.clone());
+            let validator = QueryValidator::new(catalog_manager.clone());
 
             let statement = String::from("create table table_name (col1 integer, col2 integer, col3 integer);").into_tokenizer().tokenize().into_parser().parse();
-            expect!(executer.execute(checker.type_inferring(statement)))
+
+            expect!(executer.execute(validator.validate(statement).unwrap()))
                 .to(be_equal_to(ExecutionResult::Message("'table_name' was created".to_owned())));
         }
     }

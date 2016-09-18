@@ -2,7 +2,7 @@ use std::cmp::PartialEq;
 use std::hash::{Hash, Hasher};
 use std::collections::HashSet;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Statement {
     Create(CreateTableQuery),
     Delete(DeleteQuery),
@@ -10,7 +10,7 @@ pub enum Statement {
     Select(SelectQuery)
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct CreateTableQuery {
     pub table_name: String,
     pub columns: Vec<ColumnTable>
@@ -25,7 +25,7 @@ impl CreateTableQuery {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct DeleteQuery {
     from: String,
     predicates: Option<Condition>
@@ -40,14 +40,14 @@ impl DeleteQuery {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct InsertQuery {
     pub table_name: String,
     pub columns: Vec<String>,
     pub values: ValueSource
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ValueSource {
     Row(Vec<Value>),
     SubQuery(SelectQuery)
@@ -63,7 +63,7 @@ impl InsertQuery {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct SelectQuery {
     pub table_name: String,
     pub columns: Vec<String>,
@@ -86,7 +86,7 @@ pub enum Type {
     VarChar(u8),
 }
 
-#[derive(Debug, Eq)]
+#[derive(Debug, Eq, Clone)]
 pub enum Constraint {
     PrimaryKey,
     ForeignKey(String, String),
@@ -117,7 +117,7 @@ impl Hash for Constraint {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Condition {
     pub left: CondArg,
     pub right: CondArg,
@@ -142,13 +142,13 @@ impl Condition {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum CondType {
     Eq,
     NotEq
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum CondArg {
     ColumnName(String),
     StringConstant(String),
@@ -170,7 +170,7 @@ impl CondArg {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Value {
     StrConst(String),
     NumConst(String)
@@ -186,7 +186,7 @@ impl Value {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ColumnTable {
     pub column_name: String,
     pub column_type: Type,
