@@ -2,123 +2,98 @@ use super::ast::{Statement, Type, CreateTableQuery, InsertQuery, SelectQuery, Va
 use super::catalog_manager::LockBasedCatalogManager;
 use super::data_manager::LockBaseDataManager;
 
-pub struct QueryExecuter {
-    catalog_manager: LockBasedCatalogManager,
-    data_manager: LockBaseDataManager
-}
-
-impl Default for QueryExecuter {
-    fn default() -> Self {
-        QueryExecuter {
-            catalog_manager: LockBasedCatalogManager::default(),
-            data_manager: LockBaseDataManager::default()
-        }
-    }
-}
-
-impl QueryExecuter {
-    pub fn new(catalog_manager: LockBasedCatalogManager) -> QueryExecuter {
-        QueryExecuter {
-            catalog_manager: catalog_manager,
-            data_manager: LockBaseDataManager::default()
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub enum ExecutionResult {
     Message(String),
     Data(Vec<Vec<String>>)
 }
 
-impl QueryExecuter {
-    pub fn execute(&self, query: Statement) -> ExecutionResult {
-        match query {
-            Statement::Create(query) => self.create_table(query),
-            Statement::Insert(query) => self.insert_into(query),
-            Statement::Select(query) => self.select_data(query),
-            _ => unimplemented!(),
-        }
+pub fn execute(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseDataManager, query: Statement) -> Result<ExecutionResult, String> {
+    match query {
+        Statement::Create(query) => create_table(catalog_manager, data_manager, query),
+        Statement::Insert(query) => insert_into(catalog_manager, data_manager, query),
+        Statement::Select(query) => select_data(catalog_manager, data_manager, query),
+        _ => unimplemented!(),
     }
+}
 
-    fn create_table(&self, create_query: CreateTableQuery) -> ExecutionResult {
-        let CreateTableQuery { table_name, columns } = create_query;
-        self.catalog_manager.add_table(table_name.as_str());
-        for column in columns.into_iter() {
-            let ColumnTable { column_name, column_type, constraints } = column;
-            self.catalog_manager.add_column_to(table_name.as_str(), (column_name, column_type, None))
-        }
-        ExecutionResult::Message(format!("'{}' was created", table_name.as_str()))
+fn create_table(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseDataManager, create_query: CreateTableQuery) -> Result<ExecutionResult, String> {
+    let CreateTableQuery { table_name, columns } = create_query;
+    catalog_manager.add_table(table_name.as_str());
+    for column in columns.into_iter() {
+        let ColumnTable { column_name, column_type, constraints } = column;
+        catalog_manager.add_column_to(table_name.as_str(), (column_name, column_type, None))
     }
+    Ok(ExecutionResult::Message(format!("'{}' was created", table_name.as_str())))
+}
 
-    fn insert_into(&self, insert: InsertQuery) -> ExecutionResult {
-        let InsertQuery { table_name, columns, values } = insert;
-        if self.catalog_manager.contains_table(table_name.as_str()) {
-            match values {
-                ValueSource::Row(row) => {
-                    let mut data = Vec::with_capacity(row.len());
-                    for (index, datum) in row.into_iter().enumerate() {
-                        match datum {
-                            Value::NumConst(n) => if self.catalog_manager.match_type(table_name.as_str(), index, Type::VarChar(0)) {
-                                return ExecutionResult::Message("column type is VARCHAR find INT".to_owned());
-                            } else {
-                                data.push(n);
-                            },
-                            Value::StrConst(s) => if self.catalog_manager.match_type(table_name.as_str(), index, Type::Integer) {
-                                return ExecutionResult::Message("column type is INT find VARCHAR".to_owned());
-                            } else {
-                                data.push(s);
-                            },
-                        }
-                    }
-                    self.data_manager.save_to(table_name.as_str(), data);
-                    ExecutionResult::Message("row was inserted".to_owned())
-                },
-                ValueSource::SubQuery(query) => {
-                    if let ExecutionResult::Data(query_result) = self.select_data(query) {
-                        let row_num = query_result.len();
-                        for row in query_result {
-                            self.data_manager.save_to(table_name.as_str(), row);
-                        }
-                        ExecutionResult::Message(format!("{} rows were inserted", row_num))
-                    } else {
-                        panic!("unexpected subquery result")
-                    }
-                },
-            }
-        } else {
-            ExecutionResult::Message(format!("[ERR 100] table '{}' does not exist", table_name.as_str()))
-        }
-    }
-
-    fn select_data(&self, query: SelectQuery) -> ExecutionResult {
-        let SelectQuery { table_name, columns, condition } = query;
-        match condition {
-            Some(Condition { left, right, cond_type }) => {
-                match (left, right, cond_type) {
-                    (CondArg::Limit, CondArg::NumConst(n), CondType::Eq) => {
-                        let limit = match n.parse::<usize>() {
-                            Ok(v) => v,
-                            Err(e) => panic!(e),
-                        };
-                        ExecutionResult::Data(self.data_manager.get_range(table_name.as_str(), 0, limit))
-                    },
-                    (CondArg::ColumnName(name), CondArg::StringConstant(value), CondType::NotEq) => {
-                        if let Some(index) = self.catalog_manager.get_column_index(table_name.as_str(), &name) {
-                            ExecutionResult::Data(self.data_manager.get_not_equal(table_name.as_str(), index, &value))
+fn insert_into(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseDataManager, insert: InsertQuery) -> Result<ExecutionResult, String> {
+    let InsertQuery { table_name, columns, values } = insert;
+    if catalog_manager.contains_table(table_name.as_str()) {
+        match values {
+            ValueSource::Row(row) => {
+                let mut data = Vec::with_capacity(row.len());
+                for (index, datum) in row.into_iter().enumerate() {
+                    match datum {
+                        Value::NumConst(n) => if catalog_manager.match_type(table_name.as_str(), index, Type::VarChar(0)) {
+                            return Ok(ExecutionResult::Message("column type is VARCHAR find INT".to_owned()));
                         } else {
-                            unimplemented!()
-                        }
+                            data.push(n);
+                        },
+                        Value::StrConst(s) => if catalog_manager.match_type(table_name.as_str(), index, Type::Integer) {
+                            return Ok(ExecutionResult::Message("column type is INT find VARCHAR".to_owned()));
+                        } else {
+                            data.push(s);
+                        },
                     }
-                    _ => unimplemented!(),
                 }
-            }
-            None => {
-                if let Some(index) = self.catalog_manager.get_column_index(table_name.as_str(), &columns[0]) {
-                    ExecutionResult::Data(self.data_manager.get_range_till_end_for_column(table_name.as_str(), index))
+                data_manager.save_to(table_name.as_str(), data);
+                Ok(ExecutionResult::Message("row was inserted".to_owned()))
+            },
+            ValueSource::SubQuery(query) => {
+                if let Ok(ExecutionResult::Data(query_result)) = select_data(catalog_manager, data_manager.clone(), query) {
+                    let row_num = query_result.len();
+                    for row in query_result {
+                        data_manager.save_to(table_name.as_str(), row);
+                    }
+                    Ok(ExecutionResult::Message(format!("{} rows were inserted", row_num)))
                 } else {
-                    ExecutionResult::Data(self.data_manager.get_range_till_end(table_name.as_str(), 0))
+                    panic!("unexpected subquery result")
                 }
+            },
+        }
+    } else {
+        Ok(ExecutionResult::Message(format!("[ERR 100] table '{}' does not exist", table_name.as_str())))
+    }
+}
+
+fn select_data(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseDataManager, query: SelectQuery) -> Result<ExecutionResult, String> {
+    let SelectQuery { table_name, columns, condition } = query;
+    match condition {
+        Some(Condition { left, right, cond_type }) => {
+            match (left, right, cond_type) {
+                (CondArg::Limit, CondArg::NumConst(n), CondType::Eq) => {
+                    let limit = match n.parse::<usize>() {
+                        Ok(v) => v,
+                        Err(e) => panic!(e),
+                    };
+                    Ok(ExecutionResult::Data(data_manager.get_range(table_name.as_str(), 0, limit)))
+                },
+                (CondArg::ColumnName(name), CondArg::StringConstant(value), CondType::NotEq) => {
+                    if let Some(index) = catalog_manager.get_column_index(table_name.as_str(), &name) {
+                        Ok(ExecutionResult::Data(data_manager.get_not_equal(table_name.as_str(), index, &value)))
+                    } else {
+                        unimplemented!()
+                    }
+                }
+                _ => unimplemented!(),
+            }
+        }
+        None => {
+            if let Some(index) = catalog_manager.get_column_index(table_name.as_str(), &columns[0]) {
+                Ok(ExecutionResult::Data(data_manager.get_range_till_end_for_column(table_name.as_str(), index)))
+            } else {
+                Ok(ExecutionResult::Data(data_manager.get_range_till_end(table_name.as_str(), 0)))
             }
         }
     }

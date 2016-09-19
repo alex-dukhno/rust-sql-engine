@@ -1,55 +1,27 @@
 use std::iter;
 use std::collections;
 
-use super::lexer::Token;
+use super::lexer::{Token, Tokens};
 use super::ast::{Type, CondType, Statement, CreateTableQuery, DeleteQuery, InsertQuery, SelectQuery, Condition, CondArg, Value, ColumnTable, ValueSource, Constraint};
 
-pub enum Parser<I: Iterator<Item = Token>> {
-    Create(CreateTableQueryParser<I>),
-    Insert(InsertQueryParser<I>),
-    Delete(DeleteQueryParser<I>),
-    Select(SelectQueryParser<I>)
-}
-
-impl<I: Iterator<Item = Token>> QueryParser for Parser<I> {
-    fn parse(self) -> Statement {
-        match self {
-            Parser::Create(q) => q.parse(),
-            Parser::Insert(q) => q.parse(),
-            Parser::Delete(q) => q.parse(),
-            Parser::Select(q) => q.parse(),
-        }
-    }
-}
-
-pub trait QueryParser {
-    fn parse(mut self) -> Statement;
-}
-
-pub trait IntoQueryParser<I: Iterator<Item = Token>> {
-    fn into_parser(self) -> Parser<I>;
-}
-
-impl<I: Iterator<Item = Token>, II: IntoIterator<Item = Token, IntoIter = I>> IntoQueryParser<I> for II {
-    fn into_parser(self) -> Parser<I> {
-        let mut iter = self.into_iter();
-        match iter.next() {
-            Some(Token::Create) => Parser::Create(CreateTableQueryParser::new(iter)),
-            Some(Token::Delete) => Parser::Delete(DeleteQueryParser::new(iter)),
-            Some(Token::Insert) => Parser::Insert(InsertQueryParser::new(iter)),
-            Some(Token::Select) => Parser::Select(SelectQueryParser::new(iter)),
-            _ => unimplemented!(),
-        }
+pub fn parse(tokens: Tokens) -> Result<Statement, String> {
+    let mut iter = tokens.into_iter();
+    match iter.next() {
+        Some(Token::Create) => Ok(CreateTableQueryParser::new(iter).parse()),
+        Some(Token::Delete) => Ok(DeleteQueryParser::new(iter).parse()),
+        Some(Token::Insert) => Ok(InsertQueryParser::new(iter).parse()),
+        Some(Token::Select) => Ok(SelectQueryParser::new(iter).parse()),
+        _ => unimplemented!(),
     }
 }
 
 #[derive(Debug)]
-pub struct CreateTableQueryParser<I: Iterator<Item = Token>> {
+struct CreateTableQueryParser<I: Iterator<Item = Token>> {
     tokens: I
 }
 
-impl<I: Iterator<Item = Token>> QueryParser for CreateTableQueryParser<I> {
-    fn parse(mut self) -> Statement {
+impl<I: Iterator<Item = Token>> CreateTableQueryParser<I> {
+    pub fn parse(mut self) -> Statement {
         if self.tokens.next() != Some(Token::Table) {
             unimplemented!();
         }
@@ -72,9 +44,7 @@ impl<I: Iterator<Item = Token>> QueryParser for CreateTableQueryParser<I> {
 
         Statement::Create(CreateTableQuery::new(table_name, columns))
     }
-}
 
-impl<I: Iterator<Item = Token>> CreateTableQueryParser<I> {
     fn new(tokens: I) -> CreateTableQueryParser<I> {
         CreateTableQueryParser {
             tokens: tokens
@@ -190,7 +160,7 @@ impl<I: Iterator<Item = Token>> CreateTableQueryParser<I> {
     }
 }
 
-pub struct InsertQueryParser<I: Iterator<Item = Token>> {
+struct InsertQueryParser<I: Iterator<Item = Token>> {
     tokens: I
 }
 
@@ -230,9 +200,7 @@ impl<I: Iterator<Item = Token>> InsertQueryParser<I> {
         }
         values
     }
-}
 
-impl<I: Iterator<Item = Token>> QueryParser for InsertQueryParser<I> {
     fn parse(mut self) -> Statement {
         if self.tokens.next() != Some(Token::Into) {
             unimplemented!();
@@ -273,7 +241,7 @@ impl<I: Iterator<Item = Token>> QueryParser for InsertQueryParser<I> {
     }
 }
 
-pub struct DeleteQueryParser<I: Iterator<Item = Token>> {
+struct DeleteQueryParser<I: Iterator<Item = Token>> {
     tokens: I
 }
 
@@ -283,9 +251,7 @@ impl<I: Iterator<Item = Token>> DeleteQueryParser<I> {
             tokens: tokens
         }
     }
-}
 
-impl<I: Iterator<Item = Token>> QueryParser for DeleteQueryParser<I> {
     fn parse(mut self) -> Statement {
         if self.tokens.next() != Some(Token::From) {
             unimplemented!();
@@ -300,7 +266,7 @@ impl<I: Iterator<Item = Token>> QueryParser for DeleteQueryParser<I> {
     }
 }
 
-pub struct SelectQueryParser<I: Iterator<Item = Token>> {
+struct SelectQueryParser<I: Iterator<Item = Token>> {
     tokens: I
 }
 
@@ -334,9 +300,7 @@ impl<I: Iterator<Item = Token>> SelectQueryParser<I> {
         }
         columns
     }
-}
 
-impl<I: Iterator<Item = Token>> QueryParser for SelectQueryParser<I> {
     fn parse(self) -> Statement {
         Statement::Select(self.parse_select())
     }

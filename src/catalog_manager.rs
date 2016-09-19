@@ -1,6 +1,5 @@
-use std::sync::Mutex;
+use std::sync::{Mutex, Arc};
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use super::ast::Type;
 

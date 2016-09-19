@@ -1,6 +1,5 @@
 use std::iter::Peekable;
 use std::fmt;
-use std::vec;
 
 #[derive(Debug, PartialEq)]
 pub enum Token {
@@ -127,167 +126,126 @@ impl fmt::Display for Token {
     }
 }
 
-pub trait Tokenizer {
-    type Token;
-    type Item;
+pub type Tokens = Vec<Token>;
 
-    fn tokenize(mut self) -> Vec<Self::Token>;
-
-    fn look_ahead(&mut self) -> Option<Self::Item>;
-
-    fn consume(&mut self);
-}
-
-pub trait IntoTokenizer<I: Iterator<Item = Self::Item>> {
-    type Token;
-    type Item;
-    type IntoTokenizer: Tokenizer<Token = Self::Token, Item = Self::Item>;
-
-    fn into_tokenizer(self) -> Self::IntoTokenizer;
-}
-
-impl IntoTokenizer<vec::IntoIter<char>> for String {
-    type Token = Token;
-    type Item = char;
-    type IntoTokenizer = StringTokenizer<vec::IntoIter<char>>;
-
-    fn into_tokenizer(self) -> Self::IntoTokenizer {
-        StringTokenizer {
-            sequence: self.chars().collect::<Vec<char>>().into_iter().peekable()
-        }
-    }
-}
-
-pub struct StringTokenizer<I: Iterator<Item = char>> {
-    sequence: Peekable<I>
-}
-
-impl <I: Iterator<Item = char>> StringTokenizer<I> {
-
-    fn ident_token(&mut self) -> Token {
-        let mut token = String::default();
-        loop {
-            match self.look_ahead() {
-                Some(c @ 'A'...'Z') |
-                Some(c @ 'a'...'z') |
-                Some(c @ '_') |
-                Some(c @ '0'...'9') => {
-                    self.consume();
-                    token.push(c);
-                },
-                Some(' ') => {
-                    if token == "primary" || token == "foreign" {
-                        self.consume();
-                        token.push(' ');
-                    }
-                    else {
-                        break;
-                    }
-                },
-                _ => break,
-            }
-        }
-        Token::from(token.to_lowercase().as_str())
-    }
-
-    fn numeric_token(&mut self) -> Token {
-        let mut number = String::default();
-        while let Some(d @ '0'...'9') = self.look_ahead() {
-            self.consume();
-            number.push(d);
-        }
-        Token::number(number)
-    }
-
-    fn string_token(&mut self) -> Token {
-        let mut string = String::default();
-        loop {
-            match self.look_ahead() {
-                Some('\'') => {
-                    self.consume();
-                    match self.look_ahead() {
-                        Some('\'') => {
-                            self.consume();
-                            string.push('\'');
-                        },
-                        _ => break,
-                    }
-                },
-                Some(c) => {
-                    self.consume();
-                    string.push(c);
-                },
-                None => break,
-            }
-        }
-        Token::string(string)
-    }
-}
-
-impl<I: Iterator<Item = char>> Tokenizer for StringTokenizer<I> {
-    type Token = Token;
-    type Item = char;
-
-    fn tokenize(mut self) -> Vec<Token> {
-        let mut tokens = vec![];
-        loop {
-            match self.look_ahead() {
-                Some(' ') | Some('\n') | Some('\t') => { self.consume(); },
-                Some('\'') => {
-                    self.consume();
-                    tokens.push(self.string_token());
-                },
-                Some('a'...'z') | Some('A'...'Z') => { tokens.push(self.ident_token()); },
-                Some('0'...'9') => { tokens.push(self.numeric_token()); },
-                Some('<') => {
-                    self.consume();
-                    match self.look_ahead() {
-                        Some('>') => {
-                            self.consume();
-                            tokens.push(Token::NotEqualSign);
-                        },
-                        Some('=') => {
-                            self.consume();
-                            tokens.push(Token::LessEqual);
-                        },
-                        _ => tokens.push(Token::Less),
-                    }
-                },
-                Some('>') => {
-                    self.consume();
-                    match self.look_ahead() {
-                        Some('=') => {
-                            self.consume();
-                            tokens.push(Token::GreaterEqual);
-                        },
-                        _ => tokens.push(Token::Greater),
-                    }
+pub fn tokenize(src: &str) -> Result<Tokens, String> {
+    let mut chars = src.chars().peekable();
+    let mut tokens = vec![];
+    loop {
+        match look_ahead(chars.by_ref()) {
+            Some(' ') | Some('\n') | Some('\t') => { consume(chars.by_ref()); },
+            Some('\'') => {
+                consume(chars.by_ref());
+                tokens.push(string_token(chars.by_ref()));
+            },
+            Some('a'...'z') | Some('A'...'Z') => { tokens.push(ident_token(chars.by_ref())); },
+            Some('0'...'9') => { tokens.push(numeric_token(chars.by_ref())); },
+            Some('<') => {
+                consume(chars.by_ref());
+                match look_ahead(chars.by_ref()) {
+                    Some('>') => {
+                        consume(chars.by_ref());
+                        tokens.push(Token::NotEqualSign);
+                    },
+                    Some('=') => {
+                        consume(chars.by_ref());
+                        tokens.push(Token::LessEqual);
+                    },
+                    _ => tokens.push(Token::Less),
                 }
-                Some('!') => {
-                    self.consume();
-                    match self.look_ahead() {
-                        Some('=') => {
-                            self.consume();
-                            tokens.push(Token::NotEqualSign);
-                        },
-                        _ => unimplemented!(),
-                    }
-                },
-                Some(c) => {
-                    self.consume();
-                    tokens.push(Token::from(c));
-                },
-                None => break,
+            },
+            Some('>') => {
+                consume(chars.by_ref());
+                match look_ahead(chars.by_ref()) {
+                    Some('=') => {
+                        consume(chars.by_ref());
+                        tokens.push(Token::GreaterEqual);
+                    },
+                    _ => tokens.push(Token::Greater),
+                }
             }
+            Some('!') => {
+                consume(chars.by_ref());
+                match look_ahead(chars.by_ref()) {
+                    Some('=') => {
+                        consume(chars.by_ref());
+                        tokens.push(Token::NotEqualSign);
+                    },
+                    _ => unimplemented!(),
+                }
+            },
+            Some(c) => {
+                consume(chars.by_ref());
+                tokens.push(Token::from(c));
+            },
+            None => break,
         }
-        tokens
     }
+    Ok(tokens)
+}
 
-    fn look_ahead(&mut self) -> Option<char> {
-        self.sequence.peek().cloned()
+fn ident_token<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> Token {
+    let mut token = String::default();
+    loop {
+        match look_ahead(chars.by_ref()) {
+            Some(c @ 'A'...'Z') |
+            Some(c @ 'a'...'z') |
+            Some(c @ '_') |
+            Some(c @ '0'...'9') => {
+                consume(chars.by_ref());
+                token.push(c);
+            },
+            Some(' ') => {
+                if token == "primary" || token == "foreign" {
+                    consume(chars.by_ref());
+                    token.push(' ');
+                } else {
+                    break;
+                }
+            },
+            _ => break,
+        }
     }
+    Token::from(token.to_lowercase().as_str())
+}
 
-    fn consume(&mut self) {
-        self.sequence.next();
+fn numeric_token<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> Token {
+    let mut number = String::default();
+    while let Some(d @ '0'...'9') = look_ahead(chars.by_ref()) {
+        consume(chars.by_ref());
+        number.push(d);
     }
+    Token::number(number)
+}
+
+fn string_token<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> Token {
+    let mut string = String::default();
+    loop {
+        match look_ahead(chars.by_ref()) {
+            Some('\'') => {
+                consume(chars.by_ref());
+                match look_ahead(chars.by_ref()) {
+                    Some('\'') => {
+                        consume(chars.by_ref());
+                        string.push('\'');
+                    },
+                    _ => break,
+                }
+            },
+            Some(c) => {
+                consume(chars.by_ref());
+                string.push(c);
+            },
+            None => break,
+        }
+    }
+    Token::string(string)
+}
+
+fn look_ahead<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> Option<char> {
+    chars.peek().cloned()
+}
+
+fn consume<I: Iterator<Item = char>>(chars: &mut Peekable<I>) {
+    chars.next();
 }

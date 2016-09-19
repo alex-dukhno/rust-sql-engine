@@ -1,15 +1,15 @@
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LockBaseDataManager {
-    data: Mutex<HashMap<String, Vec<Vec<String>>>>
+    data: Arc<Mutex<HashMap<String, Vec<Vec<String>>>>>
 }
 
 impl Default for LockBaseDataManager {
     fn default() -> LockBaseDataManager {
         LockBaseDataManager {
-            data: Mutex::new(HashMap::default())
+            data: Arc::new(Mutex::new(HashMap::default()))
         }
     }
 }

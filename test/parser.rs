@@ -1,16 +1,16 @@
 #[cfg(test)]
 mod parses_create_table_statement {
-    use expectest::prelude::be_equal_to;
+    use expectest::prelude::be_ok;
 
-    use sql::lexer::{Tokenizer, IntoTokenizer};
-    use sql::parser::{QueryParser, IntoQueryParser};
+    use sql::lexer::tokenize;
+    use sql::parser::parse;
     use sql::ast::{Type, Statement, Constraint, CreateTableQuery, ColumnTable};
 
     #[test]
     fn with_one_column() {
-        expect!(String::from("create table table_name_1 (col integer);").into_tokenizer().tokenize().into_parser().parse())
+        expect!(tokenize("create table table_name_1 (col integer);").and_then(|tokens| parse(tokens)))
             .to(
-                be_equal_to(
+                be_ok().value(
                     Statement::Create(
                         CreateTableQuery::new(
                             "table_name_1",
@@ -23,9 +23,9 @@ mod parses_create_table_statement {
 
     #[test]
     fn with_list_of_columns() {
-        expect!(String::from("create table table_name_2 (col1 integer, col2 integer, col3 integer);").into_tokenizer().tokenize().into_parser().parse())
+        expect!(tokenize("create table table_name_2 (col1 integer, col2 integer, col3 integer);").and_then(|tokens| parse(tokens)))
             .to(
-                be_equal_to(
+                be_ok().value(
                     Statement::Create(
                         CreateTableQuery::new(
                             "table_name_2",
@@ -42,9 +42,9 @@ mod parses_create_table_statement {
 
     #[test]
     fn with_varchar_column_type() {
-        expect!(String::from("create table table_1 (col_2 character(10));").into_tokenizer().tokenize().into_parser().parse())
+        expect!(tokenize("create table table_1 (col_2 character(10));").and_then(|tokens| parse(tokens)))
             .to(
-                be_equal_to(
+                be_ok().value(
                     Statement::Create(
                         CreateTableQuery::new(
                             "table_1",
@@ -57,9 +57,9 @@ mod parses_create_table_statement {
 
     #[test]
     fn with_default_value_constraint() {
-        expect!(String::from("create table table1 (col integer default 1);").into_tokenizer().tokenize().into_parser().parse())
+        expect!(tokenize("create table table1 (col integer default 1);").and_then(|token| parse(token)))
             .to(
-                be_equal_to(
+                be_ok().value(
                     Statement::Create(
                         CreateTableQuery::new(
                             "table1",
@@ -72,9 +72,9 @@ mod parses_create_table_statement {
 
     #[test]
     fn infer_type_for_primary_key_column() {
-        expect!(String::from("create table table_1 (col integer primary key);").into_tokenizer().tokenize().into_parser().parse())
+        expect!(tokenize("create table table_1 (col integer primary key);").and_then(|tokens| parse(tokens)))
             .to(
-                be_equal_to(
+                be_ok().value(
                     Statement::Create(
                         CreateTableQuery::new(
                             "table_1",
@@ -87,9 +87,9 @@ mod parses_create_table_statement {
 
     #[test]
     fn with_primary_key_discard_default_value() {
-        expect!(String::from("create table table_1 (col integer primary key default 1);").into_tokenizer().tokenize().into_parser().parse())
+        expect!(tokenize("create table table_1 (col integer primary key default 1);").and_then(|tokens| parse(tokens)))
             .to(
-                be_equal_to(
+                be_ok().value(
                     Statement::Create(
                         CreateTableQuery::new(
                             "table_1",
@@ -102,9 +102,9 @@ mod parses_create_table_statement {
 
     #[test]
     fn not_null_constraint() {
-        expect!(String::from("create table table_2 (col integer not null);").into_tokenizer().tokenize().into_parser().parse())
+        expect!(tokenize("create table table_2 (col integer not null);").and_then(|tokens| parse(tokens)))
             .to(
-                be_equal_to(
+                be_ok().value(
                     Statement::Create(
                         CreateTableQuery::new(
                             "table_2",
@@ -117,9 +117,9 @@ mod parses_create_table_statement {
 
     #[test]
     fn not_null_with_default() {
-        expect!(String::from("create table tab3 (col1 integer not null default 4, col2 integer);").into_tokenizer().tokenize().into_parser().parse())
+        expect!(tokenize("create table tab3 (col1 integer not null default 4, col2 integer);").and_then(|tokens| parse(tokens)))
             .to(
-                be_equal_to(
+                be_ok().value(
                     Statement::Create(
                         CreateTableQuery::new(
                             "tab3",
@@ -135,9 +135,9 @@ mod parses_create_table_statement {
 
     #[test]
     fn foreign_key_constraint() {
-        expect!(String::from("create table tab_4 (col1 integer primary key, col2 integer foreign key references table1(col));").into_tokenizer().tokenize().into_parser().parse())
+        expect!(tokenize("create table tab_4 (col1 integer primary key, col2 integer foreign key references table1(col));").and_then(|tokens| parse(tokens)))
             .to(
-                be_equal_to(
+                be_ok().value(
                     Statement::Create(
                         CreateTableQuery::new(
                             "tab_4",
@@ -154,23 +154,23 @@ mod parses_create_table_statement {
 
 #[cfg(test)]
 mod parses_delete_statements {
-    use expectest::prelude::be_equal_to;
+    use expectest::prelude::be_ok;
 
-    use sql::lexer::{Tokenizer, IntoTokenizer};
-    use sql::parser::{QueryParser, IntoQueryParser};
+    use sql::lexer::tokenize;
+    use sql::parser::parse;
     use sql::ast::{Statement, DeleteQuery, Condition, CondArg};
 
     #[test]
     fn without_any_predicates() {
-        expect!(String::from("delete from table_name_1;").into_tokenizer().tokenize().into_parser().parse())
-            .to(be_equal_to(Statement::Delete(DeleteQuery::new("table_name_1", None))));
+        expect!(tokenize("delete from table_name_1;").and_then(|tokens| parse(tokens)))
+            .to(be_ok().value(Statement::Delete(DeleteQuery::new("table_name_1", None))));
     }
 
     #[test]
     fn with_column_const_predicate() {
-        expect!(String::from("delete from table_name_2 where col_1 = 5;").into_tokenizer().tokenize().into_parser().parse())
+        expect!(tokenize("delete from table_name_2 where col_1 = 5;").and_then(|tokens| parse(tokens)))
             .to(
-                be_equal_to(
+                be_ok().value(
                     Statement::Delete(
                         DeleteQuery::new(
                             "table_name_2",
@@ -188,9 +188,9 @@ mod parses_delete_statements {
 
     #[test]
     fn with_const_column_predicate() {
-        expect!(String::from("delete from table_name_3 where 'str' = col_2;").into_tokenizer().tokenize().into_parser().parse())
+        expect!(tokenize("delete from table_name_3 where 'str' = col_2;").and_then(|tokens| parse(tokens)))
             .to(
-                be_equal_to(
+                be_ok().value(
                     Statement::Delete(
                         DeleteQuery::new(
                             "table_name_3",
@@ -209,21 +209,19 @@ mod parses_delete_statements {
 
 #[cfg(test)]
 mod parses_insert_statements {
-    use expectest::prelude::be_equal_to;
+    use expectest::prelude::be_ok;
 
-    use sql::lexer::{Tokenizer, IntoTokenizer};
-    use sql::parser::{QueryParser, IntoQueryParser};
+    use sql::lexer::tokenize;
+    use sql::parser::parse;
     use sql::ast::{InsertQuery, SelectQuery};
-    use sql::ast::Statement::Insert;
-    use sql::ast::Value;
-    use sql::ast::ValueSource;
+    use sql::ast::{Statement, Value, ValueSource};
 
     #[test]
     fn with_one_column() {
-        expect!(String::from("insert into table_name_1 values(10);").into_tokenizer().tokenize().into_parser().parse())
+        expect!(tokenize("insert into table_name_1 values(10);").and_then(|tokens| parse(tokens)))
             .to(
-                be_equal_to(
-                    Insert(
+                be_ok().value(
+                    Statement::Insert(
                         InsertQuery::new("table_name_1", vec![], ValueSource::Row(vec![Value::num("10")]))
                     )
                 )
@@ -232,10 +230,10 @@ mod parses_insert_statements {
 
     #[test]
     fn with_list_of_columns() {
-        expect!(String::from("insert into table_name_2 values (10, 'string');").into_tokenizer().tokenize().into_parser().parse())
+        expect!(tokenize("insert into table_name_2 values (10, 'string');").and_then(|tokens| parse(tokens)))
             .to(
-                be_equal_to(
-                    Insert(
+                be_ok().value(
+                    Statement::Insert(
                         InsertQuery::new(
                             "table_name_2",
                             vec![],
@@ -248,10 +246,10 @@ mod parses_insert_statements {
 
     #[test]
     fn with_columns() {
-        expect!(String::from("insert into table_name_3 (col_1, col_2) values (10, 'string');").into_tokenizer().tokenize().into_parser().parse())
+        expect!(tokenize("insert into table_name_3 (col_1, col_2) values (10, 'string');").and_then(|tokens| parse(tokens)))
             .to(
-                be_equal_to(
-                    Insert(
+                be_ok().value(
+                    Statement::Insert(
                         InsertQuery::new(
                             "table_name_3",
                             vec!["col_1", "col_2"],
@@ -264,10 +262,10 @@ mod parses_insert_statements {
 
     #[test]
     fn with_sub_select() {
-        expect!(String::from("insert into table_1 (col_1, col_2) select col_1, col_2 from table_1;").into_tokenizer().tokenize().into_parser().parse())
+        expect!(tokenize("insert into table_1 (col_1, col_2) select col_1, col_2 from table_1;").and_then(|tokens| parse(tokens)))
             .to(
-                be_equal_to(
-                    Insert(
+                be_ok().value(
+                    Statement::Insert(
                         InsertQuery::new(
                             "table_1",
                             vec!["col_1", "col_2"],
@@ -282,21 +280,18 @@ mod parses_insert_statements {
 #[cfg(test)]
 mod parse_select_statements {
 
-    use expectest::prelude::be_equal_to;
+    use expectest::prelude::be_ok;
 
-    use sql::lexer::{Tokenizer, IntoTokenizer};
-    use sql::parser::{QueryParser, IntoQueryParser};
-    use sql::ast::Statement::Select;
-    use sql::ast::SelectQuery;
-    use sql::ast::Condition;
-    use sql::ast::CondArg;
+    use sql::lexer::tokenize;
+    use sql::parser::parse;
+    use sql::ast::{Statement, SelectQuery, Condition, CondArg};
 
     #[test]
     fn without_predicates() {
-        expect!(String::from("select col_1 from table_name_1;").into_tokenizer().tokenize().into_parser().parse())
+        expect!(tokenize("select col_1 from table_name_1;").and_then(|tokens| parse(tokens)))
             .to(
-                be_equal_to(
-                    Select(
+                be_ok().value(
+                    Statement::Select(
                         SelectQuery::new("table_name_1", vec!["col_1"], None)
                     )
                 )
@@ -305,10 +300,10 @@ mod parse_select_statements {
 
     #[test]
     fn with_predicates() {
-        expect!(String::from("select col_2 from table_name_2 where col_2 = 10;").into_tokenizer().tokenize().into_parser().parse())
+        expect!(tokenize("select col_2 from table_name_2 where col_2 = 10;").and_then(|tokens| parse(tokens)))
             .to(
-                be_equal_to(
-                    Select(
+                be_ok().value(
+                    Statement::Select(
                         SelectQuery::new(
                             "table_name_2",
                             vec!["col_2"],
@@ -321,10 +316,10 @@ mod parse_select_statements {
 
     #[test]
     fn with_limit_predicate() {
-        expect!(String::from("select col_2 from table_name_2 where limit = 10;").into_tokenizer().tokenize().into_parser().parse())
+        expect!(tokenize("select col_2 from table_name_2 where limit = 10;").and_then(|tokens| parse(tokens)))
             .to(
-                be_equal_to(
-                    Select(
+                be_ok().value(
+                    Statement::Select(
                         SelectQuery::new(
                             "table_name_2",
                             vec!["col_2"],
@@ -337,10 +332,10 @@ mod parse_select_statements {
 
     #[test]
     fn with_not_equal_predicate() {
-        expect!(String::from("select col_2 from table_1 where col_1 <> \'a\';").into_tokenizer().tokenize().into_parser().parse())
+        expect!(tokenize("select col_2 from table_1 where col_1 <> \'a\';").and_then(|tokens| parse(tokens)))
             .to(
-                be_equal_to(
-                    Select(
+                be_ok().value(
+                    Statement::Select(
                         SelectQuery::new(
                             "table_1",
                             vec!["col_2"],

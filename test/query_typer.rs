@@ -1,12 +1,12 @@
 #[cfg(test)]
 mod insert_query_typer {
-    use expectest::prelude::be_equal_to;
+    use expectest::prelude::be_ok;
 
-    use sql::catalog_manager::LockBasedCatalogManager;
-    use sql::lexer::{Tokenizer, IntoTokenizer};
-    use sql::parser::{QueryParser, IntoQueryParser};
+    use sql::lexer::tokenize;
+    use sql::parser::parse;
+    use sql::query_typer::type_inferring;
     use sql::ast::{Statement, InsertQuery, Value, ValueSource, Type};
-    use sql::query_typer::QueryTyper;
+    use sql::catalog_manager::LockBasedCatalogManager;
 
     #[test]
     fn populates_columns_for_insert_query() {
@@ -17,13 +17,9 @@ mod insert_query_typer {
         catalog_manager.add_column_to("table2", ("col2", Type::Integer, None));
         catalog_manager.add_column_to("table2", ("col3", Type::Integer, None));
 
-        let statement = String::from("insert into table2 values (1, 2, 3);").into_tokenizer().tokenize().into_parser().parse();
-
-        let query_typer = QueryTyper::new(catalog_manager.clone());
-
-        expect!(query_typer.type_inferring(statement))
+        expect!(tokenize("insert into table2 values (1, 2, 3);").and_then(|tokens| parse(tokens)).and_then(|statement| type_inferring(catalog_manager, statement)))
             .to(
-                be_equal_to(
+                be_ok().value(
                     Statement::Insert(
                         InsertQuery::new(
                             "table2",
@@ -43,13 +39,9 @@ mod insert_query_typer {
         catalog_manager.add_column_to("table_1", ("col1", Type::Integer, Some("1")));
         catalog_manager.add_column_to("table_1", ("col2", Type::Integer, None));
 
-        let statement = String::from("insert into table_1 (col2) values (2);").into_tokenizer().tokenize().into_parser().parse();
-
-        let query_typer = QueryTyper::new(catalog_manager.clone());
-
-        expect!(query_typer.type_inferring(statement))
+        expect!(tokenize("insert into table_1 (col2) values (2);").and_then(|tokens| parse(tokens)).and_then(|statement| type_inferring(catalog_manager, statement)))
             .to(
-                be_equal_to(
+                be_ok().value(
                     Statement::Insert(
                         InsertQuery::new(
                             "table_1",
@@ -70,13 +62,9 @@ mod insert_query_typer {
         catalog_manager.add_column_to("table_2", ("col2", Type::Integer, None));
         catalog_manager.add_column_to("table_2", ("col3", Type::VarChar(3), Some("str")));
 
-        let statement = String::from("insert into table_2 (col2) values (2);").into_tokenizer().tokenize().into_parser().parse();
-
-        let query_typer = QueryTyper::new(catalog_manager.clone());
-
-        expect!(query_typer.type_inferring(statement))
+        expect!(tokenize("insert into table_2 (col2) values (2);").and_then(|tokens| parse(tokens)).and_then(|statement| type_inferring(catalog_manager, statement)))
             .to(
-                be_equal_to(
+                be_ok().value(
                     Statement::Insert(
                         InsertQuery::new(
                             "table_2",
