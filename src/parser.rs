@@ -119,7 +119,7 @@ impl<I: Iterator<Item = Token>> CreateTableQueryParser<I> {
                     }
                 }
                 Token::RParent | Token::Comma => {
-                    if !is_primary_key && !column_constraints.contains(&Constraint::Nullable(false)) {
+                    if !is_primary_key && is_foreign_key && !column_constraints.contains(&Constraint::Nullable(false)) {
                         column_constraints.insert(Constraint::Nullable(true));
                     } else {
                         column_constraints.insert(Constraint::Nullable(false));

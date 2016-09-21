@@ -83,7 +83,7 @@ fn validate_create_table_with_foreign_key() {
                             "col3",
                             Type::Integer,
                             vec![
-                                Constraint::Nullable(false),
+                                Constraint::Nullable(true),
                                 Constraint::DefaultValue(None),
                                 Constraint::ForeignKey(String::from("table1"), String::from("col1"))
                             ].into_iter().collect()
