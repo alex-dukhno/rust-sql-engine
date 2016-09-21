@@ -34,11 +34,12 @@ pub enum Token {
     Table,
     Columns,
     Limit,
-    PrimaryKey,
+    Primary,
+    Key,
     Default,
     Not,
     Null,
-    ForeignKey,
+    Foreign,
     References,
 
     Int,
@@ -82,8 +83,9 @@ impl<'s> From<&'s str> for Token {
             "delete" => Token::Delete,
             "create" => Token::Create,
             "table" => Token::Table,
-            "primary key" => Token::PrimaryKey,
-            "foreign key" => Token::ForeignKey,
+            "primary" => Token::Primary,
+            "foreign" => Token::Foreign,
+            "key" => Token::Key,
             "references" => Token::References,
             "default" => Token::Default,
             "not" => Token::Not,
@@ -194,14 +196,6 @@ fn ident_token<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> Token {
             Some(c @ '0'...'9') => {
                 consume(chars.by_ref());
                 token.push(c);
-            },
-            Some(' ') => {
-                if token == "primary" || token == "foreign" {
-                    consume(chars.by_ref());
-                    token.push(' ');
-                } else {
-                    break;
-                }
             },
             _ => break,
         }

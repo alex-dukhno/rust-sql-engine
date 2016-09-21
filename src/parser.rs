@@ -63,11 +63,17 @@ impl<I: Iterator<Item = Token>> CreateTableQueryParser<I> {
         let mut is_foreign_key = false;
         while let Some(token) = self.tokens.next() {
             match token {
-                Token::PrimaryKey => {
+                Token::Primary => {
+                    if Some(Token::Key) != self.tokens.next() {
+                        unimplemented!()
+                    }
                     is_primary_key = true;
                     column_constraints.insert(Constraint::PrimaryKey);
                 },
-                Token::ForeignKey => {
+                Token::Foreign => {
+                    if Some(Token::Key) != self.tokens.next() {
+                        unimplemented!()
+                    }
                     if Some(Token::References) != self.tokens.next() {
                         unimplemented!();
                     }
