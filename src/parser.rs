@@ -1,5 +1,6 @@
 use std::iter;
 use std::collections;
+use std::error::Error;
 
 use super::lexer::{Token, Tokens};
 use super::ast::{Type, CondType, Statement, CreateTableQuery, DeleteQuery, InsertQuery, SelectQuery, Condition, CondArg, Value, ColumnTable, ValueSource, Constraint};
@@ -7,7 +8,7 @@ use super::ast::{Type, CondType, Statement, CreateTableQuery, DeleteQuery, Inser
 pub fn parse(tokens: Tokens) -> Result<Statement, String> {
     let mut iter = tokens.into_iter();
     match iter.next() {
-        Some(Token::Create) => Ok(Statement::Create(parse_create_table(iter.by_ref()))),
+        Some(Token::Create) => Ok(Statement::Create(try!(parse_create_table(iter.by_ref())))),
         Some(Token::Delete) => Ok(Statement::Delete(parse_delete_query(iter.by_ref()))),
         Some(Token::Insert) => Ok(Statement::Insert(parse_insert_query(iter.by_ref()))),
         Some(Token::Select) => Ok(Statement::Select(parse_select_query(iter.by_ref()))),
@@ -15,7 +16,7 @@ pub fn parse(tokens: Tokens) -> Result<Statement, String> {
     }
 }
 
-fn parse_create_table<I: Iterator<Item = Token>>(tokens: &mut I) -> CreateTableQuery {
+fn parse_create_table<I: Iterator<Item = Token>>(tokens: &mut I) -> Result<CreateTableQuery, String> {
     if tokens.next() != Some(Token::Table) {
         unimplemented!();
     }
@@ -31,18 +32,18 @@ fn parse_create_table<I: Iterator<Item = Token>>(tokens: &mut I) -> CreateTableQ
         match token {
             Token::LParent => {},
             Token::Semicolon => break,
-            Token::Ident(name) => columns.push(parse_table_column(tokens.by_ref(), name)),
+            Token::Ident(name) => columns.push(try!(parse_table_column(tokens.by_ref(), name))),
             t => panic!("unexpected token {:?}", t)
         }
     }
 
-    CreateTableQuery::new(table_name, columns)
+    Ok(CreateTableQuery::new(table_name, columns))
 }
 
-fn parse_table_column<I: Iterator<Item = Token>>(tokens: &mut I, column_name: String) -> ColumnTable {
+fn parse_table_column<I: Iterator<Item = Token>>(tokens: &mut I, column_name: String) -> Result<ColumnTable, String> {
     let column_type = match tokens.next() {
         Some(Token::Int) => Type::Integer,
-        Some(Token::Character) => parse_var_char_type(tokens.by_ref()),
+        Some(Token::Character) => try!(parse_var_char_type(tokens.by_ref())),
         _ => unimplemented!(),
     };
     let mut column_constraints = collections::HashSet::new();
@@ -126,33 +127,34 @@ fn parse_table_column<I: Iterator<Item = Token>>(tokens: &mut I, column_name: St
             t => panic!("unexpected token {:?}", t)
         }
     };
-    ColumnTable::new(column_name, column_type, column_constraints)
+    Ok(ColumnTable::new(column_name, column_type, column_constraints))
 }
 
-fn parse_var_char_type<I: Iterator<Item = Token>>(tokens: &mut I) -> Type {
-    if tokens.next() != Some(Token::LParent) {
-        unimplemented!();
+fn parse_var_char_type<I: Iterator<Item = Token>>(tokens: &mut I) -> Result<Type, String> {
+    match tokens.next() {
+        Some(Token::LParent) => {},
+        Some(token) => return Err(format!("expected token <{}> but was found <{}>", Token::LParent, token)),
+        None => unimplemented!()
     }
 
-    let size = parse_size(tokens.by_ref());
+    let size = try!(parse_size(tokens.by_ref()));
 
     if tokens.next() != Some(Token::RParent) {
         unimplemented!();
     }
 
-    Type::VarChar(size)
+    Ok(Type::VarChar(size))
 }
 
-fn parse_size<I: Iterator<Item = Token>>(tokens: &mut I) -> u8 {
+fn parse_size<I: Iterator<Item = Token>>(tokens: &mut I) -> Result<u8, String> {
     match tokens.next() {
         Some(Token::NumConst(num)) => match num.parse::<u8>() {
-            Ok(size) => size,
-            _ => unimplemented!(),
+            Ok(size) => Ok(size),
+            Err(e) => Err(e.description().into())
         },
         _ => unimplemented!(),
     }
 }
-
 
 fn parse_columns<I: Iterator<Item = Token>>(tokens: &mut I) -> Vec<String> {
     let mut columns = vec![];

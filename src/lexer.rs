@@ -141,7 +141,7 @@ pub fn tokenize(src: &str) -> Result<Tokens, String> {
                 tokens.push(string_token(chars.by_ref()));
             },
             Some('a'...'z') | Some('A'...'Z') => { tokens.push(ident_token(chars.by_ref())); },
-            Some('0'...'9') => { tokens.push(numeric_token(chars.by_ref())); },
+            Some('0'...'9') | Some('-') => { tokens.push(numeric_token(chars.by_ref())); },
             Some('<') => {
                 consume(chars.by_ref());
                 match look_ahead(chars.by_ref()) {
@@ -205,9 +205,14 @@ fn ident_token<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> Token {
 
 fn numeric_token<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> Token {
     let mut number = String::default();
-    while let Some(d @ '0'...'9') = look_ahead(chars.by_ref()) {
-        consume(chars.by_ref());
-        number.push(d);
+    while let Some(d) = look_ahead(chars.by_ref()) {
+        match d {
+            '0'...'9' | '-' => {
+                consume(chars.by_ref());
+                number.push(d);
+            },
+            _ => break
+        }
     }
     Token::number(number)
 }

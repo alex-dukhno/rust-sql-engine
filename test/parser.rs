@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod parses_create_table_statement {
-    use expectest::prelude::be_ok;
+    use expectest::prelude::{be_ok, be_err};
 
     use sql::lexer::tokenize;
     use sql::parser::parse;
@@ -149,6 +149,24 @@ mod parses_create_table_statement {
                     )
                 )
             );
+    }
+
+    #[test]
+    fn undefined_character_size() {
+        expect!(tokenize("create table tab1 (col2 char);").and_then(|tokens| parse(tokens)))
+            .to(be_err().value(String::from("expected token <(> but was found <)>")));
+    }
+
+    #[test]
+    fn character_size_more_than_256() {
+        expect!(tokenize("create table tab2 (col1 char(456));").and_then(|tokens| parse(tokens)))
+            .to(be_err().value(String::from("number too large to fit in target type")));
+    }
+
+    #[test]
+    fn character_size_less_than_0() {
+        expect!(tokenize("create table tab3 (col6 char(-1));").and_then(|tokens| parse(tokens)))
+            .to(be_err().value("invalid digit found in string"));
     }
 }
 
