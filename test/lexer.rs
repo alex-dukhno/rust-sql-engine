@@ -140,6 +140,121 @@ mod cmp_tokens {
 }
 
 #[cfg(test)]
+mod sql_comments {
+    use expectest::prelude::be_ok;
+
+    use sql::lexer::{Token, tokenize};
+
+    #[test]
+    fn skip_all_text_after_double_dash() {
+        expect!(tokenize("this text is included--this text is excluded"))
+            .to(
+                be_ok().value(
+                    vec![
+                        Token::ident("this"),
+                        Token::ident("text"),
+                        Token::ident("is"),
+                        Token::ident("included")
+                    ]
+                )
+            );
+    }
+
+    #[test]
+    fn skip_text_till_new_line() {
+        expect!(tokenize("this text is --excluded\nincluded"))
+            .to(
+                be_ok().value(
+                    vec![
+                        Token::ident("this"),
+                        Token::ident("text"),
+                        Token::ident("is"),
+                        Token::ident("included")
+                    ]
+                )
+            );
+    }
+
+    #[test]
+    fn skip_text_till_star_slash() {
+        expect!(tokenize("this text is /*excluded*/included"))
+            .to(
+                be_ok().value(
+                    vec![
+                        Token::ident("this"),
+                        Token::ident("text"),
+                        Token::ident("is"),
+                        Token::ident("included")
+                    ]
+                )
+            );
+    }
+}
+
+#[cfg(test)]
+mod operations {
+    use expectest::prelude::be_ok;
+
+    use sql::lexer::{Token, tokenize};
+
+    #[test]
+    fn addition() {
+        expect!(tokenize("4 + 5"))
+            .to(
+                be_ok().value(
+                    vec![
+                        Token::number("4"),
+                        Token::Plus,
+                        Token::number("5")
+                    ]
+                )
+            );
+    }
+
+    #[test]
+    fn subtraction() {
+        expect!(tokenize("5 - 6"))
+            .to(
+                be_ok().value(
+                    vec![
+                        Token::number("5"),
+                        Token::Minus,
+                        Token::number("6")
+                    ]
+                )
+            );
+    }
+
+    #[test]
+    fn multiplication() {
+        expect!(tokenize("5 * 4"))
+            .to(
+                be_ok().value(
+                    vec![
+                        Token::number("5"),
+                        Token::Asterisk,
+                        Token::number("4")
+                    ]
+                )
+            );
+    }
+
+    #[test]
+    fn division() {
+        expect!(tokenize("78 / 34"))
+            .to(
+                be_ok().value(
+                    vec![
+                        Token::number("78"),
+                        Token::Slash,
+                        Token::number("34")
+                    ]
+                )
+            );
+    }
+}
+
+#[cfg(test)]
 mod sql_query {
     use expectest::prelude::be_ok;
 

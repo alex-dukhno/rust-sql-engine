@@ -21,7 +21,10 @@ pub enum Token {
     Comma,
     SingleQuote,
     Semicolon,
+    Plus,
+    Minus,
     Asterisk,
+    Slash,
 
     Insert,
     Into,
@@ -73,6 +76,8 @@ impl<'s> From<&'s str> for Token {
             "<>" | "!=" => Token::NotEqualSign,
             "<" => Token::Less,
             ">" => Token::Greater,
+            "+" => Token::Plus,
+//            "-" =>
             "insert" => Token::Insert,
             "into" => Token::Into,
             "columns" => Token::Columns,
@@ -107,9 +112,11 @@ impl From<char> for Token {
             '\'' => Token::SingleQuote,
             ';' => Token::Semicolon,
             '=' => Token::EqualSign,
-            '*' => Token::Asterisk,
             '<' => Token::Less,
             '>' => Token::Greater,
+            '*' => Token::Asterisk,
+            '+' => Token::Plus,
+            '/' => Token::Slash,
             _ => unimplemented!(),
         }
     }
@@ -141,7 +148,43 @@ pub fn tokenize(src: &str) -> Result<Tokens, String> {
                 tokens.push(string_token(chars.by_ref()));
             },
             Some('a'...'z') | Some('A'...'Z') => { tokens.push(ident_token(chars.by_ref())); },
-            Some('0'...'9') | Some('-') => { tokens.push(numeric_token(chars.by_ref())); },
+            Some('/') => {
+                consume(chars.by_ref());
+                match look_ahead(chars.by_ref()) {
+                    Some('*') => {
+                        consume(chars.by_ref());
+                        let mut previous = ' ';
+                        while let Some(c) = look_ahead(chars.by_ref()) {
+                            consume(chars.by_ref());
+                            if previous == '*' && c == '/' {
+                                break;
+                            }
+                            else {
+                                previous = c;
+                            }
+                        }
+                    },
+                    Some(_) => tokens.push(Token::Slash),
+                    None => unimplemented!()
+                }
+            }
+            Some('-') => {
+                consume(chars.by_ref());
+                match look_ahead(chars.by_ref()) {
+                    Some('0'...'9') => { tokens.push(numeric_token(chars.by_ref(), Some('-'))); },
+                    Some('-') => {
+                        while let Some(c) = look_ahead(chars.by_ref()) {
+                            match c {
+                                '\n' => break,
+                                _ => consume(chars.by_ref())
+                            }
+                        }
+                    },
+                    Some(_) => tokens.push(Token::Minus),
+                    None => unimplemented!()
+                }
+            }
+            Some('0'...'9') => { tokens.push(numeric_token(chars.by_ref(), None)); },
             Some('<') => {
                 consume(chars.by_ref());
                 match look_ahead(chars.by_ref()) {
@@ -203,11 +246,14 @@ fn ident_token<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> Token {
     Token::from(token.to_lowercase().as_str())
 }
 
-fn numeric_token<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> Token {
+fn numeric_token<I: Iterator<Item = char>>(chars: &mut Peekable<I>, sign: Option<char>) -> Token {
     let mut number = String::default();
+    if let Some(c) = sign {
+        number.push(c);
+    }
     while let Some(d) = look_ahead(chars.by_ref()) {
         match d {
-            '0'...'9' | '-' => {
+            '0'...'9' => {
                 consume(chars.by_ref());
                 number.push(d);
             },
