@@ -6,13 +6,16 @@ use sql::query_executer::{execute, ExecutionResult};
 use sql::catalog_manager::LockBasedCatalogManager;
 use sql::data_manager::LockBaseDataManager;
 
-pub fn evaluate(query: &str, data_manager: LockBaseDataManager, catalog_manager: LockBasedCatalogManager) -> Result<ExecutionResult, String> {
+pub fn evaluate(
+    query: &str,
+    data_manager: LockBaseDataManager,
+    catalog_manager: LockBasedCatalogManager)
+    -> Result<ExecutionResult, String> {
     tokenize(query)
         .and_then(|tokens| parse(tokens))
         .and_then(|statement| type_inferring(catalog_manager.clone(), statement))
         .and_then(|statement| validate(catalog_manager.clone(), statement))
         .and_then(|statement| execute(catalog_manager.clone(), data_manager.clone(), statement))
-
 }
 
 #[cfg(test)]
@@ -45,12 +48,13 @@ mod data_definition_language {
             let catalog_manager = LockBasedCatalogManager::default();
             let data_manager = LockBaseDataManager::default();
 
-            expect!(evaluate("create table table_name (col1 integer, col2 integer, col3 integer);", data_manager, catalog_manager))
-                .to(
-                    be_ok().value(
-                        ExecutionResult::Message("'table_name' was created".to_owned())
-                    )
-                );
+            expect!(
+                evaluate("create table table_name (col1 integer, col2 integer, col3 integer);", data_manager, catalog_manager)
+            ).to(
+                be_ok().value(
+                    ExecutionResult::Message("'table_name' was created".to_owned())
+                )
+            );
         }
     }
 }
@@ -68,7 +72,6 @@ mod data_manipulation_language {
         use super::super::evaluate;
 
         #[test]
-        #[ignore]
         fn row_in_created_table() {
             let catalog_manager = LockBasedCatalogManager::default();
             let data_manager = LockBaseDataManager::default();
@@ -84,12 +87,17 @@ mod data_manipulation_language {
         }
 
         #[test]
-        #[ignore]
         fn row_in_table_with_many_columns() {
             let catalog_manager = LockBasedCatalogManager::default();
             let data_manager = LockBaseDataManager::default();
 
-            drop(evaluate("create table table_name (col1 integer, col2 integer);", data_manager.clone(), catalog_manager.clone()));
+            drop(
+                evaluate(
+                    "create table table_name (col1 integer, col2 integer);",
+                    data_manager.clone(),
+                    catalog_manager.clone()
+                )
+            );
 
             expect!(evaluate("insert into table_name values(1, 2);", data_manager, catalog_manager))
                 .to(
@@ -100,7 +108,6 @@ mod data_manipulation_language {
         }
 
         #[test]
-        #[ignore]
         fn does_not_insert_into_table_that_does_not_exist() {
             let catalog_manager = LockBasedCatalogManager::default();
             let data_manager = LockBaseDataManager::default();
@@ -114,7 +121,6 @@ mod data_manipulation_language {
         }
 
         #[test]
-        #[ignore]
         fn does_not_insert_when_column_type_does_not_match() {
             let catalog_manager = LockBasedCatalogManager::default();
             let data_manager = LockBaseDataManager::default();
@@ -140,12 +146,17 @@ mod data_manipulation_language {
             drop(evaluate("insert into table_name values(3, 4);", data_manager.clone(), catalog_manager.clone()));
             drop(evaluate("insert into table_name values(5, 6);", data_manager.clone(), catalog_manager.clone()));
 
-            expect!(evaluate("insert into table_name (col1, col2) select col1, col2 from table_name;", data_manager, catalog_manager))
-                .to(
-                    be_ok().value(
-                        ExecutionResult::Message("3 rows were inserted".to_owned())
-                    )
-                );
+            expect!(
+                evaluate(
+                    "insert into table_name (col1, col2) select col1, col2 from table_name;",
+                     data_manager,
+                     catalog_manager
+                )
+            ).to(
+                be_ok().value(
+                    ExecutionResult::Message("3 rows were inserted".to_owned())
+                )
+            );
         }
     }
 

@@ -61,7 +61,7 @@ fn column_does_not_match_type() {
 
     catalog_manager.add_table("table");
 
-    catalog_manager.add_column_to("table", ("col", Type::VarChar(10), None));
+    catalog_manager.add_column_to("table", ("col", Type::Character(Option::from(10)), None));
 
     expect!(catalog_manager.match_type("table", 0, Type::Integer))
         .to(be_false());
@@ -79,7 +79,15 @@ fn get_table_columns() {
     catalog_manager.add_column_to("table", ("col_3", Type::Integer, None));
 
     expect!(catalog_manager.get_table_columns("table"))
-        .to(be_equal_to(vec![("col_1".to_owned(), (None, Type::Integer)), ("col_2".to_owned(), (None, Type::Integer)), ("col_3".to_owned(), (None, Type::Integer))]));
+        .to(
+            be_equal_to(
+                vec![
+                    ("col_1".to_owned(), (None, Type::Integer)),
+                    ("col_2".to_owned(), (None, Type::Integer)),
+                    ("col_3".to_owned(), (None, Type::Integer))
+                ]
+            )
+        );
 }
 
 #[test]

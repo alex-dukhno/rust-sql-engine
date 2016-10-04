@@ -1,17 +1,20 @@
-use std::iter;
-use std::collections;
+use std::iter::{self, Peekable};
 use std::error::Error;
 
 use super::lexer::{Token, Tokens};
-use super::ast::{Type, CondType, Statement, CreateTableQuery, DeleteQuery, InsertQuery, SelectQuery, Condition, CondArg, Value, ColumnTable, ValueSource, Constraint};
+use super::ast::{Type, CondType, RawStatement, Condition, CondArg};
+use super::ast::create_table::{CreateTableQuery, ColumnTable};
+use super::ast::delete_query::DeleteQuery;
+use super::ast::insert_query::{Value, ValueSource, InsertQuery};
+use super::ast::select_query::SelectQuery;
 
-pub fn parse(tokens: Tokens) -> Result<Statement, String> {
+pub fn parse(tokens: Tokens) -> Result<RawStatement, String> {
     let mut iter = tokens.into_iter();
     match iter.next() {
-        Some(Token::Create) => Ok(Statement::Create(try!(parse_create_table(iter.by_ref())))),
-        Some(Token::Delete) => Ok(Statement::Delete(parse_delete_query(iter.by_ref()))),
-        Some(Token::Insert) => Ok(Statement::Insert(parse_insert_query(iter.by_ref()))),
-        Some(Token::Select) => Ok(Statement::Select(parse_select_query(iter.by_ref()))),
+        Some(Token::Create) => Ok(RawStatement::Create(try!(parse_create_table(iter.by_ref())))),
+        Some(Token::Delete) => Ok(RawStatement::Delete(parse_delete_query(iter.by_ref()))),
+        Some(Token::Insert) => Ok(RawStatement::Insert(parse_insert_query(iter.by_ref()))),
+        Some(Token::Select) => Ok(RawStatement::Select(parse_select_query(iter.by_ref()))),
         _ => unimplemented!(),
     }
 }
@@ -41,15 +44,20 @@ fn parse_create_table<I: Iterator<Item = Token>>(tokens: &mut I) -> Result<Creat
 }
 
 fn parse_table_column<I: Iterator<Item = Token>>(tokens: &mut I, column_name: String) -> Result<ColumnTable, String> {
+    let mut tokens = tokens.peekable();
     let column_type = match tokens.next() {
         Some(Token::Int) => Type::Integer,
-        Some(Token::Character) => try!(parse_var_char_type(tokens.by_ref())),
+        Some(Token::Character) => {
+            let r = try!(parse_char_type(tokens.by_ref()));
+            println!("type = {:?}", r);
+            r
+        },
         _ => unimplemented!(),
     };
-    let mut column_constraints = collections::HashSet::new();
-    let mut has_default = false;
     let mut is_primary_key = false;
-    let mut is_foreign_key = false;
+    let mut foreign_key = None;
+    let mut is_nullable = true;
+    let mut default_value = None;
     while let Some(token) = tokens.next() {
         match token {
             Token::Primary => {
@@ -57,7 +65,6 @@ fn parse_table_column<I: Iterator<Item = Token>>(tokens: &mut I, column_name: St
                     unimplemented!()
                 }
                 is_primary_key = true;
-                column_constraints.insert(Constraint::PrimaryKey);
             },
             Token::Foreign => {
                 if Some(Token::Key) != tokens.next() {
@@ -73,8 +80,7 @@ fn parse_table_column<I: Iterator<Item = Token>>(tokens: &mut I, column_name: St
                         }
                         match tokens.next() {
                             Some(Token::Ident(col_name)) => {
-                                is_foreign_key = true;
-                                column_constraints.insert(Constraint::ForeignKey(table_name, col_name));
+                                foreign_key = Some((table_name, col_name));
                             }
                             t => panic!("unexpected token {:?}", t)
                         }
@@ -84,66 +90,58 @@ fn parse_table_column<I: Iterator<Item = Token>>(tokens: &mut I, column_name: St
                     }
                     t => panic!("unexpected token {:?}", t)
                 }
-            }
+            },
             Token::Default => {
                 match tokens.next() {
-                    Some(Token::NumConst(const_val))
-                    | Some(Token::CharsConst(const_val)) => {
-                        if !is_primary_key {
-                            has_default = true;
-                            column_constraints.insert(Constraint::DefaultValue(Some(const_val)));
-                        }
-                    },
+                    Some(Token::NumConst(const_val)) |
+                    Some(Token::CharsConst(const_val)) => { default_value = Option::from(const_val) },
                     t => panic!("unexpected token {:?}", t)
                 }
             },
             Token::Not => {
                 match tokens.next() {
                     Some(Token::Null) => {
-                        column_constraints.insert(Constraint::Nullable(false));
+                        is_nullable = false;
                         match column_type {
                             Type::Integer => {
-                                column_constraints.insert(Constraint::DefaultValue(Some("0".to_owned())));
+                                default_value = Option::from(String::from("0"));
                             },
-                            Type::VarChar(len) => {
-                                column_constraints.insert(Constraint::DefaultValue(Some(iter::repeat(" ").take(len as usize).collect::<String>())));
-                            }
+                            Type::Character(Some(len)) => {
+                                default_value = Option::from(iter::repeat(" ").take(len as usize).collect::<String>());
+                            },
+                            Type::Character(None) => {}
                         }
                     },
                     t => panic!("unexpected token {:?}", t)
                 }
-            }
-            Token::RParent | Token::Comma => {
-                if !is_primary_key && is_foreign_key && !column_constraints.contains(&Constraint::Nullable(false)) {
-                    column_constraints.insert(Constraint::Nullable(true));
-                } else {
-                    column_constraints.insert(Constraint::Nullable(false));
-                }
-                if !has_default {
-                    column_constraints.insert(Constraint::DefaultValue(None));
+            },
+            Token::RParent | Token::Comma | Token::Semicolon => {
+                if is_primary_key {
+                    is_nullable = false;
                 }
                 break;
             },
             t => panic!("unexpected token {:?}", t)
         }
     };
-    Ok(ColumnTable::new(column_name, column_type, column_constraints))
+    Ok(ColumnTable::new(column_name, column_type, is_primary_key, foreign_key, is_nullable, default_value))
 }
 
-fn parse_var_char_type<I: Iterator<Item = Token>>(tokens: &mut I) -> Result<Type, String> {
-    match tokens.next() {
-        Some(Token::LParent) => {},
-        Some(token) => return Err(format!("expected token <{}> but was found <{}>", Token::LParent, token)),
-        None => unimplemented!()
+fn parse_char_type<I: Iterator<Item = Token>>(tokens: &mut Peekable<I>) -> Result<Type, String> {
+    match tokens.peek() {
+        Some(&Token::LParent) => {}
+        Some(&Token::RParent) | Some(&Token::Comma) => return Ok(Type::Character(None)),
+        token => panic!("unexpected token {:?}", token)
     }
 
+    tokens.next();
     let size = try!(parse_size(tokens.by_ref()));
 
     if tokens.next() != Some(Token::RParent) {
         unimplemented!();
     }
 
-    Ok(Type::VarChar(size))
+    Ok(Type::Character(Option::from(size)))
 }
 
 fn parse_size<I: Iterator<Item = Token>>(tokens: &mut I) -> Result<u8, String> {
