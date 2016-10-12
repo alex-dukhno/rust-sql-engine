@@ -146,45 +146,66 @@ mod sql_comments {
     use sql::lexer::{Token, tokenize};
 
     #[test]
-    fn skip_all_text_after_double_dash() {
-        expect!(tokenize("this text is included--this text is excluded"))
+    fn skip_double_dashed_line() {
+        expect!(tokenize("text here--but not here"))
+            .to(be_ok().value(vec![Token::ident("text"),  Token::ident("here")]));
+    }
+
+    #[test]
+    fn should_not_skip_one_dashed_line() {
+        expect!(tokenize("text here - and here"))
+            .to(be_ok().value(vec![Token::ident("text"), Token::ident("here"), Token::Minus, Token::ident("and"), Token::ident("here")]));
+    }
+
+    #[test]
+    fn should_skip_till_new_line() {
+        expect!(tokenize("test here -- and not here\nbut here"))
+            .to(be_ok().value(vec![Token::ident("test"), Token::ident("here"), Token::ident("but"), Token::ident("here")]));
+    }
+
+    #[test]
+    fn should_skip_from_slash_star_till_star_slash() {
+        expect!(tokenize("text here /* is commented */ is not commented"))
+            .to(be_ok().value(vec![Token::ident("text"), Token::ident("here"), Token::ident("is"), Token::Not, Token::ident("commented")]));
+    }
+
+    #[test]
+    fn should_not_finish_at_star_slash() {
+        expect!(tokenize("text here--and till the new line*/ should be skipped\n"))
+            .to(be_ok().value(vec![Token::ident("text"), Token::ident("here")]));
+    }
+
+    #[test]
+    fn multiple_one_line_comments() {
+        expect!(tokenize("text--comment 1\n and text--comment 2\n and text--comment 3\n and text"))
             .to(
                 be_ok().value(
                     vec![
-                        Token::ident("this"),
                         Token::ident("text"),
-                        Token::ident("is"),
-                        Token::ident("included")
+                        Token::ident("and"),
+                        Token::ident("text"),
+                        Token::ident("and"),
+                        Token::ident("text"),
+                        Token::ident("and"),
+                        Token::ident("text")
                     ]
                 )
             );
     }
 
     #[test]
-    fn skip_text_till_new_line() {
-        expect!(tokenize("this text is --excluded\nincluded"))
+    fn multiple_multy_line_comments() {
+        expect!(tokenize("text/*comment 1*/ and text/*comment 2*/ and text/*comment 3*/ and text"))
             .to(
                 be_ok().value(
                     vec![
-                        Token::ident("this"),
                         Token::ident("text"),
-                        Token::ident("is"),
-                        Token::ident("included")
-                    ]
-                )
-            );
-    }
-
-    #[test]
-    fn skip_text_till_star_slash() {
-        expect!(tokenize("this text is /*excluded*/included"))
-            .to(
-                be_ok().value(
-                    vec![
-                        Token::ident("this"),
+                        Token::ident("and"),
                         Token::ident("text"),
-                        Token::ident("is"),
-                        Token::ident("included")
+                        Token::ident("and"),
+                        Token::ident("text"),
+                        Token::ident("and"),
+                        Token::ident("text")
                     ]
                 )
             );
