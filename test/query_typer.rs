@@ -15,7 +15,7 @@ mod create_table_query_typer {
 
         expect!(
             tokenize("create table tab1 (col1 char);")
-                .and_then(|tokens| parse(tokens))
+                .and_then(parse)
                 .and_then(|statement| type_inferring(catalog_manager, statement))
         ).to(
             be_ok().value(
@@ -35,7 +35,7 @@ mod create_table_query_typer {
 
         expect!(
             tokenize("create table tab1 (col1 char, col2 char, col3 char);")
-                .and_then(|tokens| parse(tokens))
+                .and_then(parse)
                 .and_then(|statement| type_inferring(catalog_manager, statement))
         ).to(
             be_ok().value(
@@ -76,7 +76,7 @@ mod insert_query_typer {
 
         expect!(
             tokenize("insert into table2 values (1, 2, 3);")
-                .and_then(|tokens| parse(tokens))
+                .and_then(parse)
                 .and_then(|statement| type_inferring(catalog_manager, statement))
         ).to(
             be_ok().value(
@@ -101,7 +101,7 @@ mod insert_query_typer {
 
         expect!(
             tokenize("insert into table_1 (col2) values (2);")
-                .and_then(|tokens| parse(tokens))
+                .and_then(parse)
                 .and_then(|statement| type_inferring(catalog_manager, statement))
         ).to(
             be_ok().value(
@@ -127,7 +127,7 @@ mod insert_query_typer {
 
         expect!(
             tokenize("insert into table_2 (col2) values (2);")
-                .and_then(|tokens| parse(tokens))
+                .and_then(parse)
                 .and_then(|statement| type_inferring(catalog_manager, statement))
         ).to(
             be_ok().value(

@@ -12,7 +12,7 @@ pub fn evaluate(
     catalog_manager: LockBasedCatalogManager)
     -> Result<ExecutionResult, String> {
     tokenize(query)
-        .and_then(|tokens| parse(tokens))
+        .and_then(parse)
         .and_then(|statement| type_inferring(catalog_manager.clone(), statement))
         .and_then(|statement| validate(catalog_manager.clone(), statement))
         .and_then(|statement| execute(catalog_manager.clone(), data_manager.clone(), statement))

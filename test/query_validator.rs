@@ -14,7 +14,7 @@ fn validate_create_table_qury() {
 
     expect!(
         tokenize("create table table1 (col1 integer);")
-            .and_then(|tokens| parse(tokens))
+            .and_then(parse)
             .and_then(|statement| type_inferring(catalog_manager.clone(), statement))
             .and_then(|statement| validate(catalog_manager.clone(), statement))
     ).to(
@@ -36,7 +36,7 @@ fn validate_create_already_existed_table() {
 
     expect!(
         tokenize("create table table1 (col1 integer);")
-            .and_then(|tokens| parse(tokens))
+            .and_then(parse)
             .and_then(|statement| type_inferring(catalog_manager.clone(), statement))
             .and_then(|statement| validate(catalog_manager.clone(), statement))
     ).to(be_err().value(String::from("Table <table1> already exists")));
@@ -48,7 +48,7 @@ fn validate_create_table_with_two_similar_columns() {
 
     expect!(
         tokenize("create table table1(col1 integer, col1 integer);")
-            .and_then(|tokens| parse(tokens))
+            .and_then(parse)
             .and_then(|statement| type_inferring(catalog_manager.clone(), statement))
             .and_then(|statement| validate(catalog_manager.clone(), statement))
     ).to(be_err().value(String::from("Column <col1> is already defined in <table1>")));
@@ -62,7 +62,7 @@ fn validate_create_table_with_foreign_key() {
 
     expect!(
         tokenize("create table table2 (col2 integer primary key, col3 integer foreign key references table1 (col1));")
-            .and_then(|tokens| parse(tokens))
+            .and_then(parse)
             .and_then(|statement| type_inferring(catalog_manager.clone(), statement))
             .and_then(|statement| validate(catalog_manager.clone(), statement))
     ).to(
