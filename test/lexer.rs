@@ -210,6 +210,49 @@ mod sql_comments {
                 )
             );
     }
+
+    #[cfg(test)]
+    mod in_string_leterals {
+        use expectest::prelude::be_ok;
+
+        use sql::lexer::{Token, tokenize};
+
+        #[test]
+        fn skip_double_dashed_line() {
+            expect!(tokenize("'text here--but not here'"))
+                .to(be_ok().value(vec![Token::string("text here--but not here")]));
+        }
+
+        #[test]
+        fn should_skip_till_new_line() {
+            expect!(tokenize("'test here -- and not here\nbut here'"))
+                .to(be_ok().value(vec![Token::string("test here -- and not here\nbut here")]));
+        }
+
+        #[test]
+        fn should_skip_from_slash_star_till_star_slash() {
+            expect!(tokenize("'text here /* is commented */ is not commented'"))
+                .to(be_ok().value(vec![Token::string("text here /* is commented */ is not commented")]));
+        }
+
+        #[test]
+        fn should_not_finish_at_star_slash() {
+            expect!(tokenize("'text here--and till the new line*/ should be skipped\n'"))
+                .to(be_ok().value(vec![Token::string("text here--and till the new line*/ should be skipped\n")]));
+        }
+
+        #[test]
+        fn multiple_one_line_comments() {
+            expect!(tokenize("'text--comment 1\n and text--comment 2\n and text--comment 3\n and text'"))
+                .to(be_ok().value(vec![Token::string("text--comment 1\n and text--comment 2\n and text--comment 3\n and text")]));
+        }
+
+        #[test]
+        fn multiple_multy_line_comments() {
+            expect!(tokenize("'text/*comment 1*/ and text/*comment 2*/ and text/*comment 3*/ and text'"))
+                .to(be_ok().value(vec![Token::string("text/*comment 1*/ and text/*comment 2*/ and text/*comment 3*/ and text")]));
+        }
+    }
 }
 
 #[cfg(test)]

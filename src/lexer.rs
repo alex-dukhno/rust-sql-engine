@@ -134,101 +134,23 @@ impl fmt::Display for Token {
     }
 }
 
-fn skip_comments(src: &str) -> String {
-    let mut with_out_comments = src.chars().collect::<String>();
-    for (start, end) in comment_sections(src) {
-        with_out_comments.drain(start..end);
-    }
-    with_out_comments
-}
-
-fn comment_sections(src: &str) -> Vec<(usize, usize)> {
-    let mut sections = vec![];
-
-    let mut chars = src.chars();
-    let mut counter = 0;
-    let mut previous = ' ';
-    while let Some(current) = chars.next() {
-        match (previous, current) {
-            ('-', '-') => {
-                let (start, end) = end_of_comments(counter, chars.by_ref(), end_of_linear_comment);
-                sections.push((start, end));
-                counter = end;
-                previous = '\n';
-            }
-            ('/', '*') => {
-                let (start, end) = end_of_comments(counter, chars.by_ref(), end_multi_line_comment);
-                sections.push((start, end));
-                counter = end;
-                previous = '/';
-            }
-            _ => {
-                previous = current;
-                counter += 1;
-            }
-        }
-    }
-    sections.reverse();
-    sections
-}
-
-fn end_of_comments<F: Fn(&mut I) -> usize, I: Iterator<Item = char>>(index: usize, char_seq: &mut I, skip_function: F) -> (usize, usize) {
-    (index - 1, skip_function(char_seq.by_ref()) + index + 1)
-}
-
-fn end_of_linear_comment<I: Iterator<Item = char>>(char_seq: &mut I) -> usize {
-    let mut end = 0;
-    while let Some(current) = char_seq.next() {
-        end += 1;
-        if current == '\n' {
-            break;
-        }
-    }
-    end
-}
-
-fn end_multi_line_comment<I: Iterator<Item = char>>(char_seq: &mut I) -> usize {
-    let mut end = 0;
-    let mut previous = ' ';
-    while let Some(current) = char_seq.next() {
-        end += 1;
-        if previous == '*' && current == '/' {
-            break;
-        }
-        previous = current;
-    }
-    end
-}
-
 pub type Tokens = Vec<Token>;
 
 pub fn tokenize(src: &str) -> Result<Tokens, String> {
-    let without_comments = skip_comments(src);
-    let mut chars = without_comments.chars().peekable();
+    let mut chars = src.chars().peekable();
     let mut tokens = vec![];
     loop {
         match look_ahead(chars.by_ref()) {
-            Some(' ') | Some('\n') | Some('\t') => { consume(chars.by_ref()); },
+            Some(' ') | Some('\n') | Some('\t') => consume(chars.by_ref()),
             Some('\'') => {
                 consume(chars.by_ref());
                 tokens.push(string_token(chars.by_ref()));
             },
-            Some('a' ... 'z') | Some('A' ... 'Z') => { tokens.push(ident_token(chars.by_ref())); },
+            Some('a' ... 'z') | Some('A' ... 'Z') => tokens.push(ident_token(chars.by_ref())),
             Some('/') => {
                 consume(chars.by_ref());
                 match look_ahead(chars.by_ref()) {
-                    Some('*') => {
-                        consume(chars.by_ref());
-                        let mut previous = ' ';
-                        while let Some(c) = look_ahead(chars.by_ref()) {
-                            consume(chars.by_ref());
-                            if previous == '*' && c == '/' {
-                                break;
-                            } else {
-                                previous = c;
-                            }
-                        }
-                    },
+                    Some('*') => skip_multi_line_comment(chars.by_ref()),
                     Some(_) => tokens.push(Token::Slash),
                     None => unimplemented!()
                 }
@@ -236,41 +158,34 @@ pub fn tokenize(src: &str) -> Result<Tokens, String> {
             Some('-') => {
                 consume(chars.by_ref());
                 match look_ahead(chars.by_ref()) {
-                    Some('0' ... '9') => { tokens.push(numeric_token(chars.by_ref(), Some('-'))); },
-                    Some('-') => {
-                        while let Some(c) = look_ahead(chars.by_ref()) {
-                            match c {
-                                '\n' => break,
-                                _ => consume(chars.by_ref())
-                            }
-                        }
-                    },
+                    Some('-') => skip_single_line_comment(chars.by_ref()),
+                    Some('0' ... '9') => tokens.push(numeric_token(chars.by_ref(), Some('-'))),
                     Some(_) => tokens.push(Token::Minus),
                     None => unimplemented!()
                 }
             }
-            Some('0' ... '9') => { tokens.push(numeric_token(chars.by_ref(), None)); },
+            Some('0' ... '9') => tokens.push(numeric_token(chars.by_ref(), None)),
             Some('<') => {
                 consume(chars.by_ref());
                 match look_ahead(chars.by_ref()) {
                     Some('>') => {
                         consume(chars.by_ref());
                         tokens.push(Token::NotEqualSign);
-                    },
+                    }
                     Some('=') => {
                         consume(chars.by_ref());
                         tokens.push(Token::LessEqual);
-                    },
+                    }
                     _ => tokens.push(Token::Less),
                 }
-            },
+            }
             Some('>') => {
                 consume(chars.by_ref());
                 match look_ahead(chars.by_ref()) {
                     Some('=') => {
                         consume(chars.by_ref());
                         tokens.push(Token::GreaterEqual);
-                    },
+                    }
                     _ => tokens.push(Token::Greater),
                 }
             }
@@ -280,15 +195,15 @@ pub fn tokenize(src: &str) -> Result<Tokens, String> {
                     Some('=') => {
                         consume(chars.by_ref());
                         tokens.push(Token::NotEqualSign);
-                    },
+                    }
                     _ => unimplemented!(),
                 }
-            },
+            }
             Some(c) => {
                 consume(chars.by_ref());
                 tokens.push(Token::from(c));
-            },
-            None => break,
+            }
+            None => break
         }
     }
     Ok(tokens)
@@ -317,12 +232,11 @@ fn numeric_token<I: Iterator<Item = char>>(chars: &mut Peekable<I>, sign: Option
         number.push(c);
     }
     while let Some(d) = look_ahead(chars.by_ref()) {
-        match d {
-            '0' ... '9' => {
-                consume(chars.by_ref());
-                number.push(d);
-            },
-            _ => break
+        if d.is_digit(10) {
+            consume(chars.by_ref());
+            number.push(d);
+        } else {
+            break;
         }
     }
     Token::number(number)
@@ -358,4 +272,26 @@ fn look_ahead<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> Option<char>
 
 fn consume<I: Iterator<Item = char>>(chars: &mut Peekable<I>) {
     chars.next();
+}
+
+fn skip_multi_line_comment<I: Iterator<Item = char>>(chars: &mut Peekable<I>) {
+    consume(chars.by_ref());
+    let mut previous = ' ';
+    while let Some(c) = look_ahead(chars.by_ref()) {
+        consume(chars.by_ref());
+        if previous == '*' && c == '/' {
+            break;
+        } else {
+            previous = c;
+        }
+    }
+}
+
+fn skip_single_line_comment<I: Iterator<Item = char>>(chars: &mut Peekable<I>) {
+    while let Some(c) = look_ahead(chars.by_ref()) {
+        match c {
+            '\n' => break,
+            _ => consume(chars.by_ref())
+        }
+    }
 }
