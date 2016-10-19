@@ -3,11 +3,16 @@ use std::collections::HashMap;
 
 use super::ast::Type;
 
-type Column = (String, Type, Option<String>);
+#[derive(Clone, Debug, PartialEq)]
+pub struct ColumnMetadata {
+    pub name: String,
+    pub col_type: Type,
+    pub default_val: Option<String>
+}
 
 #[derive(Clone)]
 pub struct LockBasedCatalogManager {
-    tables: Arc<Mutex<HashMap<String, Vec<Column>>>>
+    tables: Arc<Mutex<HashMap<String, Vec<ColumnMetadata>>>>
 }
 
 impl Default for LockBasedCatalogManager {
@@ -35,7 +40,7 @@ impl LockBasedCatalogManager {
     pub fn add_column_to<I: Into<String>>(&self, table_name: &str, column: (I, Type, Option<I>)) {
         let mut guard = self.tables.lock().unwrap();
         if let Some(table) = (*guard).get_mut(table_name) {
-            (*table).push((column.0.into(), column.1, column.2.and_then(|i| Some(i.into()))));
+            (*table).push(ColumnMetadata { name: column.0.into(), col_type: column.1, default_val: column.2.and_then(|i| Some(i.into())) });
         }
         drop(guard);
     }
@@ -43,7 +48,7 @@ impl LockBasedCatalogManager {
     pub fn contains_column_in(&self, table_name: &str, column_name: &str) -> bool {
         let mut guard = self.tables.lock().unwrap();
         if let Some(table) = (*guard).get_mut(table_name) {
-            (*table).iter().any(|&(ref col_name, _, _)| col_name == column_name)
+            (*table).iter().any(|ref c| c.name == column_name)
         } else {
             false
         }
@@ -53,7 +58,7 @@ impl LockBasedCatalogManager {
         let mut guard = self.tables.lock().unwrap();
         if let Some(table) = (*guard).get_mut(table_name) {
             match (*table).get(column_index) {
-                Some(&(_, col_type, _)) => col_type == column_type,
+                Some(ref c) => c.col_type == column_type,
                 None => false
             }
         } else {
@@ -63,15 +68,15 @@ impl LockBasedCatalogManager {
 
     pub fn get_column_index(&self, table_name: &str, column_name: &str) -> Option<usize> {
         let guard = self.tables.lock().unwrap();
-        let r = (*guard).get(table_name).and_then(|v| v.iter().position(|&(ref col_name, _, _)| col_name == column_name));
+        let r = (*guard).get(table_name).and_then(|v| v.iter().position(|ref c| c.name == column_name));
         drop(guard);
         r
     }
 
-    pub fn get_table_columns(&self, table_name: &str) -> Vec<(String, (Option<String>, Type))> {
+    pub fn get_table_columns(&self, table_name: &str) -> Vec<ColumnMetadata> {
         let guard = self.tables.lock().unwrap();
         let r = match (*guard).get(table_name) {
-            Some(table) => table.iter().map(|&(ref col_name, col_type, ref default)| (col_name.clone(), (default.clone(), col_type))).collect::<Vec<(String, (Option<String>, Type))>>(),
+            Some(table) => table.iter().cloned().collect::<Vec<ColumnMetadata>>(),
             None => vec![],
         };
         drop(guard);

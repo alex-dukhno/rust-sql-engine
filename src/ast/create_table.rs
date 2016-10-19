@@ -3,14 +3,14 @@ use super::Type;
 #[derive(Debug, PartialEq, Clone)]
 pub struct CreateTableQuery {
     pub table_name: String,
-    pub columns: Vec<ColumnTable>
+    pub table_columns: Vec<ColumnTable>
 }
 
 impl CreateTableQuery {
     pub fn new<I: Into<String>>(table_name: I, columns: Vec<ColumnTable>) -> CreateTableQuery {
         CreateTableQuery {
             table_name: table_name.into(),
-            columns: columns
+            table_columns: columns
         }
     }
 }

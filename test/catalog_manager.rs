@@ -1,7 +1,7 @@
 use expectest::prelude::{be_true, be_false, be_some, be_equal_to};
 
 use sql::ast::Type;
-use sql::catalog_manager::LockBasedCatalogManager;
+use sql::catalog_manager::{LockBasedCatalogManager, ColumnMetadata};
 
 #[test]
 fn adds_table_to_catalog_manger() {
@@ -67,7 +67,6 @@ fn column_does_not_match_type() {
         .to(be_false());
 }
 
-
 #[test]
 fn get_table_columns() {
     let catalog_manager = LockBasedCatalogManager::default();
@@ -82,9 +81,9 @@ fn get_table_columns() {
         .to(
             be_equal_to(
                 vec![
-                    ("col_1".to_owned(), (None, Type::Integer)),
-                    ("col_2".to_owned(), (None, Type::Integer)),
-                    ("col_3".to_owned(), (None, Type::Integer))
+                    ColumnMetadata { name: "col_1".to_owned(), col_type: Type::Integer, default_val: None },
+                    ColumnMetadata { name: "col_2".to_owned(), col_type: Type::Integer, default_val: None },
+                    ColumnMetadata { name: "col_3".to_owned(), col_type: Type::Integer, default_val: None }
                 ]
             )
         );

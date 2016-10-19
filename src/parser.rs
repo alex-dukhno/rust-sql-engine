@@ -36,7 +36,7 @@ fn parse_create_table<I: Iterator<Item = Token>>(tokens: &mut I) -> Result<Creat
             Token::LParent => {},
             Token::Semicolon => break,
             Token::Ident(name) => columns.push(try!(parse_table_column(tokens.by_ref(), name))),
-            t => panic!("unexpected token {:?}", t)
+            token => panic!("unexpected token {:?}", token)
         }
     }
 
@@ -47,11 +47,7 @@ fn parse_table_column<I: Iterator<Item = Token>>(tokens: &mut I, column_name: St
     let mut tokens = tokens.peekable();
     let column_type = match tokens.next() {
         Some(Token::Int) => Type::Integer,
-        Some(Token::Character) => {
-            let r = try!(parse_char_type(tokens.by_ref()));
-            println!("type = {:?}", r);
-            r
-        },
+        Some(Token::Character) => try!(parse_char_type(tokens.by_ref())),
         _ => unimplemented!(),
     };
     let mut is_primary_key = false;
@@ -82,20 +78,20 @@ fn parse_table_column<I: Iterator<Item = Token>>(tokens: &mut I, column_name: St
                             Some(Token::Ident(col_name)) => {
                                 foreign_key = Some((table_name, col_name));
                             }
-                            t => panic!("unexpected token {:?}", t)
+                            token => panic!("unexpected token {:?}", token)
                         }
                         if Some(Token::RParent) != tokens.next() {
                             unimplemented!();
                         }
                     }
-                    t => panic!("unexpected token {:?}", t)
+                    token => panic!("unexpected token {:?}", token)
                 }
             },
             Token::Default => {
                 match tokens.next() {
                     Some(Token::NumConst(const_val)) |
                     Some(Token::CharsConst(const_val)) => { default_value = Option::from(const_val) },
-                    t => panic!("unexpected token {:?}", t)
+                    token => panic!("unexpected token {:?}", token)
                 }
             },
             Token::Not => {
