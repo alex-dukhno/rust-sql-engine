@@ -9,7 +9,7 @@ addons:
       - binutils-dev
 
 rust:
-  - stable
+  - nightly
 
 before_script:
   - |
@@ -20,7 +20,7 @@ script:
       travis-cargo build &&
       travis-cargo test
 after_success:
-  - travis-cargo coveralls --kcov-options="--coveralls-id=$TRAVIS_JOB_ID" --no-sudo --verify
+  - travis-cargo coveralls --no-sudo --verify
 
 env:
   global:
