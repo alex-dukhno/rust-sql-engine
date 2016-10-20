@@ -2,6 +2,7 @@ use super::catalog_manager::LockBasedCatalogManager;
 use super::ast::{RawStatement, Type, TypedStatement};
 use super::ast::insert_query::{Value, ValueSource, InsertQuery};
 use super::ast::create_table::{CreateTableQuery, ColumnTable};
+use super::ast::select_query::TypedSelectQuery;
 
 pub fn type_inferring(catalog_manager: LockBasedCatalogManager, statement: RawStatement) -> Result<TypedStatement, String> {
     match statement {
@@ -23,8 +24,11 @@ pub fn type_inferring(catalog_manager: LockBasedCatalogManager, statement: RawSt
             };
             let new = InsertQuery::new(query.table_name, query.columns, ValueSource::Row(new_values));
             Ok(TypedStatement::Insert(new))
+        }
+        RawStatement::Select(query) => {
+            let typed = query.columns.into_iter().map(|c| (c, Type::Integer)).collect::<Vec<(String, Type)>>();
+            Ok(TypedStatement::Select(TypedSelectQuery::new(query.table_name, typed, query.condition)))
         },
-        RawStatement::Select(query) => Ok(TypedStatement::Select(query)),
         s => panic!("unimplemented type inferring for {:?}", s)
     }
 }

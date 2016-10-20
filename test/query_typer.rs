@@ -142,3 +142,37 @@ mod insert_query_typer {
         );
     }
 }
+
+#[cfg(test)]
+mod select_query_typer {
+    use expectest::prelude::be_ok;
+
+    use sql::catalog_manager::LockBasedCatalogManager;
+
+    use sql::lexer::tokenize;
+    use sql::parser::parse;
+    use sql::query_typer::type_inferring;
+
+    use sql::ast::{Type, TypedStatement};
+    use sql::ast::select_query::TypedSelectQuery;
+
+    #[test]
+    fn single_column_query() {
+        let catalog_manager = LockBasedCatalogManager::default();
+
+        catalog_manager.add_table("table_1");
+        catalog_manager.add_column_to("table_1", ("col1", Type::Integer, None));
+
+        expect!(
+            tokenize("select col1 from table_1;")
+                .and_then(parse)
+                .and_then(|statement| type_inferring(catalog_manager, statement))
+        ).to(
+            be_ok().value(
+                TypedStatement::Select(
+                    TypedSelectQuery::new("table_1", vec![("col1", Type::Integer)], None)
+                )
+            )
+        );
+    }
+}

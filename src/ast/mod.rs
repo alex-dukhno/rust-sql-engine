@@ -6,7 +6,7 @@ pub mod select_query;
 use self::create_table::CreateTableQuery;
 use self::delete_query::DeleteQuery;
 use self::insert_query::InsertQuery;
-use self::select_query::SelectQuery;
+use self::select_query::{SelectQuery, TypedSelectQuery};
 
 #[derive(Debug, PartialEq)]
 pub enum ValidatedStatement {
@@ -20,7 +20,7 @@ pub enum ValidatedStatement {
 pub enum TypedStatement {
     Create(CreateTableQuery),
     Insert(InsertQuery),
-    Select(SelectQuery),
+    Select(TypedSelectQuery),
     Delelte
 }
 
