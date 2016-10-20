@@ -82,4 +82,20 @@ impl LockBasedCatalogManager {
         drop(guard);
         r
     }
+
+    pub fn get_column_type(&self, table_name: &str, column_name: &str) -> Type {
+        let guard = self.tables.lock().unwrap();
+        match (*guard).get(table_name) {
+            Some(table) => {
+                for c in table {
+                    if c.name == column_name {
+                        return c.col_type
+                    }
+                }
+                panic!("unimplemented if column with <{}> does not exist in <{}> table", column_name, table_name);
+            }
+            None => panic!("unimplemented if table <{}> does not exist", table_name)
+        }
+        drop(guard);
+    }
 }

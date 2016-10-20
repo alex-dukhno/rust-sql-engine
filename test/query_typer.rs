@@ -175,4 +175,34 @@ mod select_query_typer {
             )
         );
     }
+
+    #[test]
+    fn multiple_columns_query() {
+        let catalog_manager = LockBasedCatalogManager::default();
+
+        catalog_manager.add_table("table_3");
+        catalog_manager.add_column_to("table_3", ("col2", Type::Integer, None));
+        catalog_manager.add_column_to("table_3", ("col3", Type::Character(Some(10)), None));
+        catalog_manager.add_column_to("table_3", ("col5", Type::Integer, None));
+
+        expect!(
+            tokenize("select col2, col3, col5 from table_3;")
+                .and_then(parse)
+                .and_then(|statement| type_inferring(catalog_manager, statement))
+        ).to(
+            be_ok().value(
+                TypedStatement::Select(
+                    TypedSelectQuery::new(
+                        "table_3",
+                        vec![
+                            ("col2", Type::Integer),
+                            ("col3", Type::Character(Some(10))),
+                            ("col5", Type::Integer)
+                        ],
+                        None
+                    )
+                )
+            )
+        );
+    }
 }

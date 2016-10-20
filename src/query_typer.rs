@@ -26,8 +26,12 @@ pub fn type_inferring(catalog_manager: LockBasedCatalogManager, statement: RawSt
             Ok(TypedStatement::Insert(new))
         }
         RawStatement::Select(query) => {
-            let typed = query.columns.into_iter().map(|c| (c, Type::Integer)).collect::<Vec<(String, Type)>>();
-            Ok(TypedStatement::Select(TypedSelectQuery::new(query.table_name, typed, query.condition)))
+            let table_name = query.table_name.as_str();
+            let typed = query.columns.into_iter().map(|c| {
+                let t = catalog_manager.get_column_type(table_name, &c);
+                (c, t)
+            }).collect::<Vec<(String, Type)>>();
+            Ok(TypedStatement::Select(TypedSelectQuery::new_with_strings(table_name, typed, query.condition)))
         },
         s => panic!("unimplemented type inferring for {:?}", s)
     }

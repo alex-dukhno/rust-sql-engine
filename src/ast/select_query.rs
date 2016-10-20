@@ -26,9 +26,13 @@ pub struct TypedSelectQuery {
 
 impl TypedSelectQuery {
     pub fn new<I: Into<String>>(table_name: I, columns: Vec<(I, Type)>, condition: Option<Condition>) -> TypedSelectQuery {
+        TypedSelectQuery::new_with_strings(table_name, columns.into_iter().map(|(n, t)| (n.into(), t)).collect::<Vec<(String, Type)>>(), condition)
+    }
+
+    pub fn new_with_strings<I: Into<String>>(table_name: I, columns: Vec<(String, Type)>, condition: Option<Condition>) -> TypedSelectQuery {
         TypedSelectQuery {
             table_name: table_name.into(),
-            columns: columns.into_iter().map(|(n, t)| (n.into(), t)).collect::<Vec<(String, Type)>>(),
+            columns: columns,
             condition: condition
         }
     }
