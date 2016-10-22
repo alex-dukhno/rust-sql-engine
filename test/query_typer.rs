@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod create_table_query_typer {
+mod create_table_query {
     use expectest::prelude::be_ok;
 
     use sql::lexer::tokenize;
@@ -55,7 +55,7 @@ mod create_table_query_typer {
 }
 
 #[cfg(test)]
-mod insert_query_typer {
+mod insert_query {
     use expectest::prelude::be_ok;
 
     use sql::lexer::tokenize;
@@ -144,7 +144,7 @@ mod insert_query_typer {
 }
 
 #[cfg(test)]
-mod select_query_typer {
+mod select_query {
     use expectest::prelude::be_ok;
 
     use sql::catalog_manager::LockBasedCatalogManager;

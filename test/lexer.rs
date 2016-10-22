@@ -1,60 +1,70 @@
-use expectest::prelude::be_ok;
+#[cfg(test)]
+mod should_emit {
+    use expectest::prelude::be_ok;
+    use sql::lexer::{Token, tokenize};
 
-use sql::lexer::{Token, tokenize};
+    #[test]
+    fn none_when_given_an_empty_string() {
+        expect!(tokenize(""))
+            .to(be_ok().value(vec![]));
+    }
 
-#[test]
-fn emits_none_when_given_an_empty_string() {
-    expect!(tokenize(""))
-        .to(be_ok().value(vec![]));
-}
+    #[test]
+    fn identifier_token_when_given_a_single_word_string() {
+        expect!(tokenize("word"))
+            .to(be_ok().value(vec![Token::ident("word")]));
+    }
 
-#[test]
-fn emits_identifier_token_when_given_a_single_word_string() {
-    expect!(tokenize("word"))
-        .to(be_ok().value(vec![Token::ident("word")]));
-}
+    #[test]
+    fn identifiers_when_given_string_of_words() {
+        expect!(tokenize("this is a sentence"))
+            .to(
+                be_ok().value(
+                    vec![
+                        Token::ident("this"),
+                        Token::ident("is"),
+                        Token::ident("a"),
+                        Token::ident("sentence")
+                    ]
+                )
+            );
+    }
 
-#[test]
-fn emits_identifiers_when_given_string_of_words() {
-    expect!(tokenize("this is a sentence"))
-        .to(
-            be_ok().value(
-                vec![
-                    Token::ident("this"),
-                    Token::ident("is"),
-                    Token::ident("a"),
-                    Token::ident("sentence")
-                ]
-            )
-        );
-}
+    #[test]
+    fn number_token_when_given_number() {
+        expect!(tokenize("5"))
+            .to(be_ok().value(vec![Token::number("5")]));
+    }
 
-#[test]
-fn emits_number_token_when_given_number() {
-    expect!(tokenize("5"))
-        .to(be_ok().value(vec![Token::number("5")]));
-}
-
-#[test]
-fn escapes_new_line_chars() {
-    expect!(tokenize("\nword"))
-        .to(be_ok().value(vec![Token::ident("word")]));
-}
-
-#[test]
-fn escapes_tabs() {
-    expect!(tokenize("\tword"))
-        .to(be_ok().value(vec![Token::ident("word")]));
-}
-
-#[test]
-fn case_insensitive() {
-    expect!(tokenize("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
-        .to(be_ok().value(vec![Token::ident("abcdefghijklmnopqrstuvwxyz")]));
+    #[test]
+    fn tokens_case_insensitive() {
+        expect!(tokenize("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+            .to(be_ok().value(vec![Token::ident("abcdefghijklmnopqrstuvwxyz")]));
+    }
 }
 
 #[cfg(test)]
-mod single_quotes {
+mod should_escape {
+    use expectest::prelude::be_ok;
+
+    use sql::lexer::{tokenize, Token};
+
+    #[test]
+    fn escapes_new_line_chars() {
+        expect!(tokenize("\nword"))
+            .to(be_ok().value(vec![Token::ident("word")]));
+    }
+
+    #[test]
+    fn escapes_tabs() {
+        expect!(tokenize("\tword"))
+            .to(be_ok().value(vec![Token::ident("word")]));
+    }
+
+}
+
+#[cfg(test)]
+mod should_resolve_single_quotes {
     use expectest::prelude::be_ok;
 
     use sql::lexer::{Token, tokenize};
@@ -91,7 +101,7 @@ mod single_quotes {
 }
 
 #[cfg(test)]
-mod cmp_tokens {
+mod should_understand_cmp_tokens_such_as {
     use expectest::prelude::be_ok;
 
     use sql::lexer::{Token, tokenize};
@@ -140,39 +150,27 @@ mod cmp_tokens {
 }
 
 #[cfg(test)]
-mod sql_comments {
+mod should_skip {
     use expectest::prelude::be_ok;
 
     use sql::lexer::{Token, tokenize};
 
     #[test]
-    fn skip_double_dashed_line() {
+    fn double_dashe() {
         expect!(tokenize("text here--but not here"))
             .to(be_ok().value(vec![Token::ident("text"),  Token::ident("here")]));
     }
 
     #[test]
-    fn should_not_skip_one_dashed_line() {
-        expect!(tokenize("text here - and here"))
-            .to(be_ok().value(vec![Token::ident("text"), Token::ident("here"), Token::Minus, Token::ident("and"), Token::ident("here")]));
-    }
-
-    #[test]
-    fn should_skip_till_new_line() {
+    fn double_dashe_only_till_new_line() {
         expect!(tokenize("test here -- and not here\nbut here"))
             .to(be_ok().value(vec![Token::ident("test"), Token::ident("here"), Token::ident("but"), Token::ident("here")]));
     }
 
     #[test]
-    fn should_skip_from_slash_star_till_star_slash() {
+    fn from_slash_star_till_star_slash() {
         expect!(tokenize("text here /* is commented */ is not commented"))
             .to(be_ok().value(vec![Token::ident("text"), Token::ident("here"), Token::ident("is"), Token::Not, Token::ident("commented")]));
-    }
-
-    #[test]
-    fn should_not_finish_at_star_slash() {
-        expect!(tokenize("text here--and till the new line*/ should be skipped\n"))
-            .to(be_ok().value(vec![Token::ident("text"), Token::ident("here")]));
     }
 
     #[test]
@@ -210,35 +208,49 @@ mod sql_comments {
                 )
             );
     }
+}
+
+#[cfg(test)]
+mod should_not_skip {
+    use expectest::prelude::be_ok;
+
+    use sql::lexer::{Token, tokenize};
+
+    #[test]
+    fn one_dashe() {
+        expect!(tokenize("text here - and here"))
+            .to(be_ok().value(vec![Token::ident("text"), Token::ident("here"), Token::Minus, Token::ident("and"), Token::ident("here")]));
+    }
+
+
+    #[test]
+    fn till_star_slash() {
+        expect!(tokenize("text here--and till the new line*/ should be skipped\n"))
+            .to(be_ok().value(vec![Token::ident("text"), Token::ident("here")]));
+    }
 
     #[cfg(test)]
-    mod in_string_leterals {
+    mod inside_string_leterals {
         use expectest::prelude::be_ok;
 
         use sql::lexer::{Token, tokenize};
 
         #[test]
-        fn skip_double_dashed_line() {
+        fn double_dashes() {
             expect!(tokenize("'text here--but not here'"))
                 .to(be_ok().value(vec![Token::string("text here--but not here")]));
         }
 
         #[test]
-        fn should_skip_till_new_line() {
+        fn double_dashes_till_new_line() {
             expect!(tokenize("'test here -- and not here\nbut here'"))
                 .to(be_ok().value(vec![Token::string("test here -- and not here\nbut here")]));
         }
 
         #[test]
-        fn should_skip_from_slash_star_till_star_slash() {
+        fn from_slash_star_till_star_slash() {
             expect!(tokenize("'text here /* is commented */ is not commented'"))
                 .to(be_ok().value(vec![Token::string("text here /* is commented */ is not commented")]));
-        }
-
-        #[test]
-        fn should_not_finish_at_star_slash() {
-            expect!(tokenize("'text here--and till the new line*/ should be skipped\n'"))
-                .to(be_ok().value(vec![Token::string("text here--and till the new line*/ should be skipped\n")]));
         }
 
         #[test]
@@ -253,10 +265,11 @@ mod sql_comments {
                 .to(be_ok().value(vec![Token::string("text/*comment 1*/ and text/*comment 2*/ and text/*comment 3*/ and text")]));
         }
     }
+
 }
 
 #[cfg(test)]
-mod operations {
+mod should_understand_operations_such_as {
     use expectest::prelude::be_ok;
 
     use sql::lexer::{Token, tokenize};
