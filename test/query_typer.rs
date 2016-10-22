@@ -141,6 +141,34 @@ mod insert_query {
             )
         );
     }
+
+    #[test]
+    #[ignore]
+    fn populates_types_of_columns_in_select_sub_query() {
+        let catalog_manager = LockBasedCatalogManager::default();
+
+        catalog_manager.add_table("table_1");
+        catalog_manager.add_column_to("table_1", ("col1", Type::Integer, Some("1")));
+        catalog_manager.add_column_to("table_1", ("col2", Type::Integer, Some("2")));
+
+        /*
+        expect!(
+            tokenize("insert into table_1 (col1, col2) select col1, col2 from table_1;")
+                .and_then(parse)
+                .and_then(|statement| type_inferring(catalog_manager, statement))
+        ).to(
+            be_ok().value(
+                TypedStatement::Insert(
+                    InsertQuery::new(
+                        "table_1",
+                        vec!["col1", "col2"],
+                        ValueSource::SubQuery()
+                    )
+                )
+            )
+        );
+        */
+    }
 }
 
 #[cfg(test)]
