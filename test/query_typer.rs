@@ -205,4 +205,33 @@ mod select_query_typer {
             )
         );
     }
+
+    #[test]
+    fn not_all_columns() {
+        let catalog_manager = LockBasedCatalogManager::default();
+
+        catalog_manager.add_table("table_2");
+        catalog_manager.add_column_to("table_2", ("col1", Type::Integer, None));
+        catalog_manager.add_column_to("table_2", ("col2", Type::Integer, None));
+        catalog_manager.add_column_to("table_2", ("col3", Type::Integer, None));
+
+        expect!(
+            tokenize("select col1, col3 from table_2;")
+                .and_then(parse)
+                .and_then(|statement| type_inferring(catalog_manager, statement))
+        ).to(
+            be_ok().value(
+                TypedStatement::Select(
+                    TypedSelectQuery::new(
+                        "table_2",
+                        vec![
+                            ("col1", Type::Integer),
+                            ("col3", Type::Integer)
+                        ],
+                        None
+                    )
+                )
+            )
+        );
+    }
 }
