@@ -231,7 +231,7 @@ fn parse_delete_query<I: Iterator<Item = Token>>(tokens: &mut I) -> DeleteQuery 
     DeleteQuery::new(table_name, parse_where(tokens.by_ref()))
 }
 
-fn parse_select_query<I: Iterator<Item = Token>>(tokens: &mut I) -> SelectQuery {
+fn parse_select_query<I: Iterator<Item = Token>>(tokens: &mut I) -> SelectQuery<String> {
     let columns = parse_columns_list(tokens.by_ref());
 
     let table_name = match tokens.next() {
@@ -239,7 +239,7 @@ fn parse_select_query<I: Iterator<Item = Token>>(tokens: &mut I) -> SelectQuery 
         _ => unimplemented!()
     };
 
-    SelectQuery::new(table_name, columns, parse_where(tokens.by_ref()))
+    SelectQuery::new_raw(table_name, columns, parse_where(tokens.by_ref()))
 }
 
 fn parse_columns_list<I: Iterator<Item = Token>>(tokens: &mut I) -> Vec<String> {

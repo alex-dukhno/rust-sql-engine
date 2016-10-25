@@ -6,13 +6,13 @@ pub mod select_query;
 use self::create_table::CreateTableQuery;
 use self::delete_query::DeleteQuery;
 use self::insert_query::InsertQuery;
-use self::select_query::{SelectQuery, TypedSelectQuery};
+use self::select_query::SelectQuery;
 
 #[derive(Debug, PartialEq)]
 pub enum ValidatedStatement {
     Create(CreateTableQuery),
     Insert(InsertQuery<(String, Type)>),
-    Select(SelectQuery),
+    Select(SelectQuery<(String, Type)>),
     Delete
 }
 
@@ -20,7 +20,7 @@ pub enum ValidatedStatement {
 pub enum TypedStatement {
     Create(CreateTableQuery),
     Insert(InsertQuery<(String, Type)>),
-    Select(TypedSelectQuery),
+    Select(SelectQuery<(String, Type)>),
     Delelte
 }
 
@@ -29,7 +29,7 @@ pub enum RawStatement {
     Create(CreateTableQuery),
     Delete(DeleteQuery),
     Insert(InsertQuery<String>),
-    Select(SelectQuery)
+    Select(SelectQuery<String>)
 }
 
 #[derive(Debug, PartialEq, Clone, Copy, Hash, Eq)]

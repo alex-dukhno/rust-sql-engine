@@ -1,36 +1,23 @@
 use super::{Condition, Type};
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct SelectQuery {
+pub struct SelectQuery<T> {
     pub table_name: String,
-    pub columns: Vec<String>,
+    pub columns: Vec<T>,
     pub condition: Option<Condition>
 }
 
-impl SelectQuery {
-    pub fn new<I: Into<String>>(table_name: I, columns: Vec<I>, condition: Option<Condition>) -> SelectQuery {
+impl SelectQuery<String> {
+    pub fn new_raw<I: Into<String>>(table_name: I, columns: Vec<String>, condition: Option<Condition>) -> SelectQuery<String> {
         SelectQuery {
             table_name: table_name.into(),
-            columns: columns.into_iter().map(|c| c.into()).collect::<Vec<String>>(),
+            columns: columns,
             condition: condition
         }
     }
-}
 
-#[derive(Debug, PartialEq)]
-pub struct TypedSelectQuery {
-    table_name: String,
-    columns: Vec<(String, Type)>,
-    condition: Option<Condition>
-}
-
-impl TypedSelectQuery {
-    pub fn new<I: Into<String>>(table_name: I, columns: Vec<(I, Type)>, condition: Option<Condition>) -> TypedSelectQuery {
-        TypedSelectQuery::new_with_strings(table_name, columns.into_iter().map(|(n, t)| (n.into(), t)).collect::<Vec<(String, Type)>>(), condition)
-    }
-
-    pub fn new_with_strings<I: Into<String>>(table_name: I, columns: Vec<(String, Type)>, condition: Option<Condition>) -> TypedSelectQuery {
-        TypedSelectQuery {
+    pub fn new_typed<I: Into<String>>(table_name: I, columns: Vec<(String, Type)>, condition: Option<Condition>) -> SelectQuery<(String, Type)> {
+        SelectQuery {
             table_name: table_name.into(),
             columns: columns,
             condition: condition

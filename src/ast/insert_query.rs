@@ -8,17 +8,17 @@ use super::Type;
 pub struct InsertQuery<T: Eq + Hash> {
     pub table_name: String,
     pub columns: HashSet<T>,
-    pub values: ValueSource
+    pub values: ValueSource<T>
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum ValueSource {
+pub enum ValueSource<T> {
     Row(Vec<Value>),
-    SubQuery(SelectQuery)
+    SubQuery(SelectQuery<T>)
 }
 
 impl InsertQuery<String> {
-    pub fn new_raw<I: Into<String>>(table_name: I, columns: HashSet<String>, values: ValueSource) -> InsertQuery<String> {
+    pub fn new_raw<I: Into<String>>(table_name: I, columns: HashSet<String>, values: ValueSource<String>) -> InsertQuery<String> {
         InsertQuery {
             table_name: table_name.into(),
             columns: columns,
@@ -28,7 +28,7 @@ impl InsertQuery<String> {
 }
 
 impl InsertQuery<(String, Type)> {
-    pub fn new_typed<I: Into<String>>(table_name: I, columns: HashSet<(String, Type)>, values: ValueSource) -> InsertQuery<(String, Type)> {
+    pub fn new_typed<I: Into<String>>(table_name: I, columns: HashSet<(String, Type)>, values: ValueSource<(String, Type)>) -> InsertQuery<(String, Type)> {
         InsertQuery {
             table_name: table_name.into(),
             columns: columns,

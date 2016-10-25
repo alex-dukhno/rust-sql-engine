@@ -4,7 +4,7 @@ use super::catalog_manager::LockBasedCatalogManager;
 use super::ast::{RawStatement, Type, TypedStatement};
 use super::ast::insert_query::{Value, ValueSource, InsertQuery};
 use super::ast::create_table::{CreateTableQuery, ColumnTable};
-use super::ast::select_query::TypedSelectQuery;
+use super::ast::select_query::SelectQuery;
 
 pub fn type_inferring(catalog_manager: LockBasedCatalogManager, statement: RawStatement) -> Result<TypedStatement, String> {
     match statement {
@@ -32,7 +32,7 @@ pub fn type_inferring(catalog_manager: LockBasedCatalogManager, statement: RawSt
                 let t = catalog_manager.get_column_type(table_name, &c);
                 (c, t)
             }).collect::<Vec<(String, Type)>>();
-            Ok(TypedStatement::Select(TypedSelectQuery::new_with_strings(table_name, typed, query.condition)))
+            Ok(TypedStatement::Select(SelectQuery::new_typed(table_name, typed, query.condition)))
         }
         s => panic!("unimplemented type inferring for {:?}", s)
     }

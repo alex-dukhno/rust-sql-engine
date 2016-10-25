@@ -305,7 +305,7 @@ mod should_parse {
                             InsertQuery::new_raw(
                                 "table_1",
                                 vec![String::from("col_1"), String::from("col_2")].into_iter().collect(),
-                                ValueSource::SubQuery(SelectQuery::new("table_1", vec!["col_1", "col_2"], None))
+                                ValueSource::SubQuery(SelectQuery::new_raw("table_1", vec![String::from("col_1"), String::from("col_2")], None))
                             )
                         )
                     )
@@ -328,7 +328,7 @@ mod should_parse {
                 .to(
                     be_ok().value(
                         RawStatement::Select(
-                            SelectQuery::new("table_name_1", vec!["col_1"], None)
+                            SelectQuery::new_raw("table_name_1", vec![String::from("col_1")], None)
                         )
                     )
                 );
@@ -340,9 +340,9 @@ mod should_parse {
                 .to(
                     be_ok().value(
                         RawStatement::Select(
-                            SelectQuery::new(
+                            SelectQuery::new_raw(
                                 "table_name_2",
-                                vec!["col_2"],
+                                vec![String::from("col_2")],
                                 Some(Condition::equals(CondArg::column("col_2"), CondArg::num("10")))
                             )
                         )
@@ -356,9 +356,9 @@ mod should_parse {
                 .to(
                     be_ok().value(
                         RawStatement::Select(
-                            SelectQuery::new(
+                            SelectQuery::new_raw(
                                 "table_name_2",
-                                vec!["col_2"],
+                                vec![String::from("col_2")],
                                 Some(Condition::equals(CondArg::Limit, CondArg::num("10")))
                             )
                         )
@@ -372,9 +372,9 @@ mod should_parse {
                 .to(
                     be_ok().value(
                         RawStatement::Select(
-                            SelectQuery::new(
+                            SelectQuery::new_raw(
                                 "table_1",
-                                vec!["col_2"],
+                                vec![String::from("col_2")],
                                 Some(Condition::not_equals(CondArg::column("col_1"), CondArg::str("a")))
                             )
                         )

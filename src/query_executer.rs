@@ -68,7 +68,7 @@ fn insert_into(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseD
     }
 }
 
-fn select_data(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseDataManager, query: SelectQuery) -> Result<ExecutionResult, String> {
+fn select_data(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseDataManager, query: SelectQuery<(String, Type)>) -> Result<ExecutionResult, String> {
     let SelectQuery { table_name, columns, condition } = query;
     match condition {
         Some(Condition { left, right, cond_type }) => {
@@ -91,7 +91,7 @@ fn select_data(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseD
             }
         }
         None => {
-            if let Some(index) = catalog_manager.get_column_index(table_name.as_str(), &columns[0]) {
+            if let Some(index) = catalog_manager.get_column_index(table_name.as_str(), &columns[0].0) {
                 Ok(ExecutionResult::Data(data_manager.get_range_till_end_for_column(table_name.as_str(), index)))
             } else {
                 Ok(ExecutionResult::Data(data_manager.get_range_till_end(table_name.as_str(), 0)))

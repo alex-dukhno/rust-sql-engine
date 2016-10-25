@@ -182,7 +182,7 @@ mod select_query {
     use sql::query_typer::type_inferring;
 
     use sql::ast::{Type, TypedStatement};
-    use sql::ast::select_query::TypedSelectQuery;
+    use sql::ast::select_query::SelectQuery;
 
     #[test]
     fn single_column_query() {
@@ -198,7 +198,7 @@ mod select_query {
         ).to(
             be_ok().value(
                 TypedStatement::Select(
-                    TypedSelectQuery::new("table_1", vec![("col1", Type::Integer)], None)
+                    SelectQuery::new_typed("table_1", vec![(String::from("col1"), Type::Integer)], None)
                 )
             )
         );
@@ -220,12 +220,12 @@ mod select_query {
         ).to(
             be_ok().value(
                 TypedStatement::Select(
-                    TypedSelectQuery::new(
+                    SelectQuery::new_typed(
                         "table_3",
                         vec![
-                            ("col2", Type::Integer),
-                            ("col3", Type::Character(Some(10))),
-                            ("col5", Type::Integer)
+                            (String::from("col2"), Type::Integer),
+                            (String::from("col3"), Type::Character(Some(10))),
+                            (String::from("col5"), Type::Integer)
                         ],
                         None
                     )
@@ -250,11 +250,11 @@ mod select_query {
         ).to(
             be_ok().value(
                 TypedStatement::Select(
-                    TypedSelectQuery::new(
+                    SelectQuery::new_typed(
                         "table_2",
                         vec![
-                            ("col1", Type::Integer),
-                            ("col3", Type::Integer)
+                            (String::from("col1"), Type::Integer),
+                            (String::from("col3"), Type::Integer)
                         ],
                         None
                     )
