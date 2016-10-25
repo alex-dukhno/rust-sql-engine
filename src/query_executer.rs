@@ -24,14 +24,12 @@ fn create_table(catalog_manager: LockBasedCatalogManager, create_query: CreateTa
     let CreateTableQuery { table_name, table_columns } = create_query;
     catalog_manager.add_table(table_name.as_str());
     for column in table_columns.into_iter() {
-//        let ColumnTable { column_name, column_type, is_primary_key, foreign_key, nullable, default_value  } = column;
         catalog_manager.add_column_to(table_name.as_str(), (column.column_name, column.column_type, None))
     }
     Ok(ExecutionResult::Message(format!("'{}' was created", table_name.as_str())))
 }
 
-fn insert_into(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseDataManager, insert: InsertQuery) -> Result<ExecutionResult, String> {
-//    let InsertQuery { table_name, columns, values } = insert;
+fn insert_into(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseDataManager, insert: InsertQuery<(String, Type)>) -> Result<ExecutionResult, String> {
     if catalog_manager.contains_table(insert.table_name.as_str()) {
         match insert.values {
             ValueSource::Row(row) => {

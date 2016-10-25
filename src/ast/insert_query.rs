@@ -1,9 +1,13 @@
+use std::collections::HashSet;
+use std::hash::Hash;
+
 use super::select_query::SelectQuery;
+use super::Type;
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct InsertQuery {
+pub struct InsertQuery<T: Eq + Hash> {
     pub table_name: String,
-    pub columns: Vec<String>,
+    pub columns: HashSet<T>,
     pub values: ValueSource
 }
 
@@ -13,11 +17,21 @@ pub enum ValueSource {
     SubQuery(SelectQuery)
 }
 
-impl InsertQuery {
-    pub fn new<I: Into<String>>(table_name: I, columns: Vec<I>, values: ValueSource) -> InsertQuery {
+impl InsertQuery<String> {
+    pub fn new_raw<I: Into<String>>(table_name: I, columns: HashSet<String>, values: ValueSource) -> InsertQuery<String> {
         InsertQuery {
             table_name: table_name.into(),
-            columns: columns.into_iter().map(|c| c.into()).collect::<Vec<String>>(),
+            columns: columns,
+            values: values
+        }
+    }
+}
+
+impl InsertQuery<(String, Type)> {
+    pub fn new_typed<I: Into<String>>(table_name: I, columns: HashSet<(String, Type)>, values: ValueSource) -> InsertQuery<(String, Type)> {
+        InsertQuery {
+            table_name: table_name.into(),
+            columns: columns,
             values: values
         }
     }

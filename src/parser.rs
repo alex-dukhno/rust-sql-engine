@@ -180,7 +180,7 @@ fn parse_values<I: Iterator<Item = Token>>(tokens: &mut I) -> Vec<Value> {
     values
 }
 
-fn parse_insert_query<I: Iterator<Item = Token>>(tokens: &mut I) -> InsertQuery {
+fn parse_insert_query<I: Iterator<Item = Token>>(tokens: &mut I) -> InsertQuery<String> {
     if tokens.next() != Some(Token::Into) {
         unimplemented!();
     }
@@ -208,9 +208,9 @@ fn parse_insert_query<I: Iterator<Item = Token>>(tokens: &mut I) -> InsertQuery 
     }
 
     if sub_query {
-        InsertQuery::new(table_name, columns, ValueSource::SubQuery(parse_select_query(tokens.by_ref())))
+        InsertQuery::new_raw(table_name, columns.into_iter().collect(), ValueSource::SubQuery(parse_select_query(tokens.by_ref())))
     } else {
-        let query = InsertQuery::new(table_name, columns, ValueSource::Row(parse_values(tokens.by_ref())));
+        let query = InsertQuery::new_raw(table_name, columns.into_iter().collect(), ValueSource::Row(parse_values(tokens.by_ref())));
         if tokens.next() != Some(Token::Semicolon) {
             unimplemented!();
         }

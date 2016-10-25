@@ -11,7 +11,7 @@ use self::select_query::{SelectQuery, TypedSelectQuery};
 #[derive(Debug, PartialEq)]
 pub enum ValidatedStatement {
     Create(CreateTableQuery),
-    Insert(InsertQuery),
+    Insert(InsertQuery<(String, Type)>),
     Select(SelectQuery),
     Delete
 }
@@ -19,7 +19,7 @@ pub enum ValidatedStatement {
 #[derive(Debug, PartialEq)]
 pub enum TypedStatement {
     Create(CreateTableQuery),
-    Insert(InsertQuery),
+    Insert(InsertQuery<(String, Type)>),
     Select(TypedSelectQuery),
     Delelte
 }
@@ -28,11 +28,11 @@ pub enum TypedStatement {
 pub enum RawStatement {
     Create(CreateTableQuery),
     Delete(DeleteQuery),
-    Insert(InsertQuery),
+    Insert(InsertQuery<String>),
     Select(SelectQuery)
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Hash, Eq)]
 pub enum Type {
     Integer,
     Character(Option<u8>),

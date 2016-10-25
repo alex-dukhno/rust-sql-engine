@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use super::catalog_manager::LockBasedCatalogManager;
 use super::ast::{RawStatement, Type, TypedStatement};
 use super::ast::insert_query::{Value, ValueSource, InsertQuery};
@@ -10,11 +12,10 @@ pub fn type_inferring(catalog_manager: LockBasedCatalogManager, statement: RawSt
             let CreateTableQuery { table_name, table_columns } = create_table_query;
             let columns = infer_table_columns_type(table_columns);
             Ok(TypedStatement::Create(CreateTableQuery::new(table_name.as_str(), columns)))
-        },
-        RawStatement::Insert(mut query) => {
-            let mut column_names = resolve_missed_column_names(&query, &catalog_manager);
+        }
+        RawStatement::Insert(query) => {
+            let columns = resolve_columns(&query, &catalog_manager);
             let mut value_types = resolve_missed_column_value_types(&query, &catalog_manager);
-            query.columns.append(&mut column_names);
             let new_values = match query.values {
                 ValueSource::Row(mut query_values) => {
                     query_values.append(&mut value_types);
@@ -22,7 +23,7 @@ pub fn type_inferring(catalog_manager: LockBasedCatalogManager, statement: RawSt
                 }
                 vs => panic!("unimplemented raw -> typed transformation for insert query with {:?} value source", vs)
             };
-            let new = InsertQuery::new(query.table_name, query.columns, ValueSource::Row(new_values));
+            let new = InsertQuery::new_typed(query.table_name, columns, ValueSource::Row(new_values));
             Ok(TypedStatement::Insert(new))
         }
         RawStatement::Select(query) => {
@@ -32,7 +33,7 @@ pub fn type_inferring(catalog_manager: LockBasedCatalogManager, statement: RawSt
                 (c, t)
             }).collect::<Vec<(String, Type)>>();
             Ok(TypedStatement::Select(TypedSelectQuery::new_with_strings(table_name, typed, query.condition)))
-        },
+        }
         s => panic!("unimplemented type inferring for {:?}", s)
     }
 }
@@ -49,14 +50,14 @@ fn infer_table_columns_type(table_columns: Vec<ColumnTable>) -> Vec<ColumnTable>
     ).collect::<Vec<ColumnTable>>()
 }
 
-fn resolve_missed_column_names(query: &InsertQuery, catalog_manager: &LockBasedCatalogManager) -> Vec<String> {
+fn resolve_columns(query: &InsertQuery<String>, catalog_manager: &LockBasedCatalogManager) -> HashSet<(String, Type)> {
     catalog_manager.get_table_columns(query.table_name.as_str())
         .into_iter()
-        .filter(|c| !query.columns.contains(&c.name))
-        .map(|c| c.name).collect::<Vec<String>>()
+        .map(|c| (c.name, c.col_type))
+        .collect::<HashSet<(String, Type)>>()
 }
 
-fn resolve_missed_column_value_types(query: &InsertQuery, catalog_manager: &LockBasedCatalogManager) -> Vec<Value> {
+fn resolve_missed_column_value_types(query: &InsertQuery<String>, catalog_manager: &LockBasedCatalogManager) -> Vec<Value> {
     catalog_manager.get_table_columns(query.table_name.as_str())
         .into_iter()
         .filter(|c| !query.columns.contains(&c.name) && c.default_val.is_some())

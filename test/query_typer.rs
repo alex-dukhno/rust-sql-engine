@@ -81,9 +81,9 @@ mod insert_query {
         ).to(
             be_ok().value(
                 TypedStatement::Insert(
-                    InsertQuery::new(
+                    InsertQuery::new_typed(
                         "table2",
-                        vec!["col1", "col2", "col3"],
+                        vec![(String::from("col1"), Type::Integer), (String::from("col2"), Type::Integer), (String::from("col3"), Type::Integer)].into_iter().collect(),
                         ValueSource::Row(vec![Value::num("1"), Value::num("2"), Value::num("3")])
                     )
                 )
@@ -106,9 +106,9 @@ mod insert_query {
         ).to(
             be_ok().value(
                 TypedStatement::Insert(
-                    InsertQuery::new(
+                    InsertQuery::new_typed(
                         "table_1",
-                        vec!["col2", "col1"],
+                        vec![(String::from("col2"), Type::Integer), (String::from("col1"), Type::Integer)].into_iter().collect(),
                         ValueSource::Row(vec![Value::num("2"), Value::num("1")])
                     )
                 )
@@ -132,9 +132,9 @@ mod insert_query {
         ).to(
             be_ok().value(
                 TypedStatement::Insert(
-                    InsertQuery::new(
+                    InsertQuery::new_typed(
                         "table_2",
-                        vec!["col2", "col1", "col3"],
+                        vec![(String::from("col2"), Type::Integer), (String::from("col1"), Type::Integer), (String::from("col3"), Type::Character(Option::from(3)))].into_iter().collect(),
                         ValueSource::Row(vec![Value::num("2"), Value::num("1"), Value::str("str")])
                     )
                 )

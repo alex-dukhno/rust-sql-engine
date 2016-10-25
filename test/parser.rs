@@ -254,7 +254,11 @@ mod should_parse {
                 .to(
                     be_ok().value(
                         RawStatement::Insert(
-                            InsertQuery::new("table_name_1", vec![], ValueSource::Row(vec![Value::num("10")]))
+                            InsertQuery::new_raw(
+                                "table_name_1",
+                                vec![].into_iter().collect(),
+                                ValueSource::Row(vec![Value::num("10")])
+                            )
                         )
                     )
                 );
@@ -266,9 +270,9 @@ mod should_parse {
                 .to(
                     be_ok().value(
                         RawStatement::Insert(
-                            InsertQuery::new(
+                            InsertQuery::new_raw(
                                 "table_name_2",
-                                vec![],
+                                vec![].into_iter().collect(),
                                 ValueSource::Row(vec![Value::num("10"), Value::str("string")])
                             )
                         )
@@ -282,9 +286,9 @@ mod should_parse {
                 .to(
                     be_ok().value(
                         RawStatement::Insert(
-                            InsertQuery::new(
+                            InsertQuery::new_raw(
                                 "table_name_3",
-                                vec!["col_1", "col_2"],
+                                vec![String::from("col_1"), String::from("col_2")].into_iter().collect(),
                                 ValueSource::Row(vec![Value::num("10"), Value::str("string")])
                             )
                         )
@@ -298,9 +302,9 @@ mod should_parse {
                 .to(
                     be_ok().value(
                         RawStatement::Insert(
-                            InsertQuery::new(
+                            InsertQuery::new_raw(
                                 "table_1",
-                                vec!["col_1", "col_2"],
+                                vec![String::from("col_1"), String::from("col_2")].into_iter().collect(),
                                 ValueSource::SubQuery(SelectQuery::new("table_1", vec!["col_1", "col_2"], None))
                             )
                         )
