@@ -18,9 +18,8 @@ pub fn validate(catalog_manager: LockBasedCatalogManager, statement: TypedStatem
             }
             Ok(ValidatedStatement::Create(ret))
         },
-        TypedStatement::Insert(query) => {
-            Ok(ValidatedStatement::Insert(query))
-        },
+        TypedStatement::Insert(query) => Ok(ValidatedStatement::Insert(query)),
+        TypedStatement::Select(query) => Ok(ValidatedStatement::Select(query)),
         s => panic!("validation procedure for the {:?} statement has not been implemented yet", s)
     }
 }

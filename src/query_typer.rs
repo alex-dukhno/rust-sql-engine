@@ -19,20 +19,16 @@ pub fn type_inferring(catalog_manager: LockBasedCatalogManager, statement: RawSt
             let new_values = match query.values {
                 ValueSource::Row(mut query_values) => {
                     query_values.append(&mut value_types);
-                    query_values
+                    ValueSource::Row(query_values)
                 }
-                vs => panic!("unimplemented raw -> typed transformation for insert query with {:?} value source", vs)
+                ValueSource::SubQuery(query) => {
+                    ValueSource::SubQuery(typed_from_raw(query, &catalog_manager))
+                }
             };
-            let new = InsertQuery::new_typed(query.table_name, columns, ValueSource::Row(new_values));
-            Ok(TypedStatement::Insert(new))
+            Ok(TypedStatement::Insert(InsertQuery::new_typed(query.table_name, columns, new_values)))
         }
         RawStatement::Select(query) => {
-            let table_name = query.table_name.as_str();
-            let typed = query.columns.into_iter().map(|c| {
-                let t = catalog_manager.get_column_type(table_name, &c);
-                (c, t)
-            }).collect::<Vec<(String, Type)>>();
-            Ok(TypedStatement::Select(SelectQuery::new_typed(table_name, typed, query.condition)))
+            Ok(TypedStatement::Select(typed_from_raw(query, &catalog_manager)))
         }
         s => panic!("unimplemented type inferring for {:?}", s)
     }
@@ -65,4 +61,13 @@ fn resolve_missed_column_value_types(query: &InsertQuery<String>, catalog_manage
             Type::Integer => Value::NumConst(c.default_val.unwrap()),
             Type::Character(_) => Value::StrConst(c.default_val.unwrap()),
         }).collect::<Vec<Value>>()
+}
+
+fn typed_from_raw(query: SelectQuery<String>, catalog_manager: &LockBasedCatalogManager) -> SelectQuery<(String, Type)> {
+    let table_name = query.table_name.as_str();
+    let typed = query.columns.into_iter().map(|c| {
+        let t = catalog_manager.get_column_type(table_name, &c);
+        (c, t)
+    }).collect::<Vec<(String, Type)>>();
+    SelectQuery::new_typed(table_name, typed, query.condition)
 }

@@ -136,7 +136,6 @@ mod data_manipulation_language {
         }
 
         #[test]
-        #[ignore]
         fn into_table_with_select() {
             let catalog_manager = LockBasedCatalogManager::default();
             let data_manager = LockBaseDataManager::default();
@@ -149,12 +148,28 @@ mod data_manipulation_language {
             expect!(
                 evaluate(
                     "insert into table_name (col1, col2) select col1, col2 from table_name;",
-                     data_manager,
-                     catalog_manager
+                     data_manager.clone(),
+                     catalog_manager.clone()
                 )
             ).to(
                 be_ok().value(
                     ExecutionResult::Message("3 rows were inserted".to_owned())
+                )
+            );
+            expect!(
+                evaluate("select col1 from table_name;", data_manager.clone(), catalog_manager.clone())
+            ).to(
+                be_ok().value(
+                    ExecutionResult::Data(
+                        vec![
+                            vec![String::from("1")],
+                            vec![String::from("3")],
+                            vec![String::from("5")],
+                            vec![String::from("1")],
+                            vec![String::from("3")],
+                            vec![String::from("5")]
+                        ]
+                    )
                 )
             );
         }
@@ -171,7 +186,6 @@ mod data_manipulation_language {
         use super::super::evaluate;
 
         #[test]
-        #[ignore]
         fn from_table() {
             let catalog_manager = LockBasedCatalogManager::default();
             let data_manager = LockBaseDataManager::default();
@@ -197,7 +211,6 @@ mod data_manipulation_language {
         }
 
         #[test]
-        #[ignore]
         fn limit_number_of_rows() {
             let catalog_manager = LockBasedCatalogManager::default();
             let data_manager = LockBaseDataManager::default();
@@ -217,7 +230,6 @@ mod data_manipulation_language {
         }
 
         #[test]
-        #[ignore]
         fn by_column_predicate() {
             let catalog_manager = LockBasedCatalogManager::default();
             let data_manager = LockBaseDataManager::default();
@@ -235,7 +247,6 @@ mod data_manipulation_language {
         }
 
         #[test]
-        #[ignore]
         fn column_from_table_with_list_of_columns() {
             let catalog_manager = LockBasedCatalogManager::default();
             let data_manager = LockBaseDataManager::default();

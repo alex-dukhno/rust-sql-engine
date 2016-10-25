@@ -63,6 +63,7 @@ mod insert_query {
     use sql::query_typer::type_inferring;
     use sql::ast::{Type, TypedStatement};
     use sql::ast::insert_query::{InsertQuery, Value, ValueSource};
+    use sql::ast::select_query::SelectQuery;
     use sql::catalog_manager::LockBasedCatalogManager;
 
     #[test]
@@ -143,7 +144,6 @@ mod insert_query {
     }
 
     #[test]
-    #[ignore]
     fn populates_types_of_columns_in_select_sub_query() {
         let catalog_manager = LockBasedCatalogManager::default();
 
@@ -151,7 +151,6 @@ mod insert_query {
         catalog_manager.add_column_to("table_1", ("col1", Type::Integer, Some("1")));
         catalog_manager.add_column_to("table_1", ("col2", Type::Integer, Some("2")));
 
-        /*
         expect!(
             tokenize("insert into table_1 (col1, col2) select col1, col2 from table_1;")
                 .and_then(parse)
@@ -159,15 +158,16 @@ mod insert_query {
         ).to(
             be_ok().value(
                 TypedStatement::Insert(
-                    InsertQuery::new(
+                    InsertQuery::new_typed(
                         "table_1",
-                        vec!["col1", "col2"],
-                        ValueSource::SubQuery()
+                        vec![(String::from("col1"), Type::Integer), (String::from("col2"), Type::Integer)].into_iter().collect(),
+                        ValueSource::SubQuery(
+                            SelectQuery::new_typed("table_1", vec![(String::from("col1"), Type::Integer), (String::from("col2"), Type::Integer)], None)
+                        )
                     )
                 )
             )
         );
-        */
     }
 }
 
