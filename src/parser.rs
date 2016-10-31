@@ -146,7 +146,8 @@ fn parse_size<I: Iterator<Item = Token>>(tokens: &mut I) -> Result<u8, String> {
             Ok(size) => Ok(size),
             Err(e) => Err(e.description().into())
         },
-        _ => unimplemented!(),
+        Some(Token::Minus) => Err("invalid digit found in string".into()),
+        token => panic!("unimplemented parsing procedure for {:?} token", token),
     }
 }
 

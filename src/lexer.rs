@@ -1,7 +1,7 @@
 use std::iter::Peekable;
 use std::fmt;
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub enum Token {
     Ident(String),
 
@@ -40,43 +40,69 @@ pub enum Token {
     Primary,
     Key,
     Default,
-    Not,
     Null,
     Foreign,
     References,
+
+    And,
+    Not,
 
     Int,
     Character
 }
 
-impl Token {
-    pub fn ident<I: Into<String>>(indet: I) -> Token {
-        Token::Ident(indet.into())
-    }
+impl fmt::Debug for Token {
 
-    pub fn number<I: Into<String>>(num: I) -> Token {
-        Token::NumConst(num.into())
-    }
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Token::Ident(ref val) => write!(f, "Ident('{}')", val),
+            Token::NumConst(ref val) => write!(f, "NumericConstant({})", val),
+            Token::CharsConst(ref val) => write!(f, "StringConstant({})", val),
 
-    pub fn string<I: Into<String>>(string: I) -> Token {
-        Token::CharsConst(string.into())
+            Token::EqualSign => write!(f, "EqualTo"),
+            Token::NotEqualSign => write!(f, "NotEqualTo"),
+            Token::Less => write!(f, "LessThan"),
+            Token::LessEqual => write!(f, "LessThanOrEqualTo"),
+            Token::Greater => write!(f, "GreaterThan"),
+            Token::GreaterEqual => write!(f, "GreaterThanOrEqualTo"),
+
+            Token::Minus => write!(f, "Symbol(-)"),
+            Token::Plus => write!(f, "Symbol(+)"),
+            Token::Asterisk => write!(f, "Symbol(*)"),
+            Token::Slash => write!(f, "Symbol(/)"),
+            Token::LParent => write!(f, "Symbol('(')"),
+            Token::RParent => write!(f, "Symbol(')')"),
+            Token::Semicolon => write!(f, "Symbol(';')"),
+            Token::Comma => write!(f, "Symbol(',')"),
+
+            Token::Character => write!(f, "KeyWord('CHARACTER')"),
+            Token::Int => write!(f, "KeyWord('INTEGER')"),
+
+            Token::Insert => write!(f, "KeyWord('INSERT')"),
+            Token::Into => write!(f, "KeyWord('INTO')"),
+            Token::Values => write!(f, "KeyWord('VALUES')"),
+            Token::Select => write!(f, "KeyWord('SELECT')"),
+            Token::From => write!(f, "KeyWord('FROM')"),
+            Token::Where => write!(f, "KeyWord('WHERE')"),
+            Token::Create => write!(f, "KeyWord('CREATE')"),
+            Token::Table => write!(f, "KeyWord('TABLE')"),
+            Token::Primary => write!(f, "KeyWord('PRIMARY')"),
+            Token::Foreign => write!(f, "KeyWord('FOREIGN')"),
+            Token::Key => write!(f, "KeyWord('KEY')"),
+            Token::References => write!(f, "KeyWord('REFERENCES')"),
+            Token::Null => write!(f, "KeyWord('NULL')"),
+
+            Token::Not => write!(f, "KeyWord('NOT')"),
+            Token::And => write!(f, "KeyWord('AND')"),
+
+            _ => write!(f, "unimplemented debug representation")
+        }
     }
 }
 
 impl<'s> From<&'s str> for Token {
     fn from(token: &'s str) -> Token {
         match token {
-            "(" => Token::LParent,
-            ")" => Token::RParent,
-            "," => Token::Comma,
-            "'" => Token::SingleQuote,
-            ";" => Token::Semicolon,
-            "=" => Token::EqualSign,
-            "*" => Token::Asterisk,
-            "<>" | "!=" => Token::NotEqualSign,
-            "<" => Token::Less,
-            ">" => Token::Greater,
-            "+" => Token::Plus,
             "insert" => Token::Insert,
             "into" => Token::Into,
             "columns" => Token::Columns,
@@ -97,6 +123,7 @@ impl<'s> From<&'s str> for Token {
             "integer" => Token::Int,
             "char" | "character" => Token::Character,
             "limit" => Token::Limit,
+            "and" => Token::And,
             _ => Token::Ident(token.into()),
         }
     }
@@ -121,89 +148,70 @@ impl From<char> for Token {
     }
 }
 
-impl fmt::Display for Token {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Token::RParent => ")",
-            Token::LParent => "(",
-            Token::Semicolon => ";",
-            Token::Comma => ",",
-            Token::Ident(ref id) => id.as_str(),
-            _ => unimplemented!(),
-        }.fmt(f)
-    }
-}
-
 pub type Tokens = Vec<Token>;
 
 pub fn tokenize(src: &str) -> Result<Tokens, String> {
     let mut chars = src.chars().peekable();
     let mut tokens = vec![];
-    loop {
-        match look_ahead(chars.by_ref()) {
-            Some(' ') | Some('\n') | Some('\t') => consume(chars.by_ref()),
-            Some('\'') => {
-                consume(chars.by_ref());
-                tokens.push(string_token(chars.by_ref()));
-            },
-            Some('a' ... 'z') | Some('A' ... 'Z') => tokens.push(ident_token(chars.by_ref())),
-            Some('/') => {
-                consume(chars.by_ref());
-                match look_ahead(chars.by_ref()) {
+    while let Some(c) = chars.peek().cloned() {
+        match c {
+            ' ' | '\n' | '\t' => { chars.next(); },
+            'a' ... 'z' |
+            'A' ... 'Z' => tokens.push(ident_token(chars.by_ref())),
+            '0' ... '9' => tokens.push(numeric_token(chars.by_ref())),
+            '\'' => tokens.push(string_token(chars.by_ref())),
+            '/' => {
+                chars.next();
+                match chars.peek().cloned() {
                     Some('*') => skip_multi_line_comment(chars.by_ref()),
-                    Some(_) => tokens.push(Token::Slash),
-                    None => unimplemented!()
+                    _ => tokens.push(Token::Slash)
                 }
             }
-            Some('-') => {
-                consume(chars.by_ref());
-                match look_ahead(chars.by_ref()) {
+            '-' => {
+                chars.next();
+                match chars.peek().cloned() {
                     Some('-') => skip_single_line_comment(chars.by_ref()),
-                    Some('0' ... '9') => tokens.push(numeric_token(chars.by_ref(), Some('-'))),
-                    Some(_) => tokens.push(Token::Minus),
-                    None => unimplemented!()
+                    _ => tokens.push(Token::Minus)
                 }
             }
-            Some('0' ... '9') => tokens.push(numeric_token(chars.by_ref(), None)),
-            Some('<') => {
-                consume(chars.by_ref());
-                match look_ahead(chars.by_ref()) {
+            '<' => {
+                chars.next();
+                match chars.peek().cloned() {
                     Some('>') => {
-                        consume(chars.by_ref());
+                        chars.next();
                         tokens.push(Token::NotEqualSign);
                     }
                     Some('=') => {
-                        consume(chars.by_ref());
+                        chars.next();
                         tokens.push(Token::LessEqual);
                     }
                     _ => tokens.push(Token::Less),
                 }
             }
-            Some('>') => {
-                consume(chars.by_ref());
-                match look_ahead(chars.by_ref()) {
+            '>' => {
+                chars.next();
+                match chars.peek().cloned() {
                     Some('=') => {
-                        consume(chars.by_ref());
+                        chars.next();
                         tokens.push(Token::GreaterEqual);
                     }
                     _ => tokens.push(Token::Greater),
                 }
             }
-            Some('!') => {
-                consume(chars.by_ref());
-                match look_ahead(chars.by_ref()) {
+            '!' => {
+                chars.next();
+                match chars.peek().cloned() {
                     Some('=') => {
-                        consume(chars.by_ref());
+                        chars.next();
                         tokens.push(Token::NotEqualSign);
                     }
                     _ => unimplemented!(),
                 }
             }
-            Some(c) => {
-                consume(chars.by_ref());
+            _ => {
                 tokens.push(Token::from(c));
-            }
-            None => break
+                chars.next();
+            },
         }
     }
     Ok(tokens)
@@ -211,87 +219,72 @@ pub fn tokenize(src: &str) -> Result<Tokens, String> {
 
 fn ident_token<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> Token {
     let mut token = String::default();
-    loop {
-        match look_ahead(chars.by_ref()) {
-            Some(c @ 'A' ... 'Z') |
-            Some(c @ 'a' ... 'z') |
-            Some(c @ '_') |
-            Some(c @ '0' ... '9') => {
-                consume(chars.by_ref());
-                token.push(c);
-            },
+    while let Some(c) = chars.peek().cloned() {
+        match c {
+            'A' ... 'Z' |
+            'a' ... 'z' |
+            '0' ... '9' |
+            '_' => { token.push(c); chars.next(); },
             _ => break,
         }
     }
     Token::from(token.to_lowercase().as_str())
 }
 
-fn numeric_token<I: Iterator<Item = char>>(chars: &mut Peekable<I>, sign: Option<char>) -> Token {
+fn numeric_token<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> Token {
     let mut number = String::default();
-    if let Some(c) = sign {
-        number.push(c);
-    }
-    while let Some(d) = look_ahead(chars.by_ref()) {
+    while let Some(d) = chars.peek().cloned() {
         if d.is_digit(10) {
-            consume(chars.by_ref());
             number.push(d);
+            chars.next();
         } else {
             break;
         }
     }
-    Token::number(number)
+    Token::NumConst(number)
 }
 
 fn string_token<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> Token {
+    chars.next();
     let mut string = String::default();
-    loop {
-        match look_ahead(chars.by_ref()) {
-            Some('\'') => {
-                consume(chars.by_ref());
-                match look_ahead(chars.by_ref()) {
+    while let Some(c) = chars.peek().cloned() {
+        match c {
+            '\'' => {
+                chars.next();
+                match chars.peek().cloned() {
                     Some('\'') => {
-                        consume(chars.by_ref());
                         string.push('\'');
+                        chars.next();
                     },
                     _ => break,
                 }
-            },
-            Some(c) => {
-                consume(chars.by_ref());
+            }
+            _ => {
                 string.push(c);
-            },
-            None => break,
+                chars.next();
+            }
         }
     }
-    Token::string(string)
-}
-
-fn look_ahead<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> Option<char> {
-    chars.peek().cloned()
-}
-
-fn consume<I: Iterator<Item = char>>(chars: &mut Peekable<I>) {
-    chars.next();
+    Token::CharsConst(string)
 }
 
 fn skip_multi_line_comment<I: Iterator<Item = char>>(chars: &mut Peekable<I>) {
-    consume(chars.by_ref());
-    let mut previous = ' ';
-    while let Some(c) = look_ahead(chars.by_ref()) {
-        consume(chars.by_ref());
-        if previous == '*' && c == '/' {
+    let mut previous = chars.next().unwrap();
+    while let Some(current) = chars.peek().cloned() {
+        chars.next();
+        if (previous, current) == ('*', '/') {
             break;
         } else {
-            previous = c;
+            previous = current;
         }
     }
 }
 
 fn skip_single_line_comment<I: Iterator<Item = char>>(chars: &mut Peekable<I>) {
-    while let Some(c) = look_ahead(chars.by_ref()) {
+    while let Some(c) = chars.peek().cloned() {
         match c {
             '\n' => break,
-            _ => consume(chars.by_ref())
+            _ => { chars.next(); },
         }
     }
 }

@@ -1,268 +1,214 @@
+use sql::lexer::tokenize;
+
+fn assert_that_tokenized_into(src: &str, expected: &str) {
+    match tokenize(src) {
+        Ok(good) => assert_eq!(format!("{:?}", good), expected),
+        _ => panic!("unimplemented assertion check for errors handling")
+    }
+}
+
 #[cfg(test)]
 mod should_emit {
-    use expectest::prelude::be_ok;
-    use sql::lexer::{Token, tokenize};
+    use super::assert_that_tokenized_into;
 
     #[test]
     fn none_when_given_an_empty_string() {
-        expect!(tokenize(""))
-            .to(be_ok().value(vec![]));
+        assert_that_tokenized_into("", "[]");
     }
 
     #[test]
     fn identifier_token_when_given_a_single_word_string() {
-        expect!(tokenize("word"))
-            .to(be_ok().value(vec![Token::ident("word")]));
+        assert_that_tokenized_into("word", "[Ident('word')]");
     }
 
     #[test]
     fn identifiers_when_given_string_of_words() {
-        expect!(tokenize("this is a sentence"))
-            .to(
-                be_ok().value(
-                    vec![
-                        Token::ident("this"),
-                        Token::ident("is"),
-                        Token::ident("a"),
-                        Token::ident("sentence")
-                    ]
-                )
-            );
+        assert_that_tokenized_into("this is a sentence", "[Ident('this'), Ident('is'), Ident('a'), Ident('sentence')]");
     }
 
     #[test]
-    fn number_token_when_given_number() {
-        expect!(tokenize("5"))
-            .to(be_ok().value(vec![Token::number("5")]));
+    fn number_constant_when_given_number() {
+        assert_that_tokenized_into("5", "[NumericConstant(5)]");
     }
 
     #[test]
     fn tokens_case_insensitive() {
-        expect!(tokenize("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
-            .to(be_ok().value(vec![Token::ident("abcdefghijklmnopqrstuvwxyz")]));
+        assert_that_tokenized_into("ABCD", "[Ident('abcd')]");
+    }
+
+    #[test]
+    fn string_constant_when_given_letters_surrounded_by_single_quotes() {
+        assert_that_tokenized_into("'str'", "[StringConstant(str)]");
+    }
+
+    #[test]
+    fn string_constant_when_only_open_signle_quote() {
+        assert_that_tokenized_into("'str", "[StringConstant(str)]");
     }
 }
 
 #[cfg(test)]
 mod should_escape {
-    use expectest::prelude::be_ok;
-
-    use sql::lexer::{tokenize, Token};
+    use super::assert_that_tokenized_into;
 
     #[test]
     fn escapes_new_line_chars() {
-        expect!(tokenize("\nword"))
-            .to(be_ok().value(vec![Token::ident("word")]));
+        assert_that_tokenized_into("\nword", "[Ident('word')]");
     }
 
     #[test]
     fn escapes_tabs() {
-        expect!(tokenize("\tword"))
-            .to(be_ok().value(vec![Token::ident("word")]));
+        assert_that_tokenized_into("\tword", "[Ident('word')]");
     }
 
 }
 
 #[cfg(test)]
 mod should_resolve_single_quotes {
-    use expectest::prelude::be_ok;
-
-    use sql::lexer::{Token, tokenize};
+    use super::assert_that_tokenized_into;
 
     #[test]
     fn inside_string_token() {
-        expect!(tokenize("'str''str'"))
-            .to(be_ok().value(vec![Token::string("str'str")]));
+        assert_that_tokenized_into("'str''str'", "[StringConstant(str'str)]")
     }
 
     #[test]
     fn at_the_end() {
-        expect!(tokenize("'str'''"))
-            .to(be_ok().value(vec![Token::string("str'")]));
+        assert_that_tokenized_into("'str'''", "[StringConstant(str')]");
     }
 
     #[test]
     fn at_the_begining() {
-        expect!(tokenize("'''str'"))
-            .to(be_ok().value(vec![Token::string("'str")]));
+        assert_that_tokenized_into("'''str'", "[StringConstant('str)]");
     }
 
     #[test]
     fn everywhere() {
-        expect!(tokenize("'''str''str'''"))
-            .to(be_ok().value(vec![Token::string("'str'str'")]));
-    }
-
-    #[test]
-    fn emits_string_when_only_open_signle_quote() {
-        expect!(tokenize("'str"))
-            .to(be_ok().value(vec![Token::string("str")]));
+        assert_that_tokenized_into("'''str''str'''", "[StringConstant('str'str')]");
     }
 }
 
 #[cfg(test)]
 mod should_understand_cmp_tokens_such_as {
-    use expectest::prelude::be_ok;
-
-    use sql::lexer::{Token, tokenize};
+    use super::assert_that_tokenized_into;
 
     #[test]
     fn equal_sign() {
-        expect!(tokenize("="))
-            .to(be_ok().value(vec![Token::EqualSign]));
+        assert_that_tokenized_into("=", "[EqualTo]");
     }
 
     #[test]
     fn not_equal_sign_angle_brackets() {
-        expect!(tokenize("<>"))
-            .to(be_ok().value(vec![Token::NotEqualSign]));
+        assert_that_tokenized_into("<>", "[NotEqualTo]");
     }
 
     #[test]
     fn not_equal_sign_exclamation_mark_equal_sign() {
-        expect!(tokenize("!="))
-            .to(be_ok().value(vec![Token::NotEqualSign]));
+        assert_that_tokenized_into("!=", "[NotEqualTo]");
     }
 
     #[test]
     fn less_then_sign() {
-        expect!(tokenize("<"))
-            .to(be_ok().value(vec![Token::Less]));
+        assert_that_tokenized_into("<", "[LessThan]");
     }
 
     #[test]
     fn less_or_equal_sign() {
-        expect!(tokenize("<="))
-            .to(be_ok().value(vec![Token::LessEqual]));
+        assert_that_tokenized_into("<=", "[LessThanOrEqualTo]");
     }
 
     #[test]
     fn greater_then_sign() {
-        expect!(tokenize(">"))
-            .to(be_ok().value(vec![Token::Greater]));
+        assert_that_tokenized_into(">", "[GreaterThan]");
     }
 
     #[test]
     fn greate_or_equal_sign() {
-        expect!(tokenize(">="))
-            .to(be_ok().value(vec![Token::GreaterEqual]));
+        assert_that_tokenized_into(">=", "[GreaterThanOrEqualTo]");
     }
 }
 
 #[cfg(test)]
 mod should_skip {
-    use expectest::prelude::be_ok;
-
-    use sql::lexer::{Token, tokenize};
+    use super::assert_that_tokenized_into;
 
     #[test]
     fn double_dashe() {
-        expect!(tokenize("text here--but not here"))
-            .to(be_ok().value(vec![Token::ident("text"),  Token::ident("here")]));
+        assert_that_tokenized_into("text here--but not here", "[Ident('text'), Ident('here')]");
     }
 
     #[test]
     fn double_dashe_only_till_new_line() {
-        expect!(tokenize("test here -- and not here\nbut here"))
-            .to(be_ok().value(vec![Token::ident("test"), Token::ident("here"), Token::ident("but"), Token::ident("here")]));
+        assert_that_tokenized_into("test here -- and not here\nbut here", "[Ident('test'), Ident('here'), Ident('but'), Ident('here')]");
     }
 
     #[test]
     fn from_slash_star_till_star_slash() {
-        expect!(tokenize("text here /* is commented */ is not commented"))
-            .to(be_ok().value(vec![Token::ident("text"), Token::ident("here"), Token::ident("is"), Token::Not, Token::ident("commented")]));
+        assert_that_tokenized_into(
+            "text here /* is commented */ is not commented",
+            "[Ident('text'), Ident('here'), Ident('is'), KeyWord('NOT'), Ident('commented')]"
+        );
     }
 
     #[test]
     fn multiple_one_line_comments() {
-        expect!(tokenize("text--comment 1\n and text--comment 2\n and text--comment 3\n and text"))
-            .to(
-                be_ok().value(
-                    vec![
-                        Token::ident("text"),
-                        Token::ident("and"),
-                        Token::ident("text"),
-                        Token::ident("and"),
-                        Token::ident("text"),
-                        Token::ident("and"),
-                        Token::ident("text")
-                    ]
-                )
-            );
+        assert_that_tokenized_into(
+            "text--comment 1\n and text--comment 2\n and text--comment 3\n and text",
+            "[Ident('text'), KeyWord('AND'), Ident('text'), KeyWord('AND'), Ident('text'), KeyWord('AND'), Ident('text')]"
+        );
     }
 
     #[test]
     fn multiple_multy_line_comments() {
-        expect!(tokenize("text/*comment 1*/ and text/*comment 2*/ and text/*comment 3*/ and text"))
-            .to(
-                be_ok().value(
-                    vec![
-                        Token::ident("text"),
-                        Token::ident("and"),
-                        Token::ident("text"),
-                        Token::ident("and"),
-                        Token::ident("text"),
-                        Token::ident("and"),
-                        Token::ident("text")
-                    ]
-                )
-            );
+        assert_that_tokenized_into(
+            "text/*comment 1*/ and text/*comment 2*/ and text/*comment 3*/ and text",
+            "[Ident('text'), KeyWord('AND'), Ident('text'), KeyWord('AND'), Ident('text'), KeyWord('AND'), Ident('text')]"
+        );
     }
 }
 
 #[cfg(test)]
 mod should_not_skip {
-    use expectest::prelude::be_ok;
-
-    use sql::lexer::{Token, tokenize};
+    use super::assert_that_tokenized_into;
 
     #[test]
-    fn one_dashe() {
-        expect!(tokenize("text here - and here"))
-            .to(be_ok().value(vec![Token::ident("text"), Token::ident("here"), Token::Minus, Token::ident("and"), Token::ident("here")]));
+    fn one_dash() {
+        assert_that_tokenized_into("text here - and here", "[Ident('text'), Ident('here'), Symbol(-), KeyWord('AND'), Ident('here')]");
     }
 
 
     #[test]
     fn till_star_slash() {
-        expect!(tokenize("text here--and till the new line*/ should be skipped\n"))
-            .to(be_ok().value(vec![Token::ident("text"), Token::ident("here")]));
+        assert_that_tokenized_into("text here--and till the new line*/ should be skipped\n", "[Ident('text'), Ident('here')]");
     }
 
     #[cfg(test)]
     mod inside_string_leterals {
-        use expectest::prelude::be_ok;
-
-        use sql::lexer::{Token, tokenize};
+        use super::super::assert_that_tokenized_into;
 
         #[test]
         fn double_dashes() {
-            expect!(tokenize("'text here--but not here'"))
-                .to(be_ok().value(vec![Token::string("text here--but not here")]));
+            assert_that_tokenized_into("'text here--but not here'", "[StringConstant(text here--but not here)]");
         }
 
         #[test]
         fn double_dashes_till_new_line() {
-            expect!(tokenize("'test here -- and not here\nbut here'"))
-                .to(be_ok().value(vec![Token::string("test here -- and not here\nbut here")]));
+            assert_that_tokenized_into("'test here -- and not here\nbut here'", "[StringConstant(test here -- and not here\nbut here)]");
         }
 
         #[test]
         fn from_slash_star_till_star_slash() {
-            expect!(tokenize("'text here /* is commented */ is not commented'"))
-                .to(be_ok().value(vec![Token::string("text here /* is commented */ is not commented")]));
+            assert_that_tokenized_into("'text here /* is commented */ is not commented'", "[StringConstant(text here /* is commented */ is not commented)]");
         }
 
         #[test]
         fn multiple_one_line_comments() {
-            expect!(tokenize("'text--comment 1\n and text--comment 2\n and text--comment 3\n and text'"))
-                .to(be_ok().value(vec![Token::string("text--comment 1\n and text--comment 2\n and text--comment 3\n and text")]));
+            assert_that_tokenized_into("'text--comment 1\n and text--comment 2\n and text--comment 3\n and text'", "[StringConstant(text--comment 1\n and text--comment 2\n and text--comment 3\n and text)]");
         }
 
         #[test]
         fn multiple_multy_line_comments() {
-            expect!(tokenize("'text/*comment 1*/ and text/*comment 2*/ and text/*comment 3*/ and text'"))
-                .to(be_ok().value(vec![Token::string("text/*comment 1*/ and text/*comment 2*/ and text/*comment 3*/ and text")]));
+            assert_that_tokenized_into("'text/*comment 1*/ and text/*comment 2*/ and text/*comment 3*/ and text'", "[StringConstant(text/*comment 1*/ and text/*comment 2*/ and text/*comment 3*/ and text)]");
         }
     }
 
@@ -270,204 +216,170 @@ mod should_not_skip {
 
 #[cfg(test)]
 mod should_understand_operations_such_as {
-    use expectest::prelude::be_ok;
+    use super::assert_that_tokenized_into;
 
-    use sql::lexer::{Token, tokenize};
+    #[test]
+    fn simple_plus() {
+        assert_that_tokenized_into("+", "[Symbol(+)]");
+    }
 
     #[test]
     fn addition() {
-        expect!(tokenize("4 + 5"))
-            .to(
-                be_ok().value(
-                    vec![
-                        Token::number("4"),
-                        Token::Plus,
-                        Token::number("5")
-                    ]
-                )
-            );
+        assert_that_tokenized_into("4 + 5", "[NumericConstant(4), Symbol(+), NumericConstant(5)]");
+    }
+
+    #[test]
+    fn addition_without_spaces() {
+        assert_that_tokenized_into("4+5", "[NumericConstant(4), Symbol(+), NumericConstant(5)]");
+    }
+
+    #[test]
+    fn simple_minus() {
+        assert_that_tokenized_into("-", "[Symbol(-)]");
     }
 
     #[test]
     fn subtraction() {
-        expect!(tokenize("5 - 6"))
-            .to(
-                be_ok().value(
-                    vec![
-                        Token::number("5"),
-                        Token::Minus,
-                        Token::number("6")
-                    ]
-                )
-            );
+        assert_that_tokenized_into("5 - 6", "[NumericConstant(5), Symbol(-), NumericConstant(6)]");
+    }
+
+    #[test]
+    fn subtraction_without_spaces() {
+        assert_that_tokenized_into("5-6", "[NumericConstant(5), Symbol(-), NumericConstant(6)]");
+    }
+
+    #[test]
+    fn simple_asterisk() {
+        assert_that_tokenized_into("*", "[Symbol(*)]");
     }
 
     #[test]
     fn multiplication() {
-        expect!(tokenize("5 * 4"))
-            .to(
-                be_ok().value(
-                    vec![
-                        Token::number("5"),
-                        Token::Asterisk,
-                        Token::number("4")
-                    ]
-                )
-            );
+        assert_that_tokenized_into("5 * 4", "[NumericConstant(5), Symbol(*), NumericConstant(4)]");
+    }
+
+    #[test]
+    fn multiplication_without_spaces() {
+        assert_that_tokenized_into("5*4", "[NumericConstant(5), Symbol(*), NumericConstant(4)]");
+    }
+
+    #[test]
+    fn simple_slash() {
+        assert_that_tokenized_into("/", "[Symbol(/)]");
     }
 
     #[test]
     fn division() {
-        expect!(tokenize("78 / 34"))
-            .to(
-                be_ok().value(
-                    vec![
-                        Token::number("78"),
-                        Token::Slash,
-                        Token::number("34")
-                    ]
-                )
-            );
+        assert_that_tokenized_into("78 / 34", "[NumericConstant(78), Symbol(/), NumericConstant(34)]");
+    }
+
+    #[test]
+    fn division_without_spaces() {
+        assert_that_tokenized_into("78/34", "[NumericConstant(78), Symbol(/), NumericConstant(34)]");
     }
 }
 
 #[cfg(test)]
 mod sql_query {
-    use expectest::prelude::be_ok;
-
-    use sql::lexer::{Token, tokenize};
+    use super::assert_that_tokenized_into;
 
     #[test]
-    fn tokenize_insert_query_numeric_value() {
-        expect!(tokenize("insert into table_name values(1);"))
-            .to(
-                be_ok().value(
-                    vec![
-                        Token::Insert,
-                        Token::Into,
-                        Token::ident("table_name"),
-                        Token::Values,
-                        Token::from("("),
-                        Token::number("1"),
-                        Token::from(")"),
-                        Token::from(";")
-                    ]
-                )
-            );
+    fn semicolon_symbol_token() {
+        assert_that_tokenized_into(";", "[Symbol(';')]");
     }
 
     #[test]
-    fn tokenize_insert_query_varchar_value() {
-        expect!(tokenize("insert into table_name values('string');"))
-            .to(
-                be_ok().value(
-                    vec![
-                        Token::Insert,
-                        Token::Into,
-                        Token::ident("table_name"),
-                        Token::Values,
-                        Token::from("("),
-                        Token::string("string"),
-                        Token::from(")"),
-                        Token::from(";")
-                    ]
-                )
-            );
+    fn comma_symbol_token() {
+        assert_that_tokenized_into(",", "[Symbol(',')]");
     }
 
     #[test]
-    fn tokenize_select_with_not_equal_predicate() {
-        expect!(tokenize("select col from table_1 where col <> 5;"))
-            .to(
-                be_ok().value(
-                    vec![
-                        Token::Select,
-                        Token::ident("col"),
-                        Token::From,
-                        Token::ident("table_1"),
-                        Token::Where,
-                        Token::ident("col"),
-                        Token::from("<>"),
-                        Token::number("5"),
-                        Token::from(";")
-                    ]
-                )
-            );
+    fn open_parenthes_token() {
+        assert_that_tokenized_into("(", "[Symbol('(')]");
     }
 
     #[test]
-    fn tokenize_create_table_with_primary_key() {
-        expect!(tokenize("create table tab1 (col1 char(3) primary key);"))
-            .to(
-                be_ok().value(
-                    vec![
-                        Token::Create,
-                        Token::Table,
-                        Token::ident("tab1"),
-                        Token::LParent,
-                        Token::ident("col1"),
-                        Token::Character,
-                        Token::LParent,
-                        Token::number("3"),
-                        Token::RParent,
-                        Token::Primary,
-                        Token::Key,
-                        Token::RParent,
-                        Token::Semicolon
-                    ]
-                )
-            );
+    fn closed_parenthes_token() {
+        assert_that_tokenized_into(")", "[Symbol(')')]");
     }
 
     #[test]
-    fn tokenize_create_table_with_not_null() {
-        expect!(tokenize("create table tab2 (col integer not null);"))
-            .to(
-                be_ok().value(
-                    vec![
-                        Token::Create,
-                        Token::Table,
-                        Token::ident("tab2"),
-                        Token::LParent,
-                        Token::ident("col"),
-                        Token::Int,
-                        Token::Not,
-                        Token::Null,
-                        Token::RParent,
-                        Token::Semicolon
-                    ]
-                )
-            );
+    fn insert_keyword_token() {
+        assert_that_tokenized_into("insert", "[KeyWord('INSERT')]");
     }
 
     #[test]
-    fn tokenize_create_table_with_foreign_key() {
-        expect!(tokenize("create table tab_4 (col1 integer primary key, col2 integer foreign key references table1(col));"))
-            .to(
-                be_ok().value(
-                    vec![
-                        Token::Create,
-                        Token::Table,
-                        Token::ident("tab_4"),
-                        Token::LParent,
-                        Token::ident("col1"),
-                        Token::Int,
-                        Token::Primary,
-                        Token::Key,
-                        Token::Comma,
-                        Token::ident("col2"),
-                        Token::Int,
-                        Token::Foreign,
-                        Token::Key,
-                        Token::References,
-                        Token::ident("table1"),
-                        Token::LParent,
-                        Token::ident("col"),
-                        Token::RParent,
-                        Token::RParent,
-                        Token::Semicolon
-                    ]
-                )
-            );
+    fn into_keyword_token() {
+        assert_that_tokenized_into("into", "[KeyWord('INTO')]");
+    }
+
+    #[test]
+    fn values_keyword_token() {
+        assert_that_tokenized_into("values", "[KeyWord('VALUES')]");
+    }
+
+    #[test]
+    fn select_keyword_token() {
+        assert_that_tokenized_into("select", "[KeyWord('SELECT')]");
+    }
+
+    #[test]
+    fn from_keyword_token() {
+        assert_that_tokenized_into("from", "[KeyWord('FROM')]");
+    }
+
+    #[test]
+    fn where_keyword_token() {
+        assert_that_tokenized_into("where", "[KeyWord('WHERE')]");
+    }
+
+    #[test]
+    fn create_keyword_token() {
+        assert_that_tokenized_into("create", "[KeyWord('CREATE')]");
+    }
+
+    #[test]
+    fn table_keyword_token() {
+        assert_that_tokenized_into("table", "[KeyWord('TABLE')]");
+    }
+
+    #[test]
+    fn character_keyword_token() {
+        assert_that_tokenized_into("character", "[KeyWord('CHARACTER')]");
+    }
+
+    #[test]
+    fn integer_keyword_token() {
+        assert_that_tokenized_into("integer", "[KeyWord('INTEGER')]");
+    }
+
+    #[test]
+    fn primary_keyword_token() {
+        assert_that_tokenized_into("primary", "[KeyWord('PRIMARY')]");
+    }
+
+    #[test]
+    fn foreign_keyword_token() {
+        assert_that_tokenized_into("foreign", "[KeyWord('FOREIGN')]");
+    }
+
+    #[test]
+    fn key_keyword_token() {
+        assert_that_tokenized_into("key", "[KeyWord('KEY')]");
+    }
+
+    #[test]
+    fn references_keyword_token() {
+        assert_that_tokenized_into("references", "[KeyWord('REFERENCES')]");
+    }
+
+    #[test]
+    fn not_keyword_token() {
+        assert_that_tokenized_into("not", "[KeyWord('NOT')]");
+    }
+
+    #[test]
+    fn null_keyword_token() {
+        assert_that_tokenized_into("null", "[KeyWord('NULL')]");
     }
 }
