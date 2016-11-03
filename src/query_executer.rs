@@ -69,8 +69,8 @@ fn insert_into(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseD
 }
 
 fn select_data(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseDataManager, query: SelectQuery<(String, Type)>) -> Result<ExecutionResult, String> {
-    let SelectQuery { table_name, columns, condition } = query;
-    match condition {
+    let SelectQuery { table_name, columns, predicates } = query;
+    match predicates {
         Some(Condition { left, right, cond_type }) => {
             match (left, right, cond_type) {
                 (CondArg::Limit, CondArg::NumConst(n), CondType::Eq) => {

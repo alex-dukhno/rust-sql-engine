@@ -1,3 +1,5 @@
+use std::fmt;
+
 use super::Type;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -15,7 +17,7 @@ impl CreateTableQuery {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(PartialEq, Clone)]
 pub struct ColumnTable {
     pub column_name: String,
     pub column_type: Type,
@@ -36,5 +38,22 @@ impl ColumnTable {
             nullable: nullable,
             default_value: default_value.map(Into::into)
         }
+    }
+}
+
+impl fmt::Debug for ColumnTable {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let default = match self.default_value {
+            Some(ref v) => v.as_str(),
+            None => "NULL"
+        };
+        let primary = if self.is_primary_key { "Yes" } else { "No" };
+        let nullable = if self.nullable { "Yes" } else { "No" };
+        let foreign = match self.foreign_key {
+            Some((ref table, ref column)) => format!("{}->{}", table.as_str(), column.as_str()),
+            _ => "No".into()
+        };
+        write!(f, "<name: '{}', type: '{:?}', primary key: {}, foreign key: {}, nullable: {}, default value: {}>", self.column_name, self.column_type, primary, foreign, nullable, default)
     }
 }

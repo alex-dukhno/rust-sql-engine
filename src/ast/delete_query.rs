@@ -2,8 +2,8 @@ use super::Condition;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct DeleteQuery {
-    from: String,
-    predicates: Option<Condition>
+    pub from: String,
+    pub predicates: Option<Condition>
 }
 
 impl DeleteQuery {

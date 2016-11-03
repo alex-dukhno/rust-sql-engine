@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use super::catalog_manager::LockBasedCatalogManager;
 use super::ast::{RawStatement, Type, TypedStatement};
 use super::ast::insert_query::{Value, ValueSource, InsertQuery};
@@ -46,11 +44,19 @@ fn infer_table_columns_type(table_columns: Vec<ColumnTable>) -> Vec<ColumnTable>
     ).collect::<Vec<ColumnTable>>()
 }
 
-fn resolve_columns(query: &InsertQuery<String>, catalog_manager: &LockBasedCatalogManager) -> HashSet<(String, Type)> {
-    catalog_manager.get_table_columns(query.table_name.as_str())
+fn resolve_columns(query: &InsertQuery<String>, catalog_manager: &LockBasedCatalogManager) -> Vec<(String, Type)> {
+    let mut query_columns = catalog_manager.get_table_columns(query.table_name.as_str())
         .into_iter()
+        .filter(|c| query.columns.contains(&c.name))
         .map(|c| (c.name, c.col_type))
-        .collect::<HashSet<(String, Type)>>()
+        .collect::<Vec<(String, Type)>>();
+    let mut missed_columns = catalog_manager.get_table_columns(query.table_name.as_str())
+        .into_iter()
+        .filter(|c| !query.columns.contains(&c.name))
+        .map(|c| (c.name, c.col_type))
+        .collect::<Vec<(String, Type)>>();
+    query_columns.append(&mut missed_columns);
+    query_columns
 }
 
 fn resolve_missed_column_value_types(query: &InsertQuery<String>, catalog_manager: &LockBasedCatalogManager) -> Vec<Value> {
@@ -69,5 +75,5 @@ fn typed_from_raw(query: SelectQuery<String>, catalog_manager: &LockBasedCatalog
         let t = catalog_manager.get_column_type(table_name, &c);
         (c, t)
     }).collect::<Vec<(String, Type)>>();
-    SelectQuery::new_typed(table_name, typed, query.condition)
+    SelectQuery::new_typed(table_name, typed, query.predicates)
 }

@@ -139,7 +139,10 @@ mod should_skip {
 
     #[test]
     fn double_dashe_only_till_new_line() {
-        assert_that_tokenized_into("test here -- and not here\nbut here", "[Ident('test'), Ident('here'), Ident('but'), Ident('here')]");
+        assert_that_tokenized_into(
+            "test here -- and not here\nbut here",
+            "[Ident('test'), Ident('here'), Ident('but'), Ident('here')]"
+        );
     }
 
     #[test]
@@ -173,13 +176,19 @@ mod should_not_skip {
 
     #[test]
     fn one_dash() {
-        assert_that_tokenized_into("text here - and here", "[Ident('text'), Ident('here'), Symbol(-), KeyWord('AND'), Ident('here')]");
+        assert_that_tokenized_into(
+            "text here - and here",
+            "[Ident('text'), Ident('here'), Symbol(-), KeyWord('AND'), Ident('here')]"
+        );
     }
 
 
     #[test]
     fn till_star_slash() {
-        assert_that_tokenized_into("text here--and till the new line*/ should be skipped\n", "[Ident('text'), Ident('here')]");
+        assert_that_tokenized_into(
+            "text here--and till the new line*/ should be skipped\n",
+            "[Ident('text'), Ident('here')]"
+        );
     }
 
     #[cfg(test)]
@@ -193,22 +202,34 @@ mod should_not_skip {
 
         #[test]
         fn double_dashes_till_new_line() {
-            assert_that_tokenized_into("'test here -- and not here\nbut here'", "[StringConstant(test here -- and not here\nbut here)]");
+            assert_that_tokenized_into(
+                "'test here -- and not here\nbut here'",
+                "[StringConstant(test here -- and not here\nbut here)]"
+            );
         }
 
         #[test]
         fn from_slash_star_till_star_slash() {
-            assert_that_tokenized_into("'text here /* is commented */ is not commented'", "[StringConstant(text here /* is commented */ is not commented)]");
+            assert_that_tokenized_into(
+                "'text here /* is commented */ is not commented'",
+                "[StringConstant(text here /* is commented */ is not commented)]"
+            );
         }
 
         #[test]
         fn multiple_one_line_comments() {
-            assert_that_tokenized_into("'text--comment 1\n and text--comment 2\n and text--comment 3\n and text'", "[StringConstant(text--comment 1\n and text--comment 2\n and text--comment 3\n and text)]");
+            assert_that_tokenized_into(
+                "'text--comment 1\n and text--comment 2\n and text--comment 3\n and text'",
+                "[StringConstant(text--comment 1\n and text--comment 2\n and text--comment 3\n and text)]"
+            );
         }
 
         #[test]
         fn multiple_multy_line_comments() {
-            assert_that_tokenized_into("'text/*comment 1*/ and text/*comment 2*/ and text/*comment 3*/ and text'", "[StringConstant(text/*comment 1*/ and text/*comment 2*/ and text/*comment 3*/ and text)]");
+            assert_that_tokenized_into(
+                "'text/*comment 1*/ and text/*comment 2*/ and text/*comment 3*/ and text'",
+                "[StringConstant(text/*comment 1*/ and text/*comment 2*/ and text/*comment 3*/ and text)]"
+            );
         }
     }
 
