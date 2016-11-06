@@ -1,4 +1,4 @@
-use super::ast::{ValidatedStatement, Type, Condition, CondType, CondArg};
+use super::ast::{ValidatedStatement, Type, TypedColumn, Condition, CondType, CondArg};
 use super::ast::create_table::CreateTableQuery;
 use super::ast::insert_query::{InsertQuery, ValueSource, Value};
 use super::ast::select_query::SelectQuery;
@@ -29,7 +29,7 @@ fn create_table(catalog_manager: LockBasedCatalogManager, create_query: CreateTa
     Ok(ExecutionResult::Message(format!("'{}' was created", table_name.as_str())))
 }
 
-fn insert_into(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseDataManager, insert: InsertQuery<(String, Type)>) -> Result<ExecutionResult, String> {
+fn insert_into(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseDataManager, insert: InsertQuery<TypedColumn>) -> Result<ExecutionResult, String> {
     if catalog_manager.contains_table(insert.table_name.as_str()) {
         match insert.values {
             ValueSource::Row(row) => {
@@ -68,7 +68,7 @@ fn insert_into(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseD
     }
 }
 
-fn select_data(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseDataManager, query: SelectQuery<(String, Type)>) -> Result<ExecutionResult, String> {
+fn select_data(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseDataManager, query: SelectQuery<TypedColumn>) -> Result<ExecutionResult, String> {
     let SelectQuery { table_name, columns, predicates } = query;
     match predicates {
         Some(Condition { left, right, cond_type }) => {
@@ -91,7 +91,7 @@ fn select_data(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseD
             }
         }
         None => {
-            if let Some(index) = catalog_manager.get_column_index(table_name.as_str(), &columns[0].0) {
+            if let Some(index) = catalog_manager.get_column_index(table_name.as_str(), &columns[0].name) {
                 Ok(ExecutionResult::Data(data_manager.get_range_till_end_for_column(table_name.as_str(), index)))
             } else {
                 Ok(ExecutionResult::Data(data_manager.get_range_till_end(table_name.as_str(), 0)))

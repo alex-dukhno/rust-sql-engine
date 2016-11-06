@@ -1,17 +1,16 @@
 use std::fmt;
 
 use super::select_query::SelectQuery;
-use super::Type;
 
 #[derive(PartialEq, Clone)]
-pub struct InsertQuery<T> {
+pub struct InsertQuery<T: fmt::Debug> {
     pub table_name: String,
     pub columns: Vec<T>,
     pub values: ValueSource<T>
 }
 
-impl InsertQuery<String> {
-    pub fn new_raw<I: Into<String>>(table_name: I, columns: Vec<String>, values: ValueSource<String>) -> InsertQuery<String> {
+impl <T: fmt::Debug> InsertQuery<T> {
+    pub fn new<I: Into<String>>(table_name: I, columns: Vec<T>, values: ValueSource<T>) -> InsertQuery<T> {
         InsertQuery {
             table_name: table_name.into(),
             columns: columns,
@@ -20,57 +19,20 @@ impl InsertQuery<String> {
     }
 }
 
-impl fmt::Debug for InsertQuery<String> {
+impl <T: fmt::Debug> fmt::Debug for InsertQuery<T> {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-
-        fn debug_raw_columns(columns: &Vec<String>) -> String {
-            String::from("[") + columns.iter().map(|c| format!("<name: '{}'>", c)).collect::<Vec<String>>().join(", ").as_str() + "]"
-        }
-
-        write!(f, "statement: 'insert', table name: '{}', columns: {}, values: {:?}", self.table_name, debug_raw_columns(&self.columns), self.values)
-    }
-}
-
-impl InsertQuery<(String, Type)> {
-    pub fn new_typed<I: Into<String>>(table_name: I, columns: Vec<(String, Type)>, values: ValueSource<(String, Type)>) -> InsertQuery<(String, Type)> {
-        InsertQuery {
-            table_name: table_name.into(),
-            columns: columns,
-            values: values
-        }
-    }
-}
-
-impl fmt::Debug for InsertQuery<(String, Type)> {
-
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-
-        fn debug_raw_columns(columns: &Vec<(String, Type)>) -> String {
-            String::from("[") + columns.iter().map(|&(ref c, t)| format!("<name: '{}', type: '{:?}'>", c, t)).collect::<Vec<String>>().join(", ").as_str() + "]"
-        }
-
-        write!(f, "statement: 'insert', table name: '{}', columns: {}, values: {:?}", self.table_name, debug_raw_columns(&self.columns), self.values)
+        write!(f, "statement: 'insert', table name: '{}', columns: {:?}, values: {:?}", self.table_name, self.columns, self.values)
     }
 }
 
 #[derive(PartialEq, Clone)]
-pub enum ValueSource<T> {
+pub enum ValueSource<T: fmt::Debug> {
     Row(Vec<Value>),
     SubQuery(SelectQuery<T>)
 }
 
-impl fmt::Debug for ValueSource<String> {
-
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            ValueSource::Row(ref values) => write!(f, "{:?}", values),
-            ValueSource::SubQuery(ref subquery) => write!(f, "<sub{:?}>", subquery)
-        }
-    }
-}
-
-impl fmt::Debug for ValueSource<(String, Type)> {
+impl <T: fmt::Debug> fmt::Debug for ValueSource<T> {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {

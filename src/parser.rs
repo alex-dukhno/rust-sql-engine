@@ -2,7 +2,7 @@ use std::iter::{self, Peekable};
 use std::error::Error;
 
 use super::lexer::{Token, Tokens};
-use super::ast::{Type, CondType, RawStatement, Condition, CondArg};
+use super::ast::{Type, CondType, RawStatement, RawColumn, Condition, CondArg};
 use super::ast::create_table::{CreateTableQuery, ColumnTable};
 use super::ast::delete_query::DeleteQuery;
 use super::ast::insert_query::{Value, ValueSource, InsertQuery};
@@ -151,12 +151,12 @@ fn parse_size<I: Iterator<Item = Token>>(tokens: &mut I) -> Result<u8, String> {
     }
 }
 
-fn parse_columns<I: Iterator<Item = Token>>(tokens: &mut I) -> Vec<String> {
+fn parse_columns<I: Iterator<Item = Token>>(tokens: &mut I) -> Vec<RawColumn> {
     let mut columns = vec![];
     while let Some(token) = tokens.next() {
         match token {
             Token::Comma => {},
-            Token::Ident(col) => { columns.push(col); },
+            Token::Ident(col) => { columns.push(RawColumn::new(col)); },
             Token::RParent => break,
             unexpected => panic!("panic find unexpected token {:?}", unexpected),
         }
@@ -181,7 +181,7 @@ fn parse_values<I: Iterator<Item = Token>>(tokens: &mut I) -> Vec<Value> {
     values
 }
 
-fn parse_insert_query<I: Iterator<Item = Token>>(tokens: &mut I) -> InsertQuery<String> {
+fn parse_insert_query<I: Iterator<Item = Token>>(tokens: &mut I) -> InsertQuery<RawColumn> {
     if tokens.next() != Some(Token::Into) {
         unimplemented!();
     }
@@ -209,9 +209,9 @@ fn parse_insert_query<I: Iterator<Item = Token>>(tokens: &mut I) -> InsertQuery<
     }
 
     if sub_query {
-        InsertQuery::new_raw(table_name, columns.into_iter().collect(), ValueSource::SubQuery(parse_select_query(tokens.by_ref())))
+        InsertQuery::new(table_name, columns.into_iter().collect(), ValueSource::SubQuery(parse_select_query(tokens.by_ref())))
     } else {
-        let query = InsertQuery::new_raw(table_name, columns.into_iter().collect(), ValueSource::Row(parse_values(tokens.by_ref())));
+        let query = InsertQuery::new(table_name, columns.into_iter().collect(), ValueSource::Row(parse_values(tokens.by_ref())));
         if tokens.next() != Some(Token::Semicolon) {
             unimplemented!();
         }
@@ -232,7 +232,7 @@ fn parse_delete_query<I: Iterator<Item = Token>>(tokens: &mut I) -> DeleteQuery 
     DeleteQuery::new(table_name, parse_where(tokens.by_ref()))
 }
 
-fn parse_select_query<I: Iterator<Item = Token>>(tokens: &mut I) -> SelectQuery<String> {
+fn parse_select_query<I: Iterator<Item = Token>>(tokens: &mut I) -> SelectQuery<RawColumn> {
     let columns = parse_columns_list(tokens.by_ref());
 
     let table_name = match tokens.next() {
@@ -240,15 +240,15 @@ fn parse_select_query<I: Iterator<Item = Token>>(tokens: &mut I) -> SelectQuery<
         _ => unimplemented!()
     };
 
-    SelectQuery::new_raw(table_name, columns, parse_where(tokens.by_ref()))
+    SelectQuery::new(table_name, columns, parse_where(tokens.by_ref()))
 }
 
-fn parse_columns_list<I: Iterator<Item = Token>>(tokens: &mut I) -> Vec<String> {
+fn parse_columns_list<I: Iterator<Item = Token>>(tokens: &mut I) -> Vec<RawColumn> {
     let mut columns = vec![];
     loop {
         match tokens.next() {
             Some(Token::From) => break, // skip 'FROM' keyword
-            Some(Token::Ident(column_name)) => columns.push(column_name),
+            Some(Token::Ident(column_name)) => columns.push(RawColumn::new(column_name)),
             Some(Token::Comma) => {},
             t => panic!("unexpected token {:?} - ", t),
         }

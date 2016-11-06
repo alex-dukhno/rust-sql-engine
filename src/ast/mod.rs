@@ -13,16 +13,16 @@ use self::select_query::SelectQuery;
 #[derive(Debug, PartialEq)]
 pub enum ValidatedStatement {
     Create(CreateTableQuery),
-    Insert(InsertQuery<(String, Type)>),
-    Select(SelectQuery<(String, Type)>),
+    Insert(InsertQuery<TypedColumn>),
+    Select(SelectQuery<TypedColumn>),
     Delete
 }
 
 #[derive(PartialEq)]
 pub enum TypedStatement {
     Create(CreateTableQuery),
-    Insert(InsertQuery<(String, Type)>),
-    Select(SelectQuery<(String, Type)>),
+    Insert(InsertQuery<TypedColumn>),
+    Select(SelectQuery<TypedColumn>),
     Delelte
 }
 
@@ -30,11 +30,34 @@ impl fmt::Debug for TypedStatement {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            TypedStatement::Create(ref query) => write!(f, "statement: 'create table', table name: '{}', columns: {:?}", query.table_name, query.table_columns),
-            TypedStatement::Insert(ref query) => write!(f, "{:?}", query),
-            TypedStatement::Select(ref query) => write!(f, "{:?}", query),
+            TypedStatement::Create(ref create_table_query) => write!(f, "{:?}", create_table_query),
+            TypedStatement::Insert(ref insert_query) => write!(f, "{:?}", insert_query),
+            TypedStatement::Select(ref select_query) => write!(f, "{:?}", select_query),
             _ => panic!("unimplemented debug formatting")
         }
+    }
+}
+
+#[derive(PartialEq, Clone)]
+pub struct TypedColumn {
+    pub name: String,
+    pub col_type: Type
+}
+
+impl TypedColumn {
+
+    pub fn new<I: Into<String>>(name: I, col_type: Type) -> TypedColumn {
+        TypedColumn {
+            name: name.into(),
+            col_type: col_type
+        }
+    }
+}
+
+impl fmt::Debug for TypedColumn {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "<name: '{}', type: '{:?}'>", self.name, self.col_type)
     }
 }
 
@@ -42,26 +65,40 @@ impl fmt::Debug for TypedStatement {
 pub enum RawStatement {
     Create(CreateTableQuery),
     Delete(DeleteQuery),
-    Insert(InsertQuery<String>),
-    Select(SelectQuery<String>)
+    Insert(InsertQuery<RawColumn>),
+    Select(SelectQuery<RawColumn>)
 }
 
 impl fmt::Debug for RawStatement {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fn debug_predicates(predicates: &Option<Condition>) -> String {
-            match predicates {
-                &Some(ref cond) => cond.to_string(),
-                &None => "no predicate".into()
-            }
-        }
-
         match *self {
-            RawStatement::Create(ref query) => write!(f, "statement: 'create table', table name: '{}', columns: {:?}", query.table_name, query.table_columns),
-            RawStatement::Delete(ref query) => write!(f, "statement: 'delete', table name: '{}', where: {}", query.from, debug_predicates(&query.predicates)),
+            RawStatement::Create(ref query) => write!(f, "{:?}", query),
+            RawStatement::Delete(ref query) => write!(f, "{:?}", query),
             RawStatement::Insert(ref query) => write!(f, "{:?}", query),
             RawStatement::Select(ref query) => write!(f, "{:?}", query),
         }
+    }
+}
+
+#[derive(PartialEq, Clone)]
+pub struct RawColumn {
+    pub name: String
+}
+
+impl RawColumn {
+
+    pub fn new<I: Into<String>>(name: I) -> RawColumn {
+        RawColumn {
+            name: name.into()
+        }
+    }
+}
+
+impl fmt::Debug for RawColumn {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "<name: '{}'>", self.name)
     }
 }
 
@@ -79,6 +116,13 @@ impl fmt::Debug for Type {
             Type::Character(Some(v)) => write!(f, "character size of {}", v),
             Type::Character(None) => write!(f, "character")
         }
+    }
+}
+
+pub fn debug_predicates(predicates: &Option<Condition>) -> String {
+    match *predicates {
+        Some(ref cond) => cond.to_string(),
+        None => "no predicate".into()
     }
 }
 

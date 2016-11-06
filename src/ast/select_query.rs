@@ -1,16 +1,16 @@
 use std::fmt;
 
-use super::{Condition, Type};
+use super::{Condition, debug_predicates};
 
 #[derive(PartialEq, Clone)]
-pub struct SelectQuery<T> {
+pub struct SelectQuery<T: fmt::Debug> {
     pub table_name: String,
     pub columns: Vec<T>,
     pub predicates: Option<Condition>
 }
 
-impl SelectQuery<String> {
-    pub fn new_raw<I: Into<String>>(table_name: I, columns: Vec<String>, predicates: Option<Condition>) -> SelectQuery<String> {
+impl <T: fmt::Debug> SelectQuery<T> {
+    pub fn new<I: Into<String>>(table_name: I, columns: Vec<T>, predicates: Option<Condition>) -> SelectQuery<T> {
         SelectQuery {
             table_name: table_name.into(),
             columns: columns,
@@ -19,50 +19,9 @@ impl SelectQuery<String> {
     }
 }
 
-impl SelectQuery<(String, Type)> {
-    pub fn new_typed<I: Into<String>>(table_name: I, columns: Vec<(String, Type)>, predicates: Option<Condition>) -> SelectQuery<(String, Type)> {
-        SelectQuery {
-            table_name: table_name.into(),
-            columns: columns,
-            predicates: predicates
-        }
-    }
-}
-
-impl fmt::Debug for SelectQuery<String> {
+impl <T: fmt::Debug> fmt::Debug for SelectQuery<T> {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-
-        fn debug_predicates(predicates: &Option<Condition>) -> String {
-            match predicates {
-                &Some(ref cond) => cond.to_string(),
-                &None => "no predicate".into()
-            }
-        }
-
-        fn debug_raw_columns(columns: &Vec<String>) -> String {
-            String::from("[") + columns.iter().map(|c| format!("<name: '{}'>", c)).collect::<Vec<String>>().join(", ").as_str() + "]"
-        }
-
-        write!(f, "statement: 'select', tables: [<name: '{}'>], columns: {}, where: {}", self.table_name, debug_raw_columns(&self.columns), debug_predicates(&self.predicates))
+        write!(f, "statement: 'select', tables: [<name: '{}'>], columns: {:?}, where: {}", self.table_name, self.columns, debug_predicates(&self.predicates))
     }
-}
-
-impl fmt::Debug for SelectQuery<(String, Type)> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-
-        fn debug_predicates(predicates: &Option<Condition>) -> String {
-            match predicates {
-                &Some(ref cond) => cond.to_string(),
-                &None => "no predicate".into()
-            }
-        }
-
-        fn debug_typed_columns(columns: &Vec<(String, Type)>) -> String {
-            String::from("[") + columns.iter().map(|&(ref c, t)| format!("<name: '{}', type: '{:?}'>", c, t)).collect::<Vec<String>>().join(", ").as_str() + "]"
-        }
-
-        write!(f, "statement: 'select', tables: [<name: '{}'>], columns: {}, where: {}", self.table_name, debug_raw_columns(&self.columns), debug_predicates(&self.predicates))
-    }
-
 }

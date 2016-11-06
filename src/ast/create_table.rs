@@ -2,7 +2,7 @@ use std::fmt;
 
 use super::Type;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(PartialEq, Clone)]
 pub struct CreateTableQuery {
     pub table_name: String,
     pub table_columns: Vec<ColumnTable>
@@ -14,6 +14,13 @@ impl CreateTableQuery {
             table_name: table_name.into(),
             table_columns: columns
         }
+    }
+}
+
+impl fmt::Debug for CreateTableQuery {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "statement: 'create table', table name: '{}', columns: {:?}", self.table_name, self.table_columns)
     }
 }
 

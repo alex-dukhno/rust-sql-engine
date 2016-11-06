@@ -1,5 +1,5 @@
 use super::catalog_manager::LockBasedCatalogManager;
-use super::ast::{RawStatement, Type, TypedStatement};
+use super::ast::{RawStatement, RawColumn, Type, TypedStatement, TypedColumn};
 use super::ast::insert_query::{Value, ValueSource, InsertQuery};
 use super::ast::create_table::{CreateTableQuery, ColumnTable};
 use super::ast::select_query::SelectQuery;
@@ -23,7 +23,7 @@ pub fn type_inferring(catalog_manager: LockBasedCatalogManager, statement: RawSt
                     ValueSource::SubQuery(typed_from_raw(query, &catalog_manager))
                 }
             };
-            Ok(TypedStatement::Insert(InsertQuery::new_typed(query.table_name, columns, new_values)))
+            Ok(TypedStatement::Insert(InsertQuery::new(query.table_name, columns, new_values)))
         }
         RawStatement::Select(query) => {
             Ok(TypedStatement::Select(typed_from_raw(query, &catalog_manager)))
@@ -44,36 +44,36 @@ fn infer_table_columns_type(table_columns: Vec<ColumnTable>) -> Vec<ColumnTable>
     ).collect::<Vec<ColumnTable>>()
 }
 
-fn resolve_columns(query: &InsertQuery<String>, catalog_manager: &LockBasedCatalogManager) -> Vec<(String, Type)> {
+fn resolve_columns(query: &InsertQuery<RawColumn>, catalog_manager: &LockBasedCatalogManager) -> Vec<TypedColumn> {
     let mut query_columns = catalog_manager.get_table_columns(query.table_name.as_str())
         .into_iter()
-        .filter(|c| query.columns.contains(&c.name))
-        .map(|c| (c.name, c.col_type))
-        .collect::<Vec<(String, Type)>>();
+        .filter(|c| query.columns.contains(&RawColumn::new(c.name.as_str())))
+        .map(|c| TypedColumn::new(c.name, c.col_type))
+        .collect::<Vec<TypedColumn>>();
     let mut missed_columns = catalog_manager.get_table_columns(query.table_name.as_str())
         .into_iter()
-        .filter(|c| !query.columns.contains(&c.name))
-        .map(|c| (c.name, c.col_type))
-        .collect::<Vec<(String, Type)>>();
+        .filter(|c| !query.columns.contains(&RawColumn::new(c.name.as_str())))
+        .map(|c| TypedColumn::new(c.name, c.col_type))
+        .collect::<Vec<TypedColumn>>();
     query_columns.append(&mut missed_columns);
     query_columns
 }
 
-fn resolve_missed_column_value_types(query: &InsertQuery<String>, catalog_manager: &LockBasedCatalogManager) -> Vec<Value> {
+fn resolve_missed_column_value_types(query: &InsertQuery<RawColumn>, catalog_manager: &LockBasedCatalogManager) -> Vec<Value> {
     catalog_manager.get_table_columns(query.table_name.as_str())
         .into_iter()
-        .filter(|c| !query.columns.contains(&c.name) && c.default_val.is_some())
+        .filter(|c| !query.columns.contains(&RawColumn::new(c.name.as_str())) && c.default_val.is_some())
         .map(|c| match c.col_type {
             Type::Integer => Value::NumConst(c.default_val.unwrap()),
             Type::Character(_) => Value::StrConst(c.default_val.unwrap()),
         }).collect::<Vec<Value>>()
 }
 
-fn typed_from_raw(query: SelectQuery<String>, catalog_manager: &LockBasedCatalogManager) -> SelectQuery<(String, Type)> {
+fn typed_from_raw(query: SelectQuery<RawColumn>, catalog_manager: &LockBasedCatalogManager) -> SelectQuery<TypedColumn> {
     let table_name = query.table_name.as_str();
     let typed = query.columns.into_iter().map(|c| {
-        let t = catalog_manager.get_column_type(table_name, &c);
-        (c, t)
-    }).collect::<Vec<(String, Type)>>();
-    SelectQuery::new_typed(table_name, typed, query.predicates)
+        let t = catalog_manager.get_column_type(table_name, &c.name);
+        TypedColumn::new(c.name, t)
+    }).collect::<Vec<TypedColumn>>();
+    SelectQuery::new(table_name, typed, query.predicates)
 }
