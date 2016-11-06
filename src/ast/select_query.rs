@@ -58,8 +58,8 @@ impl fmt::Debug for SelectQuery<(String, Type)> {
             }
         }
 
-        fn debug_raw_columns(columns: &Vec<(String, Type)>) -> String {
-            String::from("[") + columns.iter().map(|&(ref c, _)| format!("<name: '{}'>", c)).collect::<Vec<String>>().join(", ").as_str() + "]"
+        fn debug_typed_columns(columns: &Vec<(String, Type)>) -> String {
+            String::from("[") + columns.iter().map(|&(ref c, t)| format!("<name: '{}', type: '{:?}'>", c, t)).collect::<Vec<String>>().join(", ").as_str() + "]"
         }
 
         write!(f, "statement: 'select', tables: [<name: '{}'>], columns: {}, where: {}", self.table_name, debug_raw_columns(&self.columns), debug_predicates(&self.predicates))

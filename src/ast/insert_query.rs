@@ -47,7 +47,7 @@ impl fmt::Debug for InsertQuery<(String, Type)> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         fn debug_raw_columns(columns: &Vec<(String, Type)>) -> String {
-            String::from("[") + columns.iter().map(|&(ref c, _)| format!("<name: '{}'>", c)).collect::<Vec<String>>().join(", ").as_str() + "]"
+            String::from("[") + columns.iter().map(|&(ref c, t)| format!("<name: '{}', type: '{:?}'>", c, t)).collect::<Vec<String>>().join(", ").as_str() + "]"
         }
 
         write!(f, "statement: 'insert', table name: '{}', columns: {}, values: {:?}", self.table_name, debug_raw_columns(&self.columns), self.values)
@@ -75,7 +75,7 @@ impl fmt::Debug for ValueSource<(String, Type)> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             ValueSource::Row(ref values) => write!(f, "{:?}", values),
-            ValueSource::SubQuery(ref subquery) => write!(f, "subquery: <{:?}>", subquery)
+            ValueSource::SubQuery(ref subquery) => write!(f, "<sub{:?}>", subquery)
         }
     }
 }

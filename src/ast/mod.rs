@@ -18,12 +18,24 @@ pub enum ValidatedStatement {
     Delete
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub enum TypedStatement {
     Create(CreateTableQuery),
     Insert(InsertQuery<(String, Type)>),
     Select(SelectQuery<(String, Type)>),
     Delelte
+}
+
+impl fmt::Debug for TypedStatement {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            TypedStatement::Create(ref query) => write!(f, "statement: 'create table', table name: '{}', columns: {:?}", query.table_name, query.table_columns),
+            TypedStatement::Insert(ref query) => write!(f, "{:?}", query),
+            TypedStatement::Select(ref query) => write!(f, "{:?}", query),
+            _ => panic!("unimplemented debug formatting")
+        }
+    }
 }
 
 #[derive(PartialEq, Clone)]
@@ -49,7 +61,6 @@ impl fmt::Debug for RawStatement {
             RawStatement::Delete(ref query) => write!(f, "statement: 'delete', table name: '{}', where: {}", query.from, debug_predicates(&query.predicates)),
             RawStatement::Insert(ref query) => write!(f, "{:?}", query),
             RawStatement::Select(ref query) => write!(f, "{:?}", query),
-            // _ => panic!("unimlemented debug formatting")
         }
     }
 }

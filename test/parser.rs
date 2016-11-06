@@ -141,14 +141,6 @@ mod should_parse {
 
     #[cfg(test)]
     mod insert_statements {
-        use expectest::prelude::be_ok;
-
-        use sql::lexer::tokenize;
-        use sql::parser::parse;
-        use sql::ast::RawStatement;
-        use sql::ast::insert_query::{InsertQuery, ValueSource};
-        use sql::ast::select_query::SelectQuery;
-
         use super::super::assert_that_statement_parsed_into;
 
         #[test]
