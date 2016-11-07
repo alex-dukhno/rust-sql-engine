@@ -24,47 +24,37 @@ fn create_table(catalog_manager: LockBasedCatalogManager, create_query: CreateTa
     let CreateTableQuery { table_name, table_columns } = create_query;
     catalog_manager.add_table(table_name.as_str());
     for column in table_columns.into_iter() {
-        catalog_manager.add_column_to(table_name.as_str(), (column.column_name, column.column_type, None))
+        catalog_manager.add_column_to(table_name.as_str(), (column.column_name, column.column_type, column.default_value))
     }
     Ok(ExecutionResult::Message(format!("'{}' was created", table_name.as_str())))
 }
 
 fn insert_into(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseDataManager, insert: InsertQuery<TypedColumn>) -> Result<ExecutionResult, String> {
-    if catalog_manager.contains_table(insert.table_name.as_str()) {
-        match insert.values {
-            ValueSource::Row(row) => {
-                let mut data = Vec::with_capacity(row.len());
-                for (index, datum) in row.into_iter().enumerate() {
-                    match datum {
-                        Value::NumConst(n) => if catalog_manager.match_type(insert.table_name.as_str(), index, Type::Character(Option::from(0))) {
-                            return Ok(ExecutionResult::Message("column type is VARCHAR find INT".to_owned()));
-                        } else {
-                            data.push(n);
-                        },
-                        Value::StrConst(s) => if catalog_manager.match_type(insert.table_name.as_str(), index, Type::Integer) {
-                            return Ok(ExecutionResult::Message("column type is INT find VARCHAR".to_owned()));
-                        } else {
-                            data.push(s);
-                        },
+    match insert.values {
+        ValueSource::Row(row) => {
+            let data = row.into_iter().map(
+                |v| {
+                    match v {
+                        Value::NumConst(n) => n,
+                        Value::StrConst(s) => s
                     }
                 }
-                data_manager.save_to(insert.table_name.as_str(), data);
-                Ok(ExecutionResult::Message("row was inserted".to_owned()))
-            },
-            ValueSource::SubQuery(query) => {
-                if let Ok(ExecutionResult::Data(query_result)) = select_data(catalog_manager, data_manager.clone(), query) {
-                    let row_num = query_result.len();
-                    for row in query_result {
-                        data_manager.save_to(insert.table_name.as_str(), row);
-                    }
-                    Ok(ExecutionResult::Message(format!("{} rows were inserted", row_num)))
-                } else {
-                    panic!("unexpected sub query result")
+            ).collect::<Vec<String>>();
+            data_manager.save_to(insert.table_name.as_str(), data);
+            println!("data manager - {:?}", data_manager.get_row_from(insert.table_name.as_str(), 0));
+            Ok(ExecutionResult::Message("row was inserted".to_owned()))
+        },
+        ValueSource::SubQuery(query) => {
+            if let Ok(ExecutionResult::Data(query_result)) = select_data(catalog_manager, data_manager.clone(), query) {
+                let row_num = query_result.len();
+                for row in query_result {
+                    data_manager.save_to(insert.table_name.as_str(), row);
                 }
-            },
-        }
-    } else {
-        Ok(ExecutionResult::Message(format!("[ERR 100] table '{}' does not exist", insert.table_name.as_str())))
+                Ok(ExecutionResult::Message(format!("{} rows were inserted", row_num)))
+            } else {
+                panic!("unexpected sub query result")
+            }
+        },
     }
 }
 
@@ -92,7 +82,7 @@ fn select_data(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseD
         }
         None => {
             if let Some(index) = catalog_manager.get_column_index(table_name.as_str(), &columns[0].name) {
-                Ok(ExecutionResult::Data(data_manager.get_range_till_end_for_column(table_name.as_str(), index)))
+                Ok(ExecutionResult::Data(data_manager.get_range_till_end_for_column(table_name.as_str(), index, columns.len())))
             } else {
                 Ok(ExecutionResult::Data(data_manager.get_range_till_end(table_name.as_str(), 0)))
             }

@@ -67,18 +67,20 @@ impl LockBaseDataManager {
                     .cloned()
                     .collect::<Vec<Vec<String>>>(),
         };
+        println!("result - {:?}", result);
         drop(guard);
         result
     }
 
-    pub fn get_range_till_end_for_column(&self, table_name: &str, column_index: usize) -> Vec<Vec<String>> {
+    pub fn get_range_till_end_for_column(&self, table_name: &str, column_index: usize, number_of_columns: usize) -> Vec<Vec<String>> {
         let guard = self.data.lock().unwrap();
         let result = match (*guard).get(table_name) {
             None => unimplemented!(),
             Some(table_data) => {
-                table_data.into_iter().map(|row| row.into_iter().skip(column_index).take(1).cloned().collect::<Vec<String>>()).collect::<Vec<Vec<String>>>()
+                table_data.into_iter().map(|row| row.into_iter().skip(column_index).take(number_of_columns).cloned().collect::<Vec<String>>()).collect::<Vec<Vec<String>>>()
             },
         };
+        println!("result - {:?}", result);
         drop(guard);
         result
     }

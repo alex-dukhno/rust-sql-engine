@@ -98,7 +98,7 @@ fn retrives_by_column_index() {
     drop(data_manager.save_to("table_name", vec!["1".to_owned(), "2".to_owned(), "3".to_owned()]));
     drop(data_manager.save_to("table_name", vec!["7".to_owned(), "8".to_owned(), "9".to_owned()]));
 
-    expect!(data_manager.get_range_till_end_for_column("table_name", 0))
+    expect!(data_manager.get_range_till_end_for_column("table_name", 0, 1))
         .to(be_equal_to(
             vec![
                 vec!["10"],

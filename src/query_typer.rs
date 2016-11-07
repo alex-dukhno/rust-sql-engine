@@ -14,6 +14,7 @@ pub fn type_inferring(catalog_manager: LockBasedCatalogManager, statement: RawSt
         RawStatement::Insert(query) => {
             let columns = resolve_columns(&query, &catalog_manager);
             let mut value_types = resolve_missed_column_value_types(&query, &catalog_manager);
+            println!("value types - {:?}", value_types);
             let new_values = match query.values {
                 ValueSource::Row(mut query_values) => {
                     query_values.append(&mut value_types);
@@ -63,10 +64,12 @@ fn resolve_missed_column_value_types(query: &InsertQuery<RawColumn>, catalog_man
     catalog_manager.get_table_columns(query.table_name.as_str())
         .into_iter()
         .filter(|c| !query.columns.contains(&RawColumn::new(c.name.as_str())) && c.default_val.is_some())
-        .map(|c| match c.col_type {
-            Type::Integer => Value::NumConst(c.default_val.unwrap()),
-            Type::Character(_) => Value::StrConst(c.default_val.unwrap()),
-        }).collect::<Vec<Value>>()
+        .map(
+            |c| match c.col_type {
+                    Type::Integer => Value::NumConst(c.default_val.unwrap()),
+                    Type::Character(_) => Value::StrConst(c.default_val.unwrap())
+                }
+        ).collect::<Vec<Value>>()
 }
 
 fn typed_from_raw(query: SelectQuery<RawColumn>, catalog_manager: &LockBasedCatalogManager) -> SelectQuery<TypedColumn> {

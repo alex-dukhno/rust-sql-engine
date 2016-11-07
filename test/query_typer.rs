@@ -41,18 +41,16 @@ mod create_table_query {
 #[cfg(test)]
 mod insert_query {
     use super::assert_that_types_will_be_inferred;
+    use super::super::evaluate_query;
 
     use sql::catalog_manager::LockBasedCatalogManager;
-    use sql::ast::Type;
+    use sql::data_manager::LockBaseDataManager;
 
     #[test]
     fn populates_columns_for_insert_query() {
         let catalog_manager = LockBasedCatalogManager::default();
 
-        catalog_manager.add_table("table2");
-        catalog_manager.add_column_to("table2", ("col1", Type::Integer, None));
-        catalog_manager.add_column_to("table2", ("col2", Type::Integer, None));
-        catalog_manager.add_column_to("table2", ("col3", Type::Integer, None));
+        drop(evaluate_query("create table table2 (col1 integer, col2 integer, col3 integer)", LockBaseDataManager::default(), catalog_manager.clone()));
 
         assert_that_types_will_be_inferred(
             "insert into table2 values (1, 2, 3);",
@@ -65,9 +63,7 @@ mod insert_query {
     fn populates_only_missed_column() {
         let catalog_manager = LockBasedCatalogManager::default();
 
-        catalog_manager.add_table("table_1");
-        catalog_manager.add_column_to("table_1", ("col1", Type::Integer, Some("1")));
-        catalog_manager.add_column_to("table_1", ("col2", Type::Integer, None));
+        drop(evaluate_query("create table table_1 (col1 integer default 1, col2 integer)", LockBaseDataManager::default(), catalog_manager.clone()));
 
         assert_that_types_will_be_inferred(
             "insert into table_1 (col2) values (2);",
@@ -80,10 +76,13 @@ mod insert_query {
     fn populates_default_value_for_different_types() {
         let catalog_manager = LockBasedCatalogManager::default();
 
-        catalog_manager.add_table("table_2");
-        catalog_manager.add_column_to("table_2", ("col1", Type::Integer, Some("1")));
-        catalog_manager.add_column_to("table_2", ("col2", Type::Integer, None));
-        catalog_manager.add_column_to("table_2", ("col3", Type::Character(Option::from(3)), Some("str")));
+        drop(
+            evaluate_query(
+                "create table table_2 (col1 integer default 1, col2 integer, col3 char(3) default 'str')",
+                LockBaseDataManager::default(),
+                catalog_manager.clone()
+            )
+        );
 
         assert_that_types_will_be_inferred(
             "insert into table_2 (col2) values (2);",
@@ -96,9 +95,13 @@ mod insert_query {
     fn populates_types_of_columns_in_select_sub_query() {
         let catalog_manager = LockBasedCatalogManager::default();
 
-        catalog_manager.add_table("table_1");
-        catalog_manager.add_column_to("table_1", ("col1", Type::Integer, Some("1")));
-        catalog_manager.add_column_to("table_1", ("col2", Type::Integer, Some("2")));
+        drop(
+            evaluate_query(
+                "create table table_1 (col1 integer default 1, col2 integer default 2);",
+                LockBaseDataManager::default(),
+                catalog_manager.clone()
+            )
+        );
 
         assert_that_types_will_be_inferred(
             "insert into table_1 (col1, col2) select col1, col2 from table_1;",
@@ -111,16 +114,22 @@ mod insert_query {
 #[cfg(test)]
 mod select_query {
     use super::assert_that_types_will_be_inferred;
+    use super::super::evaluate_query;
 
     use sql::catalog_manager::LockBasedCatalogManager;
-    use sql::ast::Type;
+    use sql::data_manager::LockBaseDataManager;
 
     #[test]
     fn single_column_query() {
         let catalog_manager = LockBasedCatalogManager::default();
 
-        catalog_manager.add_table("table_1");
-        catalog_manager.add_column_to("table_1", ("col1", Type::Integer, None));
+        drop(
+            evaluate_query(
+                "create table table_1 (col1 integer);",
+                LockBaseDataManager::default(),
+                catalog_manager.clone()
+            )
+        );
 
         assert_that_types_will_be_inferred(
             "select col1 from table_1;",
@@ -133,10 +142,13 @@ mod select_query {
     fn multiple_columns_query() {
         let catalog_manager = LockBasedCatalogManager::default();
 
-        catalog_manager.add_table("table_3");
-        catalog_manager.add_column_to("table_3", ("col2", Type::Integer, None));
-        catalog_manager.add_column_to("table_3", ("col3", Type::Character(Some(10)), None));
-        catalog_manager.add_column_to("table_3", ("col5", Type::Integer, None));
+        drop(
+            evaluate_query(
+                "create table table_3 (col2 integer, col3 char(10), col5 integer);",
+                LockBaseDataManager::default(),
+                catalog_manager.clone()
+            )
+        );
 
         assert_that_types_will_be_inferred(
             "select col2, col3, col5 from table_3;",
@@ -149,10 +161,13 @@ mod select_query {
     fn not_all_columns() {
         let catalog_manager = LockBasedCatalogManager::default();
 
-        catalog_manager.add_table("table_2");
-        catalog_manager.add_column_to("table_2", ("col1", Type::Integer, None));
-        catalog_manager.add_column_to("table_2", ("col2", Type::Integer, None));
-        catalog_manager.add_column_to("table_2", ("col3", Type::Integer, None));
+        drop(
+            evaluate_query(
+                "create table table_2 (col1 integer, col2 integer, col3 integer);",
+                LockBaseDataManager::default(),
+                catalog_manager.clone()
+            )
+        );
 
         assert_that_types_will_be_inferred(
             "select col1, col3 from table_2;",

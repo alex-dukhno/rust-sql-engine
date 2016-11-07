@@ -1,59 +1,73 @@
-use sql::lexer::tokenize;
-use sql::parser::parse;
-use sql::query_typer::type_inferring;
-use sql::query_validator::validate;
-use sql::query_executer::{execute, ExecutionResult};
+use sql::query_executer::ExecutionResult;
 use sql::catalog_manager::LockBasedCatalogManager;
 use sql::data_manager::LockBaseDataManager;
 
-pub fn evaluate(
-    query: &str,
-    data_manager: LockBaseDataManager,
-    catalog_manager: LockBasedCatalogManager)
-    -> Result<ExecutionResult, String> {
-    tokenize(query)
-        .and_then(parse)
-        .and_then(|statement| type_inferring(catalog_manager.clone(), statement))
-        .and_then(|statement| validate(catalog_manager.clone(), statement))
-        .and_then(|statement| execute(catalog_manager.clone(), data_manager.clone(), statement))
+use super::evaluate_query;
+
+fn assert_that_query_evaluation_return_message(
+        src_query: &str,
+        expected_message: &str,
+        data_manager: LockBaseDataManager,
+        catalog_manager: LockBasedCatalogManager) {
+    let execution_result = evaluate_query(src_query, data_manager.clone(), catalog_manager.clone());
+
+    match execution_result {
+        Ok(ExecutionResult::Message(actual_message)) => assert_eq!(actual_message, expected_message),
+        res => panic!("unexpected query evaluation result {:?}", res)
+    }
+}
+
+fn assert_that_query_evaluation_return_data(src_query: &str, expected_data: &str, data_manager: LockBaseDataManager, catalog_manager: LockBasedCatalogManager) {
+    let execution_result = evaluate_query(src_query, data_manager.clone(), catalog_manager.clone());
+
+    match execution_result {
+        Ok(ExecutionResult::Data(data)) => assert_eq!(format!("{:?}", data), expected_data),
+        res => panic!("unexpected query evaluation result {:?}", res)
+    }
 }
 
 #[cfg(test)]
 mod data_definition_language {
     #[cfg(test)]
     mod create_table {
-        use expectest::prelude::be_ok;
-
-        use sql::query_executer::ExecutionResult;
         use sql::catalog_manager::LockBasedCatalogManager;
         use sql::data_manager::LockBaseDataManager;
 
-        use super::super::evaluate;
+        use super::super::super::evaluate_query;
+        use super::super::assert_that_query_evaluation_return_message;
 
         #[test]
         fn single_column() {
-            let catalog_manager = LockBasedCatalogManager::default();
-            let data_manager = LockBaseDataManager::default();
-
-            expect!(evaluate("create table table_name (col integer);", data_manager, catalog_manager))
-                .to(
-                    be_ok().value(
-                        ExecutionResult::Message("'table_name' was created".to_owned())
-                    )
-                );
+            assert_that_query_evaluation_return_message(
+                "create table table_name (col integer);",
+                "'table_name' was created",
+                LockBaseDataManager::default(),
+                LockBasedCatalogManager::default()
+            );
         }
 
         #[test]
         fn with_list_of_columns() {
+            assert_that_query_evaluation_return_message(
+                "create table table_name (col1 integer, col2 integer, col3 integer);",
+                "'table_name' was created",
+                LockBaseDataManager::default(),
+                LockBasedCatalogManager::default()
+            );
+        }
+
+        #[test]
+        fn with_foreign_key() {
             let catalog_manager = LockBasedCatalogManager::default();
             let data_manager = LockBaseDataManager::default();
 
-            expect!(
-                evaluate("create table table_name (col1 integer, col2 integer, col3 integer);", data_manager, catalog_manager)
-            ).to(
-                be_ok().value(
-                    ExecutionResult::Message("'table_name' was created".to_owned())
-                )
+            drop(evaluate_query("create table table1 (col1 integer primary key);", data_manager.clone(), catalog_manager.clone()));
+
+            assert_that_query_evaluation_return_message(
+                "create table table2 (col2 integer primary key, col3 integer foreign key references table1 (col1));",
+                "'table2' was created",
+                LockBaseDataManager::default(),
+                catalog_manager
             );
         }
     }
@@ -63,27 +77,26 @@ mod data_definition_language {
 mod data_manipulation_language {
     #[cfg(test)]
     mod inserts {
-        use expectest::prelude::be_ok;
-
-        use sql::query_executer::ExecutionResult;
         use sql::catalog_manager::LockBasedCatalogManager;
         use sql::data_manager::LockBaseDataManager;
 
-        use super::super::evaluate;
+        use super::super::super::evaluate_query;
+        use super::super::assert_that_query_evaluation_return_message;
+        use super::super::assert_that_query_evaluation_return_data;
 
         #[test]
         fn row_in_created_table() {
             let catalog_manager = LockBasedCatalogManager::default();
             let data_manager = LockBaseDataManager::default();
 
-            drop(evaluate("create table table_name (col integer);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("create table table_name (col integer);", data_manager.clone(), catalog_manager.clone()));
 
-            expect!(evaluate("insert into table_name values(1);", data_manager, catalog_manager))
-                .to(
-                    be_ok().value(
-                        ExecutionResult::Message("row was inserted".to_owned())
-                    )
-                );
+            assert_that_query_evaluation_return_message(
+                "insert into table_name values(1);",
+                "row was inserted",
+                data_manager,
+                catalog_manager
+            );
         }
 
         #[test]
@@ -92,47 +105,19 @@ mod data_manipulation_language {
             let data_manager = LockBaseDataManager::default();
 
             drop(
-                evaluate(
+                evaluate_query(
                     "create table table_name (col1 integer, col2 integer);",
                     data_manager.clone(),
                     catalog_manager.clone()
                 )
             );
 
-            expect!(evaluate("insert into table_name values(1, 2);", data_manager, catalog_manager))
-                .to(
-                    be_ok().value(
-                        ExecutionResult::Message("row was inserted".to_owned())
-                    )
-                );
-        }
-
-        #[test]
-        fn does_not_insert_into_table_that_does_not_exist() {
-            let catalog_manager = LockBasedCatalogManager::default();
-            let data_manager = LockBaseDataManager::default();
-
-            expect!(evaluate("insert into table_name values(1);", data_manager, catalog_manager))
-                .to(
-                    be_ok().value(
-                        ExecutionResult::Message("[ERR 100] table 'table_name' does not exist".to_owned())
-                    )
-                );
-        }
-
-        #[test]
-        fn does_not_insert_when_column_type_does_not_match() {
-            let catalog_manager = LockBasedCatalogManager::default();
-            let data_manager = LockBaseDataManager::default();
-
-            drop(evaluate("create table table_name (col integer);", data_manager.clone(), catalog_manager.clone()));
-
-            expect!(evaluate("insert into table_name values('string');", data_manager, catalog_manager))
-                .to(
-                    be_ok().value(
-                        ExecutionResult::Message("column type is INT find VARCHAR".to_owned())
-                    )
-                );
+            assert_that_query_evaluation_return_message(
+                "insert into table_name values(1, 2);",
+                "row was inserted",
+                data_manager,
+                catalog_manager
+            );
         }
 
         #[test]
@@ -140,74 +125,62 @@ mod data_manipulation_language {
             let catalog_manager = LockBasedCatalogManager::default();
             let data_manager = LockBaseDataManager::default();
 
-            drop(evaluate("create table table_name (col1 integer, col2 integer);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate("insert into table_name values(1, 2);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate("insert into table_name values(3, 4);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate("insert into table_name values(5, 6);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("create table table_name (col1 integer, col2 integer);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("insert into table_name values(1, 2);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("insert into table_name values(3, 4);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("insert into table_name values(5, 6);", data_manager.clone(), catalog_manager.clone()));
 
-            expect!(
-                evaluate(
-                    "insert into table_name (col1, col2) select col1, col2 from table_name;",
-                     data_manager.clone(),
-                     catalog_manager.clone()
-                )
-            ).to(
-                be_ok().value(
-                    ExecutionResult::Message("3 rows were inserted".to_owned())
-                )
+            assert_that_query_evaluation_return_message(
+                "insert into table_name (col1, col2) select col1, col2 from table_name;",
+                "3 rows were inserted",
+                 data_manager,
+                 catalog_manager
             );
-            expect!(
-                evaluate("select col1 from table_name;", data_manager.clone(), catalog_manager.clone())
-            ).to(
-                be_ok().value(
-                    ExecutionResult::Data(
-                        vec![
-                            vec![String::from("1")],
-                            vec![String::from("3")],
-                            vec![String::from("5")],
-                            vec![String::from("1")],
-                            vec![String::from("3")],
-                            vec![String::from("5")]
-                        ]
-                    )
-                )
+        }
+
+        #[test]
+        fn column_with_default_value() {
+            let catalog_manager = LockBasedCatalogManager::default();
+            let data_manager = LockBaseDataManager::default();
+
+            drop(evaluate_query("create table table1 (col1 integer, col2 integer default 1);", data_manager.clone(), catalog_manager.clone()));
+
+            assert_that_query_evaluation_return_message(
+                "insert into table1 values (1);",
+                "row was inserted",
+                data_manager.clone(), catalog_manager.clone()
+            );
+
+            assert_that_query_evaluation_return_data(
+                "select col1, col2 from table1;",
+                "[[\"1\", \"1\"]]",
+                data_manager,
+                catalog_manager
             );
         }
     }
 
     #[cfg(test)]
     mod selects {
-        use expectest::prelude::be_ok;
-
-        use sql::query_executer::ExecutionResult;
         use sql::catalog_manager::LockBasedCatalogManager;
         use sql::data_manager::LockBaseDataManager;
 
-        use super::super::evaluate;
+        use super::super::super::evaluate_query;
+        use super::super::assert_that_query_evaluation_return_data;
 
         #[test]
         fn from_table() {
             let catalog_manager = LockBasedCatalogManager::default();
             let data_manager = LockBaseDataManager::default();
 
-            drop(evaluate("create table table_name (col integer);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate("insert into table_name values(1);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("create table table_name (col integer);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("insert into table_name values(1);", data_manager.clone(), catalog_manager.clone()));
 
-            expect!(evaluate("select col from table_name;", data_manager.clone(), catalog_manager.clone()))
-                .to(
-                    be_ok().value(
-                        ExecutionResult::Data(vec![vec!["1".to_owned()]])
-                    )
-                );
+            assert_that_query_evaluation_return_data("select col from table_name;", "[[\"1\"]]", data_manager.clone(), catalog_manager.clone());
 
-            drop(evaluate("insert into table_name values(2);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("insert into table_name values(2);", data_manager.clone(), catalog_manager.clone()));
 
-            expect!(evaluate("select col from table_name;", data_manager, catalog_manager))
-                .to(
-                    be_ok().value(
-                        ExecutionResult::Data(vec![vec!["1".to_owned()], vec!["2".to_owned()]])
-                    )
-                );
+            assert_that_query_evaluation_return_data("select col from table_name;", "[[\"1\"], [\"2\"]]", data_manager, catalog_manager);
         }
 
         #[test]
@@ -215,18 +188,18 @@ mod data_manipulation_language {
             let catalog_manager = LockBasedCatalogManager::default();
             let data_manager = LockBaseDataManager::default();
 
-            drop(evaluate("create table table_name_2 (col integer);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate("insert into table_name_2 values(1);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate("insert into table_name_2 values(2);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate("insert into table_name_2 values(3);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate("insert into table_name_2 values(4);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("create table table_name_2 (col integer);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("insert into table_name_2 values(1);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("insert into table_name_2 values(2);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("insert into table_name_2 values(3);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("insert into table_name_2 values(4);", data_manager.clone(), catalog_manager.clone()));
 
-            expect!(evaluate("select col from table_name_2 where limit = 3;", data_manager, catalog_manager))
-                .to(
-                    be_ok().value(
-                        ExecutionResult::Data(vec![vec!["1".to_owned()], vec!["2".to_owned()], vec!["3".to_owned()]])
-                    )
-                );
+            assert_that_query_evaluation_return_data(
+                "select col from table_name_2 where limit = 3;",
+                "[[\"1\"], [\"2\"], [\"3\"]]",
+                data_manager,
+                catalog_manager
+            );
         }
 
         #[test]
@@ -234,16 +207,11 @@ mod data_manipulation_language {
             let catalog_manager = LockBasedCatalogManager::default();
             let data_manager = LockBaseDataManager::default();
 
-            drop(evaluate("create table table_1 (col character(1));", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate("insert into table_1 values (\'a\');", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate("insert into table_1 values (\'b\');", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("create table table_1 (col character(1));", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("insert into table_1 values (\'a\');", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("insert into table_1 values (\'b\');", data_manager.clone(), catalog_manager.clone()));
 
-            expect!(evaluate("select col from table_1 where col <> \'a\';", data_manager, catalog_manager))
-                .to(
-                    be_ok().value(
-                        ExecutionResult::Data(vec![vec!["b".to_owned()]])
-                    )
-                );
+            assert_that_query_evaluation_return_data("select col from table_1 where col <> \'a\';", "[[\"b\"]]", data_manager, catalog_manager);
         }
 
         #[test]
@@ -251,16 +219,28 @@ mod data_manipulation_language {
             let catalog_manager = LockBasedCatalogManager::default();
             let data_manager = LockBaseDataManager::default();
 
-            drop(evaluate("create table tab1 (col_1 integer, co_2 integer);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate("insert into tab1 values(1, 2);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate("insert into tab1 values(3, 4);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("create table tab1 (col_1 integer, col_2 integer);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("insert into tab1 values(1, 2);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("insert into tab1 values(3, 4);", data_manager.clone(), catalog_manager.clone()));
 
-            expect!(evaluate("select col_1 from tab1;", data_manager, catalog_manager))
-                .to(
-                    be_ok().value(
-                        ExecutionResult::Data(vec![vec!["1".to_owned()], vec!["3".to_owned()]])
-                    )
-                );
+            assert_that_query_evaluation_return_data("select col_1 from tab1;", "[[\"1\"], [\"3\"]]", data_manager, catalog_manager);
+        }
+
+        #[test]
+        fn list_of_columns_from_table_with_many_columns() {
+            let catalog_manager = LockBasedCatalogManager::default();
+            let data_manager = LockBaseDataManager::default();
+
+            drop(evaluate_query("create table tab1 (col_1 integer, col_2 integer);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("insert into tab1 values(1, 2);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("insert into tab1 values(3, 4);", data_manager.clone(), catalog_manager.clone()));
+
+            assert_that_query_evaluation_return_data(
+                "select col_1, col_2 from tab1;",
+                "[[\"1\", \"2\"], [\"3\", \"4\"]]",
+                data_manager,
+                catalog_manager
+            );
         }
     }
 }

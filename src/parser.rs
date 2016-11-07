@@ -15,7 +15,7 @@ pub fn parse(tokens: Tokens) -> Result<RawStatement, String> {
         Some(Token::Delete) => Ok(RawStatement::Delete(parse_delete_query(iter.by_ref()))),
         Some(Token::Insert) => Ok(RawStatement::Insert(parse_insert_query(iter.by_ref()))),
         Some(Token::Select) => Ok(RawStatement::Select(parse_select_query(iter.by_ref()))),
-        _ => unimplemented!(),
+        token => panic!("unimplemented parseing procedure for {:?}", token),
     }
 }
 
