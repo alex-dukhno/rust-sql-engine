@@ -1,10 +1,10 @@
 use expectest::prelude::be_equal_to;
 
-use sql::data_manager::LockBaseDataManager;
+use sql::data_manager::DataManager;
 
 #[test]
 fn saves_to_one_row_table() {
-    let data_manger = LockBaseDataManager::default();
+    let data_manger = DataManager::default();
 
     drop(data_manger.save_to("table_name", vec!["1".to_owned()]));
 
@@ -14,7 +14,7 @@ fn saves_to_one_row_table() {
 
 #[test]
 fn retrievs_data_from_table() {
-    let data_manager = LockBaseDataManager::default();
+    let data_manager = DataManager::default();
 
     drop(data_manager.save_to("table_name", vec!["1".to_owned(), "2".to_owned()]));
     drop(data_manager.save_to("table_name", vec!["3".to_owned(), "4".to_owned()]));
@@ -27,7 +27,7 @@ fn retrievs_data_from_table() {
 
 #[test]
 fn retrievs_range_of_rows_from_table() {
-    let data_manager = LockBaseDataManager::default();
+    let data_manager = DataManager::default();
 
     drop(data_manager.save_to("table_name", vec!["1".to_owned(), "2".to_owned(), "3".to_owned()]));
     drop(data_manager.save_to("table_name", vec!["4".to_owned(), "5".to_owned(), "6".to_owned()]));
@@ -55,7 +55,7 @@ fn retrievs_range_of_rows_from_table() {
 
 #[test]
 fn retrievs_range_from_index_till_end() {
-    let data_manager = LockBaseDataManager::default();
+    let data_manager = DataManager::default();
 
     drop(data_manager.save_to("table_name", vec!["1".to_owned(), "2".to_owned(), "3".to_owned()]));
     drop(data_manager.save_to("table_name", vec!["4".to_owned(), "5".to_owned(), "6".to_owned()]));
@@ -75,7 +75,7 @@ fn retrievs_range_from_index_till_end() {
 
 #[test]
 fn retrievs_by_not_equal_predicate_on_column() {
-    let data_manager = LockBaseDataManager::default();
+    let data_manager = DataManager::default();
 
     drop(data_manager.save_to("table_name", vec!["10".to_owned(), "11".to_owned(), "12".to_owned()]));
     drop(data_manager.save_to("table_name", vec!["1".to_owned(), "2".to_owned(), "3".to_owned()]));
@@ -92,7 +92,7 @@ fn retrievs_by_not_equal_predicate_on_column() {
 
 #[test]
 fn retrives_by_column_index() {
-    let data_manager = LockBaseDataManager::default();
+    let data_manager = DataManager::default();
 
     drop(data_manager.save_to("table_name", vec!["10".to_owned(), "11".to_owned(), "12".to_owned()]));
     drop(data_manager.save_to("table_name", vec!["1".to_owned(), "2".to_owned(), "3".to_owned()]));

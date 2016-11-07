@@ -1,10 +1,10 @@
-use super::catalog_manager::LockBasedCatalogManager;
+use super::catalog_manager::CatalogManager;
 use super::ast::{RawStatement, RawColumn, Type, TypedStatement, TypedColumn};
 use super::ast::insert_query::{Value, ValueSource, InsertQuery};
 use super::ast::create_table::{CreateTableQuery, ColumnTable};
 use super::ast::select_query::SelectQuery;
 
-pub fn type_inferring(catalog_manager: LockBasedCatalogManager, statement: RawStatement) -> Result<TypedStatement, String> {
+pub fn type_inferring(catalog_manager: CatalogManager, statement: RawStatement) -> Result<TypedStatement, String> {
     match statement {
         RawStatement::Create(create_table_query) => {
             let CreateTableQuery { table_name, table_columns } = create_table_query;
@@ -45,7 +45,7 @@ fn infer_table_columns_type(table_columns: Vec<ColumnTable>) -> Vec<ColumnTable>
     ).collect::<Vec<ColumnTable>>()
 }
 
-fn resolve_columns(query: &InsertQuery<RawColumn>, catalog_manager: &LockBasedCatalogManager) -> Vec<TypedColumn> {
+fn resolve_columns(query: &InsertQuery<RawColumn>, catalog_manager: &CatalogManager) -> Vec<TypedColumn> {
     let mut query_columns = catalog_manager.get_table_columns(query.table_name.as_str())
         .into_iter()
         .filter(|c| query.columns.contains(&RawColumn::new(c.name.as_str())))
@@ -60,7 +60,7 @@ fn resolve_columns(query: &InsertQuery<RawColumn>, catalog_manager: &LockBasedCa
     query_columns
 }
 
-fn resolve_missed_column_value_types(query: &InsertQuery<RawColumn>, catalog_manager: &LockBasedCatalogManager) -> Vec<Value> {
+fn resolve_missed_column_value_types(query: &InsertQuery<RawColumn>, catalog_manager: &CatalogManager) -> Vec<Value> {
     catalog_manager.get_table_columns(query.table_name.as_str())
         .into_iter()
         .filter(|c| !query.columns.contains(&RawColumn::new(c.name.as_str())) && c.default_val.is_some())
@@ -72,7 +72,7 @@ fn resolve_missed_column_value_types(query: &InsertQuery<RawColumn>, catalog_man
         ).collect::<Vec<Value>>()
 }
 
-fn typed_from_raw(query: SelectQuery<RawColumn>, catalog_manager: &LockBasedCatalogManager) -> SelectQuery<TypedColumn> {
+fn typed_from_raw(query: SelectQuery<RawColumn>, catalog_manager: &CatalogManager) -> SelectQuery<TypedColumn> {
     let table_name = query.table_name.as_str();
     let typed = query.columns.into_iter().map(|c| {
         let t = catalog_manager.get_column_type(table_name, &c.name);

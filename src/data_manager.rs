@@ -2,19 +2,19 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone)]
-pub struct LockBaseDataManager {
+pub struct DataManager {
     data: Arc<Mutex<HashMap<String, Vec<Vec<String>>>>>
 }
 
-impl Default for LockBaseDataManager {
-    fn default() -> LockBaseDataManager {
-        LockBaseDataManager {
+impl Default for DataManager {
+    fn default() -> Self {
+        DataManager {
             data: Arc::new(Mutex::new(HashMap::default()))
         }
     }
 }
 
-impl LockBaseDataManager {
+impl DataManager {
     pub fn save_to<I, D>(&self, table_name: I, data: D)
         where I: Into<String>,
               D: IntoIterator<Item = String> {

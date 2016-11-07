@@ -1,9 +1,9 @@
-use super::ast::{ValidatedStatement, Type, TypedColumn, Condition, CondType, CondArg};
+use super::ast::{ValidatedStatement, TypedColumn, Condition, CondType, CondArg};
 use super::ast::create_table::CreateTableQuery;
 use super::ast::insert_query::{InsertQuery, ValueSource, Value};
 use super::ast::select_query::SelectQuery;
-use super::catalog_manager::LockBasedCatalogManager;
-use super::data_manager::LockBaseDataManager;
+use super::catalog_manager::CatalogManager;
+use super::data_manager::DataManager;
 
 #[derive(Debug, PartialEq)]
 pub enum ExecutionResult {
@@ -11,7 +11,7 @@ pub enum ExecutionResult {
     Data(Vec<Vec<String>>)
 }
 
-pub fn execute(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseDataManager, query: ValidatedStatement) -> Result<ExecutionResult, String> {
+pub fn execute(catalog_manager: CatalogManager, data_manager: DataManager, query: ValidatedStatement) -> Result<ExecutionResult, String> {
     match query {
         ValidatedStatement::Create(query) => create_table(catalog_manager, query),
         ValidatedStatement::Insert(query) => insert_into(catalog_manager, data_manager, query),
@@ -20,7 +20,7 @@ pub fn execute(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseD
     }
 }
 
-fn create_table(catalog_manager: LockBasedCatalogManager, create_query: CreateTableQuery) -> Result<ExecutionResult, String> {
+fn create_table(catalog_manager: CatalogManager, create_query: CreateTableQuery) -> Result<ExecutionResult, String> {
     let CreateTableQuery { table_name, table_columns } = create_query;
     catalog_manager.add_table(table_name.as_str());
     for column in table_columns.into_iter() {
@@ -29,7 +29,7 @@ fn create_table(catalog_manager: LockBasedCatalogManager, create_query: CreateTa
     Ok(ExecutionResult::Message(format!("'{}' was created", table_name.as_str())))
 }
 
-fn insert_into(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseDataManager, insert: InsertQuery<TypedColumn>) -> Result<ExecutionResult, String> {
+fn insert_into(catalog_manager: CatalogManager, data_manager: DataManager, insert: InsertQuery<TypedColumn>) -> Result<ExecutionResult, String> {
     match insert.values {
         ValueSource::Row(row) => {
             let data = row.into_iter().map(
@@ -58,7 +58,7 @@ fn insert_into(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseD
     }
 }
 
-fn select_data(catalog_manager: LockBasedCatalogManager, data_manager: LockBaseDataManager, query: SelectQuery<TypedColumn>) -> Result<ExecutionResult, String> {
+fn select_data(catalog_manager: CatalogManager, data_manager: DataManager, query: SelectQuery<TypedColumn>) -> Result<ExecutionResult, String> {
     let SelectQuery { table_name, columns, predicates } = query;
     match predicates {
         Some(Condition { left, right, cond_type }) => {

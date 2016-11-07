@@ -11,19 +11,19 @@ pub struct ColumnMetadata {
 }
 
 #[derive(Clone)]
-pub struct LockBasedCatalogManager {
+pub struct CatalogManager {
     tables: Arc<Mutex<HashMap<String, Vec<ColumnMetadata>>>>
 }
 
-impl Default for LockBasedCatalogManager {
+impl Default for CatalogManager {
     fn default() -> Self {
-        LockBasedCatalogManager {
+        CatalogManager {
             tables: Arc::new(Mutex::new(HashMap::default()))
         }
     }
 }
 
-impl LockBasedCatalogManager {
+impl CatalogManager {
     pub fn add_table<I: Into<String>>(&self, table_name: I) {
         let mut guard = self.tables.lock().unwrap();
         (*guard).entry(table_name.into()).or_insert(vec![]);
@@ -92,7 +92,7 @@ impl LockBasedCatalogManager {
                         return c.col_type
                     }
                 }
-                panic!("unimplemented if column with <{}> does not exist in <{}> table", column_name, table_name);
+                panic!("unimplemented if column with <{}> name does not exist in <{}> table", column_name, table_name);
             }
             None => panic!("unimplemented if table <{}> does not exist", table_name)
         }
