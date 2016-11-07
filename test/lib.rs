@@ -19,10 +19,10 @@ use sql::query_executer::{execute, ExecutionResult};
 use sql::data_manager::DataManager;
 use sql::catalog_manager::CatalogManager;
 
-pub fn evaluate_query(query: &str, data_manager: DataManager, catalog_manager: CatalogManager) -> Result<ExecutionResult, String> {
+pub fn evaluate_query(query: &str, data_manager: &DataManager, catalog_manager: &CatalogManager) -> Result<ExecutionResult, String> {
     tokenize(query)
         .and_then(parse)
-        .and_then(|statement| type_inferring(catalog_manager.clone(), statement))
-        .and_then(|statement| validate(catalog_manager.clone(), statement))
-        .and_then(|statement| execute(catalog_manager.clone(), data_manager.clone(), statement))
+        .and_then(|statement| type_inferring(catalog_manager, statement))
+        .and_then(|statement| validate(catalog_manager, statement))
+        .and_then(|statement| execute(catalog_manager, data_manager, statement))
 }

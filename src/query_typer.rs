@@ -4,7 +4,7 @@ use super::ast::insert_query::{Value, ValueSource, InsertQuery};
 use super::ast::create_table::{CreateTableQuery, ColumnTable};
 use super::ast::select_query::SelectQuery;
 
-pub fn type_inferring(catalog_manager: CatalogManager, statement: RawStatement) -> Result<TypedStatement, String> {
+pub fn type_inferring(catalog_manager: &CatalogManager, statement: RawStatement) -> Result<TypedStatement, String> {
     match statement {
         RawStatement::Create(create_table_query) => {
             let CreateTableQuery { table_name, table_columns } = create_table_query;

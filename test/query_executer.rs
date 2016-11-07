@@ -7,9 +7,9 @@ use super::evaluate_query;
 fn assert_that_query_evaluation_return_message(
         src_query: &str,
         expected_message: &str,
-        data_manager: DataManager,
-        catalog_manager: CatalogManager) {
-    let execution_result = evaluate_query(src_query, data_manager.clone(), catalog_manager.clone());
+        data_manager: &DataManager,
+        catalog_manager: &CatalogManager) {
+    let execution_result = evaluate_query(src_query, data_manager, catalog_manager);
 
     match execution_result {
         Ok(ExecutionResult::Message(actual_message)) => assert_eq!(actual_message, expected_message),
@@ -20,9 +20,9 @@ fn assert_that_query_evaluation_return_message(
 fn assert_that_query_evaluation_return_data(
         src_query: &str,
         expected_data: &str,
-        data_manager: DataManager,
-        catalog_manager: CatalogManager) {
-    let execution_result = evaluate_query(src_query, data_manager.clone(), catalog_manager.clone());
+        data_manager: &DataManager,
+        catalog_manager: &CatalogManager) {
+    let execution_result = evaluate_query(src_query, data_manager, catalog_manager);
 
     match execution_result {
         Ok(ExecutionResult::Data(data)) => assert_eq!(format!("{:?}", data), expected_data),
@@ -45,8 +45,8 @@ mod data_definition_language {
             assert_that_query_evaluation_return_message(
                 "create table table_name (col integer);",
                 "'table_name' was created",
-                DataManager::default(),
-                CatalogManager::default()
+                &DataManager::default(),
+                &CatalogManager::default()
             );
         }
 
@@ -55,8 +55,8 @@ mod data_definition_language {
             assert_that_query_evaluation_return_message(
                 "create table table_name (col1 integer, col2 integer, col3 integer);",
                 "'table_name' was created",
-                DataManager::default(),
-                CatalogManager::default()
+                &DataManager::default(),
+                &CatalogManager::default()
             );
         }
 
@@ -65,13 +65,13 @@ mod data_definition_language {
             let catalog_manager = CatalogManager::default();
             let data_manager = DataManager::default();
 
-            drop(evaluate_query("create table table1 (col1 integer primary key);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("create table table1 (col1 integer primary key);", &data_manager, &catalog_manager));
 
             assert_that_query_evaluation_return_message(
                 "create table table2 (col2 integer primary key, col3 integer foreign key references table1 (col1));",
                 "'table2' was created",
-                data_manager,
-                catalog_manager
+                &data_manager,
+                &catalog_manager
             );
         }
     }
@@ -93,13 +93,13 @@ mod data_manipulation_language {
             let catalog_manager = CatalogManager::default();
             let data_manager = DataManager::default();
 
-            drop(evaluate_query("create table table_name (col integer);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("create table table_name (col integer);", &data_manager, &catalog_manager));
 
             assert_that_query_evaluation_return_message(
                 "insert into table_name values(1);",
                 "row was inserted",
-                data_manager,
-                catalog_manager
+                &data_manager,
+                &catalog_manager
             );
         }
 
@@ -111,16 +111,16 @@ mod data_manipulation_language {
             drop(
                 evaluate_query(
                     "create table table_name (col1 integer, col2 integer);",
-                    data_manager.clone(),
-                    catalog_manager.clone()
+                    &data_manager,
+                    &catalog_manager
                 )
             );
 
             assert_that_query_evaluation_return_message(
                 "insert into table_name values(1, 2);",
                 "row was inserted",
-                data_manager,
-                catalog_manager
+                &data_manager,
+                &catalog_manager
             );
         }
 
@@ -129,16 +129,16 @@ mod data_manipulation_language {
             let catalog_manager = CatalogManager::default();
             let data_manager = DataManager::default();
 
-            drop(evaluate_query("create table table_name (col1 integer, col2 integer);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate_query("insert into table_name values(1, 2);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate_query("insert into table_name values(3, 4);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate_query("insert into table_name values(5, 6);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("create table table_name (col1 integer, col2 integer);", &data_manager, &catalog_manager));
+            drop(evaluate_query("insert into table_name values(1, 2);", &data_manager, &catalog_manager));
+            drop(evaluate_query("insert into table_name values(3, 4);", &data_manager, &catalog_manager));
+            drop(evaluate_query("insert into table_name values(5, 6);", &data_manager, &catalog_manager));
 
             assert_that_query_evaluation_return_message(
                 "insert into table_name (col1, col2) select col1, col2 from table_name;",
                 "3 rows were inserted",
-                 data_manager,
-                 catalog_manager
+                 &data_manager,
+                 &catalog_manager
             );
         }
 
@@ -147,19 +147,20 @@ mod data_manipulation_language {
             let catalog_manager = CatalogManager::default();
             let data_manager = DataManager::default();
 
-            drop(evaluate_query("create table table1 (col1 integer, col2 integer default 1);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("create table table1 (col1 integer, col2 integer default 1);", &data_manager, &catalog_manager));
 
             assert_that_query_evaluation_return_message(
                 "insert into table1 values (1);",
                 "row was inserted",
-                data_manager.clone(), catalog_manager.clone()
+                &data_manager,
+                &catalog_manager
             );
 
             assert_that_query_evaluation_return_data(
                 "select col1, col2 from table1;",
                 "[[\"1\", \"1\"]]",
-                data_manager,
-                catalog_manager
+                &data_manager,
+                &catalog_manager
             );
         }
     }
@@ -177,14 +178,24 @@ mod data_manipulation_language {
             let catalog_manager = CatalogManager::default();
             let data_manager = DataManager::default();
 
-            drop(evaluate_query("create table table_name (col integer);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate_query("insert into table_name values(1);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("create table table_name (col integer);", &data_manager, &catalog_manager));
+            drop(evaluate_query("insert into table_name values(1);", &data_manager, &catalog_manager));
 
-            assert_that_query_evaluation_return_data("select col from table_name;", "[[\"1\"]]", data_manager.clone(), catalog_manager.clone());
+            assert_that_query_evaluation_return_data(
+                "select col from table_name;",
+                "[[\"1\"]]",
+                &data_manager,
+                &catalog_manager
+            );
 
-            drop(evaluate_query("insert into table_name values(2);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("insert into table_name values(2);", &data_manager, &catalog_manager));
 
-            assert_that_query_evaluation_return_data("select col from table_name;", "[[\"1\"], [\"2\"]]", data_manager, catalog_manager);
+            assert_that_query_evaluation_return_data(
+                "select col from table_name;",
+                "[[\"1\"], [\"2\"]]",
+                &data_manager,
+                &catalog_manager
+            );
         }
 
         #[test]
@@ -192,17 +203,17 @@ mod data_manipulation_language {
             let catalog_manager = CatalogManager::default();
             let data_manager = DataManager::default();
 
-            drop(evaluate_query("create table table_name_2 (col integer);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate_query("insert into table_name_2 values(1);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate_query("insert into table_name_2 values(2);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate_query("insert into table_name_2 values(3);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate_query("insert into table_name_2 values(4);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("create table table_name_2 (col integer);", &data_manager, &catalog_manager));
+            drop(evaluate_query("insert into table_name_2 values(1);", &data_manager, &catalog_manager));
+            drop(evaluate_query("insert into table_name_2 values(2);", &data_manager, &catalog_manager));
+            drop(evaluate_query("insert into table_name_2 values(3);", &data_manager, &catalog_manager));
+            drop(evaluate_query("insert into table_name_2 values(4);", &data_manager, &catalog_manager));
 
             assert_that_query_evaluation_return_data(
                 "select col from table_name_2 where limit = 3;",
                 "[[\"1\"], [\"2\"], [\"3\"]]",
-                data_manager,
-                catalog_manager
+                &data_manager,
+                &catalog_manager
             );
         }
 
@@ -211,11 +222,16 @@ mod data_manipulation_language {
             let catalog_manager = CatalogManager::default();
             let data_manager = DataManager::default();
 
-            drop(evaluate_query("create table table_1 (col character(1));", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate_query("insert into table_1 values (\'a\');", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate_query("insert into table_1 values (\'b\');", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("create table table_1 (col character(1));", &data_manager, &catalog_manager));
+            drop(evaluate_query("insert into table_1 values (\'a\');", &data_manager, &catalog_manager));
+            drop(evaluate_query("insert into table_1 values (\'b\');", &data_manager, &catalog_manager));
 
-            assert_that_query_evaluation_return_data("select col from table_1 where col <> \'a\';", "[[\"b\"]]", data_manager, catalog_manager);
+            assert_that_query_evaluation_return_data(
+                "select col from table_1 where col <> \'a\';",
+                "[[\"b\"]]",
+                &data_manager,
+                &catalog_manager
+            );
         }
 
         #[test]
@@ -223,11 +239,16 @@ mod data_manipulation_language {
             let catalog_manager = CatalogManager::default();
             let data_manager = DataManager::default();
 
-            drop(evaluate_query("create table tab1 (col_1 integer, col_2 integer);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate_query("insert into tab1 values(1, 2);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate_query("insert into tab1 values(3, 4);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("create table tab1 (col_1 integer, col_2 integer);", &data_manager, &catalog_manager));
+            drop(evaluate_query("insert into tab1 values(1, 2);", &data_manager, &catalog_manager));
+            drop(evaluate_query("insert into tab1 values(3, 4);", &data_manager, &catalog_manager));
 
-            assert_that_query_evaluation_return_data("select col_1 from tab1;", "[[\"1\"], [\"3\"]]", data_manager, catalog_manager);
+            assert_that_query_evaluation_return_data(
+                "select col_1 from tab1;",
+                "[[\"1\"], [\"3\"]]",
+                &data_manager,
+                &catalog_manager
+            );
         }
 
         #[test]
@@ -235,15 +256,15 @@ mod data_manipulation_language {
             let catalog_manager = CatalogManager::default();
             let data_manager = DataManager::default();
 
-            drop(evaluate_query("create table tab1 (col_1 integer, col_2 integer);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate_query("insert into tab1 values(1, 2);", data_manager.clone(), catalog_manager.clone()));
-            drop(evaluate_query("insert into tab1 values(3, 4);", data_manager.clone(), catalog_manager.clone()));
+            drop(evaluate_query("create table tab1 (col_1 integer, col_2 integer);", &data_manager, &catalog_manager));
+            drop(evaluate_query("insert into tab1 values(1, 2);", &data_manager, &catalog_manager));
+            drop(evaluate_query("insert into tab1 values(3, 4);", &data_manager, &catalog_manager));
 
             assert_that_query_evaluation_return_data(
                 "select col_1, col_2 from tab1;",
                 "[[\"1\", \"2\"], [\"3\", \"4\"]]",
-                data_manager,
-                catalog_manager
+                &data_manager,
+                &catalog_manager
             );
         }
     }
