@@ -147,7 +147,7 @@ mod should_parse {
         fn with_one_column() {
             assert_that_statement_parsed_into(
                 "insert into table_name_1 values(10);",
-                "statement: 'insert', table name: 'table_name_1', columns: [], values: [Numeric(10)]"
+                "statement: 'insert', table name: 'table_name_1', columns: [], values: [<value: 10, type: integer>]"
             );
         }
 
@@ -155,7 +155,7 @@ mod should_parse {
         fn with_list_of_columns() {
             assert_that_statement_parsed_into(
                 "insert into table_name_2 values (10, 'string');",
-                "statement: 'insert', table name: 'table_name_2', columns: [], values: [Numeric(10), String(string)]"
+                "statement: 'insert', table name: 'table_name_2', columns: [], values: [<value: 10, type: integer>, <value: string, type: character size of 6>]"
             );
         }
 
@@ -163,7 +163,7 @@ mod should_parse {
         fn with_columns() {
             assert_that_statement_parsed_into(
                 "insert into table_name_3 (col_1, col_2) values (10, 'string');",
-                "statement: 'insert', table name: 'table_name_3', columns: [<name: 'col_1'>, <name: 'col_2'>], values: [Numeric(10), String(string)]"
+                "statement: 'insert', table name: 'table_name_3', columns: [<name: 'col_1'>, <name: 'col_2'>], values: [<value: 10, type: integer>, <value: string, type: character size of 6>]"
             );
         }
 

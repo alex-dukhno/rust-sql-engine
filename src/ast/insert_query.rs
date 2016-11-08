@@ -1,6 +1,8 @@
 use std::fmt;
 
+use super::super::lexer::Token;
 use super::select_query::SelectQuery;
+use super::Type;
 
 #[derive(PartialEq, Clone)]
 pub struct InsertQuery<T: fmt::Debug> {
@@ -43,27 +45,24 @@ impl <T: fmt::Debug> fmt::Debug for ValueSource<T> {
 }
 
 #[derive(PartialEq, Clone)]
-pub enum Value {
-    StrConst(String),
-    NumConst(String)
+pub struct Value {
+    pub val: String,
+    pub val_type: Type
 }
 
 impl Value {
-    pub fn str<I: Into<String>>(v: I) -> Value {
-        Value::StrConst(v.into())
-    }
 
-    pub fn num<I: Into<String>>(v: I) -> Value {
-        Value::NumConst(v.into())
+    pub fn new<I: Into<String>>(val: I, val_type: Type) -> Value {
+        Value {
+            val: val.into(),
+            val_type: val_type
+        }
     }
 }
 
 impl fmt::Debug for Value {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Value::NumConst(ref number) => write!(f, "Numeric({})", number),
-            Value::StrConst(ref string) => write!(f, "String({})", string)
-        }
+        write!(f, "<value: {}, type: {:?}>", self.val, self.val_type)
     }
 }

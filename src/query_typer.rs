@@ -66,8 +66,12 @@ fn resolve_missed_column_value_types(query: &InsertQuery<RawColumn>, catalog_man
         .filter(|c| !query.columns.contains(&RawColumn::new(c.name.as_str())) && c.default_val.is_some())
         .map(
             |c| match c.col_type {
-                    Type::Integer => Value::NumConst(c.default_val.unwrap()),
-                    Type::Character(_) => Value::StrConst(c.default_val.unwrap())
+                    Type::Integer => Value::new(c.default_val.unwrap(), Type::Integer),
+                    Type::Character(_) => {
+                        let val = c.default_val.unwrap();
+                        let size = val.len() as u8;
+                        Value::new(val, Type::Character(Option::from(size)))
+                    }
                 }
         ).collect::<Vec<Value>>()
 }

@@ -98,4 +98,17 @@ impl CatalogManager {
         }
         drop(guard);
     }
+
+    pub fn get_column_type_by_index(&self, table_name: &str, index: usize) -> Type {
+        let guard = self.tables.lock().unwrap();
+        match (*guard).get(table_name) {
+            Some(table) => {
+                match table.into_iter().nth(index) {
+                    Some(cm) => cm.col_type,
+                    _ => panic!("unimplemented if column with <{}> index does not exist in <{}> table", index, table_name)
+                }
+            }
+            _ => panic!("unimplemented if table <{}> does not exist", table_name)
+        }
+    }
 }

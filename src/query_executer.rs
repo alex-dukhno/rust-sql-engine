@@ -32,14 +32,7 @@ fn create_table(catalog_manager: &CatalogManager, create_query: CreateTableQuery
 fn insert_into(catalog_manager: &CatalogManager, data_manager: &DataManager, insert: InsertQuery<TypedColumn>) -> Result<ExecutionResult, String> {
     match insert.values {
         ValueSource::Row(row) => {
-            let data = row.into_iter().map(
-                |v| {
-                    match v {
-                        Value::NumConst(n) => n,
-                        Value::StrConst(s) => s
-                    }
-                }
-            ).collect::<Vec<String>>();
+            let data = row.into_iter().map(|v| v.val).collect::<Vec<String>>();
             data_manager.save_to(insert.table_name.as_str(), data);
             println!("data manager - {:?}", data_manager.get_row_from(insert.table_name.as_str(), 0));
             Ok(ExecutionResult::Message("row was inserted".to_owned()))

@@ -24,21 +24,9 @@ pub fn validate(catalog_manager: &CatalogManager, statement: TypedStatement) -> 
                 match query.values {
                     ValueSource::Row(ref row) => {
                         for (index, value) in row.iter().enumerate() {
-                            match value {
-                                &Value::NumConst(_) => {
-                                    if catalog_manager.match_type(query.table_name.as_str(), index, Type::Character(Option::from(0))) {
-                                        return Err(String::from("column type is VARCHAR find INT"));
-                                    } else {
-                                        continue;
-                                    }
-                                },
-                                &Value::StrConst(_) => {
-                                    if catalog_manager.match_type(query.table_name.as_str(), index, Type::Integer) {
-                                        return Err(String::from("column type is INT find VARCHAR"));
-                                    } else {
-                                        continue;
-                                    }
-                                }
+                            let col_type = catalog_manager.get_column_type_by_index(query.table_name.as_str(), index);
+                            if col_type != value.val_type {
+                                return Err(format!("column type is INT find VARCHAR"));
                             }
                         }
                     },

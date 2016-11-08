@@ -171,8 +171,11 @@ fn parse_values<I: Iterator<Item = Token>>(tokens: &mut I) -> Vec<Value> {
     let mut values = vec![];
     while let Some(token) = tokens.next() {
         match token {
-            Token::NumConst(s) => values.push(Value::NumConst(s)),
-            Token::CharsConst(s) => values.push(Value::StrConst(s)),
+            Token::NumConst(s) => values.push(Value::new(s, Type::Integer)),
+            Token::CharsConst(s) => {
+                let size = s.len() as u8;
+                values.push(Value::new(s, Type::Character(Option::from(size))));
+            },
             Token::Comma => {},
             Token::RParent => break,
             unexpected => panic!("panic find unexpected token {:?}", unexpected),

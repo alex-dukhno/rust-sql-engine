@@ -60,7 +60,7 @@ mod insert_query {
 
         assert_that_types_will_be_inferred(
             "insert into table2 values (1, 2, 3);",
-            "statement: 'insert', table name: 'table2', columns: [<name: 'col1', type: 'integer'>, <name: 'col2', type: 'integer'>, <name: 'col3', type: 'integer'>], values: [Numeric(1), Numeric(2), Numeric(3)]",
+            "statement: 'insert', table name: 'table2', columns: [<name: 'col1', type: 'integer'>, <name: 'col2', type: 'integer'>, <name: 'col3', type: 'integer'>], values: [<value: 1, type: integer>, <value: 2, type: integer>, <value: 3, type: integer>]",
             &catalog_manager
         );
     }
@@ -79,7 +79,7 @@ mod insert_query {
 
         assert_that_types_will_be_inferred(
             "insert into table_1 (col2) values (2);",
-            "statement: 'insert', table name: 'table_1', columns: [<name: 'col2', type: 'integer'>, <name: 'col1', type: 'integer'>], values: [Numeric(2), Numeric(1)]",
+            "statement: 'insert', table name: 'table_1', columns: [<name: 'col2', type: 'integer'>, <name: 'col1', type: 'integer'>], values: [<value: 2, type: integer>, <value: 1, type: integer>]",
             &catalog_manager
         );
     }
@@ -98,7 +98,7 @@ mod insert_query {
 
         assert_that_types_will_be_inferred(
             "insert into table_2 (col2) values (2);",
-            "statement: 'insert', table name: 'table_2', columns: [<name: 'col2', type: 'integer'>, <name: 'col1', type: 'integer'>, <name: 'col3', type: 'character size of 3'>], values: [Numeric(2), Numeric(1), String(str)]",
+            "statement: 'insert', table name: 'table_2', columns: [<name: 'col2', type: 'integer'>, <name: 'col1', type: 'integer'>, <name: 'col3', type: 'character size of 3'>], values: [<value: 2, type: integer>, <value: 1, type: integer>, <value: str, type: character size of 3>]",
             &catalog_manager
         );
     }
