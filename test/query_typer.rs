@@ -23,7 +23,7 @@ mod create_table_query {
     fn default_size_for_char_should_be_255() {
         assert_that_types_will_be_inferred(
             "create table tab1 (col1 char);",
-            "statement: 'create table', table name: 'tab1', columns: [<name: 'col1', type: 'character size of 255', primary key: No, foreign key: No, nullable: Yes, default value: NULL>]",
+            "statement: 'create table', table name: 'tab1', columns: [<name: 'col1', type: 'character[255]', primary key: No, foreign key: No, nullable: Yes, default value: NULL>]",
             &CatalogManager::default()
         );
     }
@@ -32,7 +32,7 @@ mod create_table_query {
     fn list_of_columns_with_default_char_size() {
         assert_that_types_will_be_inferred(
             "create table tab1 (col1 char, col2 char, col3 char);",
-            "statement: 'create table', table name: 'tab1', columns: [<name: 'col1', type: 'character size of 255', primary key: No, foreign key: No, nullable: Yes, default value: NULL>, <name: 'col2', type: 'character size of 255', primary key: No, foreign key: No, nullable: Yes, default value: NULL>, <name: 'col3', type: 'character size of 255', primary key: No, foreign key: No, nullable: Yes, default value: NULL>]",
+            "statement: 'create table', table name: 'tab1', columns: [<name: 'col1', type: 'character[255]', primary key: No, foreign key: No, nullable: Yes, default value: NULL>, <name: 'col2', type: 'character[255]', primary key: No, foreign key: No, nullable: Yes, default value: NULL>, <name: 'col3', type: 'character[255]', primary key: No, foreign key: No, nullable: Yes, default value: NULL>]",
             &CatalogManager::default()
         )
     }
@@ -98,7 +98,7 @@ mod insert_query {
 
         assert_that_types_will_be_inferred(
             "insert into table_2 (col2) values (2);",
-            "statement: 'insert', table name: 'table_2', columns: [<name: 'col2', type: 'integer'>, <name: 'col1', type: 'integer'>, <name: 'col3', type: 'character size of 3'>], values: [<value: 2, type: integer>, <value: 1, type: integer>, <value: str, type: character size of 3>]",
+            "statement: 'insert', table name: 'table_2', columns: [<name: 'col2', type: 'integer'>, <name: 'col1', type: 'integer'>, <name: 'col3', type: 'character[3]'>], values: [<value: 2, type: integer>, <value: 1, type: integer>, <value: str, type: character[3]>]",
             &catalog_manager
         );
     }
@@ -164,7 +164,7 @@ mod select_query {
 
         assert_that_types_will_be_inferred(
             "select col2, col3, col5 from table_3;",
-            "statement: 'select', tables: [<name: 'table_3'>], columns: [<name: 'col2', type: 'integer'>, <name: 'col3', type: 'character size of 10'>, <name: 'col5', type: 'integer'>], where: no predicate",
+            "statement: 'select', tables: [<name: 'table_3'>], columns: [<name: 'col2', type: 'integer'>, <name: 'col3', type: 'character[10]'>, <name: 'col5', type: 'integer'>], where: no predicate",
             &catalog_manager
         );
     }

@@ -1,6 +1,5 @@
 use std::fmt;
 
-use super::super::lexer::Token;
 use super::select_query::SelectQuery;
 use super::Type;
 

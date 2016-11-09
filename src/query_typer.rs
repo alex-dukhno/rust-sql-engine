@@ -12,8 +12,8 @@ pub fn type_inferring(catalog_manager: &CatalogManager, statement: RawStatement)
             Ok(TypedStatement::Create(CreateTableQuery::new(table_name.as_str(), columns)))
         }
         RawStatement::Insert(query) => {
-            let columns = resolve_columns(&query, &catalog_manager);
-            let mut value_types = resolve_missed_column_value_types(&query, &catalog_manager);
+            let columns = resolve_columns(&query, catalog_manager);
+            let mut value_types = resolve_missed_column_value_types(&query, catalog_manager);
             println!("value types - {:?}", value_types);
             let new_values = match query.values {
                 ValueSource::Row(mut query_values) => {
@@ -21,13 +21,13 @@ pub fn type_inferring(catalog_manager: &CatalogManager, statement: RawStatement)
                     ValueSource::Row(query_values)
                 }
                 ValueSource::SubQuery(query) => {
-                    ValueSource::SubQuery(typed_from_raw(query, &catalog_manager))
+                    ValueSource::SubQuery(typed_from_raw(query, catalog_manager))
                 }
             };
             Ok(TypedStatement::Insert(InsertQuery::new(query.table_name, columns, new_values)))
         }
         RawStatement::Select(query) => {
-            Ok(TypedStatement::Select(typed_from_raw(query, &catalog_manager)))
+            Ok(TypedStatement::Select(typed_from_raw(query, catalog_manager)))
         }
         s => panic!("unimplemented type inferring for {:?}", s)
     }
@@ -49,12 +49,12 @@ fn resolve_columns(query: &InsertQuery<RawColumn>, catalog_manager: &CatalogMana
     let mut query_columns = catalog_manager.get_table_columns(query.table_name.as_str())
         .into_iter()
         .filter(|c| query.columns.contains(&RawColumn::new(c.name.as_str())))
-        .map(|c| TypedColumn::new(c.name, c.col_type))
+        .map(|c| TypedColumn::new(c.name.as_str(), c.col_type))
         .collect::<Vec<TypedColumn>>();
     let mut missed_columns = catalog_manager.get_table_columns(query.table_name.as_str())
         .into_iter()
         .filter(|c| !query.columns.contains(&RawColumn::new(c.name.as_str())))
-        .map(|c| TypedColumn::new(c.name, c.col_type))
+        .map(|c| TypedColumn::new(c.name.as_str(), c.col_type))
         .collect::<Vec<TypedColumn>>();
     query_columns.append(&mut missed_columns);
     query_columns
@@ -65,10 +65,10 @@ fn resolve_missed_column_value_types(query: &InsertQuery<RawColumn>, catalog_man
         .into_iter()
         .filter(|c| !query.columns.contains(&RawColumn::new(c.name.as_str())) && c.default_val.is_some())
         .map(
-            |c| match c.col_type {
-                    Type::Integer => Value::new(c.default_val.unwrap(), Type::Integer),
+            |ref c| match c.col_type {
+                    Type::Integer => Value::new(c.default_val.as_ref().unwrap().as_str(), Type::Integer),
                     Type::Character(_) => {
-                        let val = c.default_val.unwrap();
+                        let val = c.default_val.as_ref().unwrap().as_str();
                         let size = val.len() as u8;
                         Value::new(val, Type::Character(Option::from(size)))
                     }

@@ -1,6 +1,6 @@
 use super::ast::{ValidatedStatement, TypedColumn, Condition, CondType, CondArg};
 use super::ast::create_table::CreateTableQuery;
-use super::ast::insert_query::{InsertQuery, ValueSource, Value};
+use super::ast::insert_query::{InsertQuery, ValueSource};
 use super::ast::select_query::SelectQuery;
 use super::catalog_manager::CatalogManager;
 use super::data_manager::DataManager;

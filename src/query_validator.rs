@@ -1,5 +1,5 @@
-use super::ast::{Type, TypedStatement, ValidatedStatement};
-use super::ast::insert_query::{Value, ValueSource};
+use super::ast::{TypedStatement, ValidatedStatement};
+use super::ast::insert_query::{ValueSource};
 use super::catalog_manager::CatalogManager;
 
 pub fn validate(catalog_manager: &CatalogManager, statement: TypedStatement) -> Result<ValidatedStatement, String> {

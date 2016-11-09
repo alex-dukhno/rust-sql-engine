@@ -113,7 +113,7 @@ impl fmt::Debug for Type {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Type::Integer => write!(f, "integer"),
-            Type::Character(Some(v)) => write!(f, "character size of {}", v),
+            Type::Character(Some(v)) => write!(f, "character[{}]", v),
             Type::Character(None) => write!(f, "character")
         }
     }

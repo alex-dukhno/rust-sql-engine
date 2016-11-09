@@ -33,7 +33,7 @@ mod should_parse {
         fn with_varchar_column_type() {
             assert_that_statement_parsed_into(
                 "create table table_1 (col_2 character(10));",
-                "statement: 'create table', table name: 'table_1', columns: [<name: 'col_2', type: 'character size of 10', primary key: No, foreign key: No, nullable: Yes, default value: NULL>]"
+                "statement: 'create table', table name: 'table_1', columns: [<name: 'col_2', type: 'character[10]', primary key: No, foreign key: No, nullable: Yes, default value: NULL>]"
             );
         }
 
@@ -155,7 +155,7 @@ mod should_parse {
         fn with_list_of_columns() {
             assert_that_statement_parsed_into(
                 "insert into table_name_2 values (10, 'string');",
-                "statement: 'insert', table name: 'table_name_2', columns: [], values: [<value: 10, type: integer>, <value: string, type: character size of 6>]"
+                "statement: 'insert', table name: 'table_name_2', columns: [], values: [<value: 10, type: integer>, <value: string, type: character[6]>]"
             );
         }
 
@@ -163,7 +163,7 @@ mod should_parse {
         fn with_columns() {
             assert_that_statement_parsed_into(
                 "insert into table_name_3 (col_1, col_2) values (10, 'string');",
-                "statement: 'insert', table name: 'table_name_3', columns: [<name: 'col_1'>, <name: 'col_2'>], values: [<value: 10, type: integer>, <value: string, type: character size of 6>]"
+                "statement: 'insert', table name: 'table_name_3', columns: [<name: 'col_1'>, <name: 'col_2'>], values: [<value: 10, type: integer>, <value: string, type: character[6]>]"
             );
         }
 

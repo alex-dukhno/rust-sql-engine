@@ -26,7 +26,7 @@ impl Default for CatalogManager {
 impl CatalogManager {
     pub fn add_table<I: Into<String>>(&self, table_name: I) {
         let mut guard = self.tables.lock().unwrap();
-        (*guard).entry(table_name.into()).or_insert(vec![]);
+        (*guard).entry(table_name.into()).or_insert_with(Vec::default);
         drop(guard);
     }
 
@@ -77,7 +77,7 @@ impl CatalogManager {
         let guard = self.tables.lock().unwrap();
         let r = match (*guard).get(table_name) {
             Some(table) => table.iter().cloned().collect::<Vec<ColumnMetadata>>(),
-            None => vec![],
+            None => vec![] //panic!("table <{}> not found", table_name),
         };
         drop(guard);
         r
