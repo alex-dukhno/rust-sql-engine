@@ -92,22 +92,6 @@ mod should_parse {
                 "statement: 'create table', table name: 'tab1', columns: [<name: 'col2', type: 'character', primary key: No, foreign key: No, nullable: Yes, default value: NULL>]"
             );
         }
-
-        #[test]
-        fn character_size_more_than_256() {
-            assert_that_statement_parsed_into(
-                "create table tab2 (col1 char(456));",
-                "number too large to fit in target type"
-            );
-        }
-
-        #[test]
-        fn character_size_less_than_0() {
-            assert_that_statement_parsed_into(
-                "create table tab3 (col6 char(-1));",
-                "invalid digit found in string"
-            );
-        }
     }
 
     #[cfg(test)]
@@ -209,6 +193,45 @@ mod should_parse {
             assert_that_statement_parsed_into(
                 "select col_2 from table_1 where col_1 <> \'a\';",
                 "statement: 'select', tables: [<name: 'table_1'>], columns: [<name: 'col_2'>], where: predicate <col_1 not equals to 'a'>"
+            );
+        }
+    }
+}
+
+fn assert_that_statement_parsed_with_error(sql: &str, expected_error_message: &str) {
+    match tokenize(sql).and_then(parse) {
+        Ok(r) => panic!("An unexpected positive result - {:?}\nwhen parsing sql - {:?}", r, sql),
+        Err(actual_error_message) => assert_eq!(actual_error_message, expected_error_message)
+    }
+}
+
+#[cfg(test)]
+mod should_not_parse_when {
+    #[cfg(test)]
+    mod create_table {
+        use super::super::assert_that_statement_parsed_with_error;
+
+        #[test]
+        fn without_semicolon_in_the_end_of_statement() {
+            assert_that_statement_parsed_with_error(
+                "create table tab3 (col1 int)",
+                "missed ';' in the end of statement"
+            );
+        }
+
+        #[test]
+        fn character_size_more_than_256() {
+            assert_that_statement_parsed_with_error(
+                "create table tab2 (col1 char(456));",
+                "number too large to fit in target type"
+            );
+        }
+
+        #[test]
+        fn character_size_less_than_0() {
+            assert_that_statement_parsed_with_error(
+                "create table tab3 (col6 char(-1));",
+                "invalid digit found in string"
             );
         }
     }

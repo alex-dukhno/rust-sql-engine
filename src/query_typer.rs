@@ -1,10 +1,24 @@
+use std::collections::HashMap;
+
 use super::catalog_manager::CatalogManager;
+use super::catalog::ColumnMetadata;
 use super::ast::{RawStatement, RawColumn, Type, TypedStatement, TypedColumn};
 use super::ast::insert_query::{Value, ValueSource, InsertQuery};
 use super::ast::create_table::{CreateTableQuery, ColumnTable};
 use super::ast::select_query::SelectQuery;
 
-pub fn type_inferring(catalog_manager: &CatalogManager, statement: RawStatement) -> Result<TypedStatement, String> {
+pub fn type_inferring(tables_set: &HashMap<String, Vec<ColumnMetadata>>, statement: RawStatement) -> Result<TypedStatement, String> {
+    match statement {
+        RawStatement::Create(create_table_query) => {
+            let CreateTableQuery { table_name, table_columns } = create_table_query;
+            let columns = infer_table_columns_type(table_columns);
+            Ok(TypedStatement::Create(CreateTableQuery::new(table_name.as_str(), columns)))
+        }
+        _ => Err("some error occurred!".into())
+    }
+}
+
+pub fn type_inferring_old(catalog_manager: &CatalogManager, statement: RawStatement) -> Result<TypedStatement, String> {
     match statement {
         RawStatement::Create(create_table_query) => {
             let CreateTableQuery { table_name, table_columns } = create_table_query;

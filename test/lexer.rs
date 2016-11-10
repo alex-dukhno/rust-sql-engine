@@ -375,6 +375,11 @@ mod sql_query {
     }
 
     #[test]
+    fn int_as_alias_to_integer() {
+        assert_that_tokenized_into("int", "[KeyWord('INTEGER')]");
+    }
+
+    #[test]
     fn primary_keyword_token() {
         assert_that_tokenized_into("primary", "[KeyWord('PRIMARY')]");
     }

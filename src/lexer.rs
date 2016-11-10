@@ -120,7 +120,7 @@ impl<'s> From<&'s str> for Token {
             "default" => Token::Default,
             "not" => Token::Not,
             "null" => Token::Null,
-            "integer" => Token::Int,
+            "integer" | "int" => Token::Int,
             "char" | "character" => Token::Character,
             "limit" => Token::Limit,
             "and" => Token::And,

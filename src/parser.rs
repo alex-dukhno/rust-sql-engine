@@ -15,7 +15,7 @@ pub fn parse(tokens: Tokens) -> Result<RawStatement, String> {
         Some(Token::Delete) => Ok(RawStatement::Delete(parse_delete_query(iter.by_ref()))),
         Some(Token::Insert) => Ok(RawStatement::Insert(parse_insert_query(iter.by_ref()))),
         Some(Token::Select) => Ok(RawStatement::Select(parse_select_query(iter.by_ref()))),
-        token => panic!("unimplemented parseing procedure for {:?}", token),
+        token => panic!("unimplemented parsing procedure for {:?}", token),
     }
 }
 
@@ -31,16 +31,23 @@ fn parse_create_table<I: Iterator<Item = Token>>(tokens: &mut I) -> Result<Creat
 
     let mut columns = vec![];
 
+    let mut has_semicolon = false;
     while let Some(token) = tokens.next() {
         match token {
             Token::LParent => {},
-            Token::Semicolon => break,
+            Token::Semicolon => {
+                has_semicolon = true;
+                break
+            },
             Token::Ident(name) => columns.push(try!(parse_table_column(tokens.by_ref(), name))),
             token => panic!("unexpected token {:?}", token)
         }
     }
-
-    Ok(CreateTableQuery::new(table_name, columns))
+    if !has_semicolon {
+        Err("missed ';' in the end of statement".into())
+    } else {
+        Ok(CreateTableQuery::new(table_name, columns))
+    }
 }
 
 fn parse_table_column<I: Iterator<Item = Token>>(tokens: &mut I, column_name: String) -> Result<ColumnTable, String> {
@@ -48,7 +55,7 @@ fn parse_table_column<I: Iterator<Item = Token>>(tokens: &mut I, column_name: St
     let column_type = match tokens.next() {
         Some(Token::Int) => Type::Integer,
         Some(Token::Character) => try!(parse_char_type(tokens.by_ref())),
-        _ => unimplemented!(),
+        token => panic!("Unexpected token - {:?}", token),
     };
     let mut is_primary_key = false;
     let mut foreign_key = None;

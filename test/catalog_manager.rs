@@ -1,7 +1,8 @@
 use expectest::prelude::{be_true, be_false, be_some, be_equal_to};
 
 use sql::ast::Type;
-use sql::catalog_manager::{CatalogManager, ColumnMetadata};
+use sql::catalog_manager::CatalogManager;
+use sql::catalog::ColumnMetadata;
 
 #[test]
 fn adds_table_to_catalog_manger() {

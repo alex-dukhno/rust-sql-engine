@@ -5,4 +5,5 @@ pub mod query_typer;
 pub mod query_validator;
 pub mod query_executer;
 pub mod catalog_manager;
+pub mod catalog;
 pub mod data_manager;

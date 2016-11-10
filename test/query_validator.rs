@@ -1,6 +1,6 @@
 use sql::lexer::tokenize;
 use sql::parser::parse;
-use sql::query_typer::type_inferring;
+use sql::query_typer::type_inferring_old;
 use sql::query_validator::validate;
 use sql::catalog_manager::CatalogManager;
 use sql::data_manager::DataManager;
@@ -10,7 +10,7 @@ use super::evaluate_query;
 fn assert_that_query_verified_with_error_message(src_query: &str, expected_message: &str, catalog_manager: &CatalogManager) {
     let query_result = tokenize(src_query)
         .and_then(parse)
-        .and_then(|statement| type_inferring(catalog_manager, statement))
+        .and_then(|statement| type_inferring_old(catalog_manager, statement))
         .and_then(|statement| validate(catalog_manager, statement));
 
     match query_result {
