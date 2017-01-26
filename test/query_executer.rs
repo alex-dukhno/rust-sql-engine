@@ -41,6 +41,7 @@ mod data_definition_language {
         use super::super::assert_that_query_evaluation_return_message;
 
         #[test]
+        #[ignore]
         fn single_column() {
             assert_that_query_evaluation_return_message(
                 "create table table_name (col integer);",
@@ -51,6 +52,7 @@ mod data_definition_language {
         }
 
         #[test]
+        #[ignore]
         fn with_list_of_columns() {
             assert_that_query_evaluation_return_message(
                 "create table table_name (col1 integer, col2 integer, col3 integer);",
@@ -61,6 +63,7 @@ mod data_definition_language {
         }
 
         #[test]
+        #[ignore]
         fn with_foreign_key() {
             let catalog_manager = CatalogManager::default();
             let data_manager = DataManager::default();
@@ -89,6 +92,7 @@ mod data_manipulation_language {
         use super::super::assert_that_query_evaluation_return_data;
 
         #[test]
+        #[ignore]
         fn row_in_created_table() {
             let catalog_manager = CatalogManager::default();
             let data_manager = DataManager::default();
@@ -104,6 +108,7 @@ mod data_manipulation_language {
         }
 
         #[test]
+        #[ignore]
         fn row_in_table_with_many_columns() {
             let catalog_manager = CatalogManager::default();
             let data_manager = DataManager::default();
@@ -125,6 +130,7 @@ mod data_manipulation_language {
         }
 
         #[test]
+        #[ignore]
         fn into_table_with_select() {
             let catalog_manager = CatalogManager::default();
             let data_manager = DataManager::default();
@@ -143,6 +149,7 @@ mod data_manipulation_language {
         }
 
         #[test]
+        #[ignore]
         fn column_with_default_value() {
             let catalog_manager = CatalogManager::default();
             let data_manager = DataManager::default();
@@ -174,6 +181,7 @@ mod data_manipulation_language {
         use super::super::assert_that_query_evaluation_return_data;
 
         #[test]
+        #[ignore]
         fn from_table() {
             let catalog_manager = CatalogManager::default();
             let data_manager = DataManager::default();
@@ -199,6 +207,7 @@ mod data_manipulation_language {
         }
 
         #[test]
+        #[ignore]
         fn limit_number_of_rows() {
             let catalog_manager = CatalogManager::default();
             let data_manager = DataManager::default();
@@ -218,6 +227,7 @@ mod data_manipulation_language {
         }
 
         #[test]
+        #[ignore]
         fn by_column_predicate() {
             let catalog_manager = CatalogManager::default();
             let data_manager = DataManager::default();
@@ -235,6 +245,7 @@ mod data_manipulation_language {
         }
 
         #[test]
+        #[ignore]
         fn column_from_table_with_list_of_columns() {
             let catalog_manager = CatalogManager::default();
             let data_manager = DataManager::default();
@@ -252,6 +263,7 @@ mod data_manipulation_language {
         }
 
         #[test]
+        #[ignore]
         fn list_of_columns_from_table_with_many_columns() {
             let catalog_manager = CatalogManager::default();
             let data_manager = DataManager::default();

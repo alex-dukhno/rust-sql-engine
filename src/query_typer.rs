@@ -9,15 +9,13 @@ use super::ast::select_query::SelectQuery;
 
 pub fn type_inferring(tables_set: &HashMap<String, Vec<ColumnMetadata>>, statement: RawStatement) -> Result<TypedStatement, String> {
     match statement {
-        RawStatement::Create(create_table_query) => {
-            let CreateTableQuery { table_name, table_columns } = create_table_query;
-            let columns = infer_table_columns_type(table_columns);
-            Ok(TypedStatement::Create(CreateTableQuery::new(table_name.as_str(), columns)))
+        RawStatement::Create(mut create_table_query) => {
+            infer_table_columns_type(&mut create_table_query.table_columns);
+            Ok(TypedStatement::Create(create_table_query))
         }
         RawStatement::Insert(query) => {
             let columns = resolve_columns(&query, tables_set);
             let mut value_types = resolve_missed_column_value_types(&query, tables_set);
-            println!("value types - {:?}", value_types);
             let new_values = match query.values {
                 ValueSource::Row(mut query_values) => {
                     query_values.append(&mut value_types);
@@ -36,16 +34,12 @@ pub fn type_inferring(tables_set: &HashMap<String, Vec<ColumnMetadata>>, stateme
     }
 }
 
-fn infer_table_columns_type(table_columns: Vec<ColumnTable>) -> Vec<ColumnTable> {
-    table_columns.into_iter().map(
-        |mut column| {
-            column.column_type = match column.column_type {
-                Type::Character(None) => Type::Character(Option::from(255)),
-                col_type => col_type
-            };
-            column
+fn infer_table_columns_type(table_columns: &mut Vec<ColumnTable>) {
+    for col in table_columns.iter_mut() {
+        if col.column_type == Type::Character(None) {
+            col.column_type = Type::Character(Option::from(255));
         }
-    ).collect::<Vec<ColumnTable>>()
+    }
 }
 
 fn resolve_columns(query: &InsertQuery<RawColumn>, table_set: &HashMap<String, Vec<ColumnMetadata>>) -> Vec<TypedColumn> {
@@ -97,11 +91,14 @@ fn typed_from_raw(query: SelectQuery<RawColumn>, table_set: &HashMap<String, Vec
     SelectQuery::new(table_name, typed, query.predicates)
 }
 
+
+
+
 pub fn type_inferring_old(catalog_manager: &CatalogManager, statement: RawStatement) -> Result<TypedStatement, String> {
     match statement {
         RawStatement::Create(create_table_query) => {
             let CreateTableQuery { table_name, table_columns } = create_table_query;
-            let columns = infer_table_columns_type(table_columns);
+            let columns = infer_table_columns_type_old(table_columns);
             Ok(TypedStatement::Create(CreateTableQuery::new(table_name.as_str(), columns)))
         }
         RawStatement::Insert(query) => {
@@ -124,6 +121,18 @@ pub fn type_inferring_old(catalog_manager: &CatalogManager, statement: RawStatem
         }
         s => panic!("unimplemented type inferring for {:?}", s)
     }
+}
+
+fn infer_table_columns_type_old(table_columns: Vec<ColumnTable>) -> Vec<ColumnTable> {
+    table_columns.into_iter().map(
+        |mut column| {
+            column.column_type = match column.column_type {
+                Type::Character(None) => Type::Character(Option::from(255)),
+                col_type => col_type
+            };
+            column
+        }
+    ).collect::<Vec<ColumnTable>>()
 }
 
 fn resolve_columns_old(query: &InsertQuery<RawColumn>, catalog_manager: &CatalogManager) -> Vec<TypedColumn> {

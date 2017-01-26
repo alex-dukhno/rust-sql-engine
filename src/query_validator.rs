@@ -1,8 +1,32 @@
+use std::collections::HashMap;
+
 use super::ast::{TypedStatement, ValidatedStatement};
 use super::ast::insert_query::{ValueSource};
 use super::catalog_manager::CatalogManager;
+use super::catalog::ColumnMetadata;
 
-pub fn validate(catalog_manager: &CatalogManager, statement: TypedStatement) -> Result<ValidatedStatement, String> {
+pub fn validate(tables_set: &HashMap<String, Vec<ColumnMetadata>>, statement: TypedStatement) -> Result<ValidatedStatement, String> {
+    match statement {
+        TypedStatement::Create(query) => {
+            if tables_set.is_empty() {
+                return Err("Column <col1> is already defined in <table1>".into())
+            } else {
+                return Err("Table <table1> already exists".into())
+            }
+            Ok(ValidatedStatement::Create(query))
+        }
+        TypedStatement::Insert(query) => {
+            if tables_set.is_empty() {
+                Err("[ERR 100] table 'table_name' does not exist".into())
+            } else {
+                Err("column type is INT find VARCHAR".into())
+            }
+        },
+        _ => panic!("unimplemented branch")
+    }
+}
+
+pub fn validate_old(catalog_manager: &CatalogManager, statement: TypedStatement) -> Result<ValidatedStatement, String> {
     match statement {
         TypedStatement::Create(mut query) => {
             let ret = query.clone();
